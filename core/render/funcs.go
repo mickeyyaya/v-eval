@@ -21,6 +21,7 @@ func funcMap() template.FuncMap {
 		"requirement":   requirement,
 		"isJudgment":    isJudgment,
 		"orNotRecorded": orNotRecorded,
+		"provenance":    provenance,
 	}
 }
 
@@ -103,3 +104,18 @@ var cellEscapes = strings.NewReplacer("|", `\|`, "\r\n", "<br>", "\n", "<br>")
 
 // cell makes report text safe inside a Markdown table cell.
 func cell(text string) string { return cellEscapes.Replace(text) }
+
+// provenance names what produced a piece of evidence, e.g. "via pytest 7.4".
+// A tool nobody recorded says so explicitly rather than leaving a dangling
+// "via" with nothing after it, and a tool with no recorded version is named
+// without a trailing space.
+func provenance(p report.EvidenceProvenance) string {
+	switch {
+	case p.Tool == "":
+		return "via (not recorded)"
+	case p.Version == "":
+		return "via " + p.Tool
+	default:
+		return "via " + p.Tool + " " + p.Version
+	}
+}

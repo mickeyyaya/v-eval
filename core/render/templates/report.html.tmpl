@@ -2,7 +2,7 @@
 what it said, whether the candidate supplied it rather than the evaluator
 gathering it, and what produced it. */ -}}
 {{- define "evidence" -}}
-<li><span class="tag">kind {{.Kind}}</span> <span class="tag">isolation {{.Isolation}}</span> <code>{{locator .Locator}}</code> <span class="text">{{.Observation}}{{supplied .}}</span> <span class="via">via {{.Provenance.Tool}} {{.Provenance.Version}}{{if isJudgment .}}, rubric {{orNotRecorded .RubricVersion}}, model {{orNotRecorded .Model}}{{else}}{{with .Model}}, model {{.}}{{end}}{{end}}</span></li>
+<li><span class="tag">kind {{.Kind}}</span> <span class="tag">isolation {{.Isolation}}</span> <code>{{locator .Locator}}</code> <span class="text">{{.Observation}}{{supplied .}}</span> <span class="via">{{provenance .Provenance}}{{if isJudgment .}}, rubric {{orNotRecorded .RubricVersion}}, model {{orNotRecorded .Model}}{{else}}{{with .Model}}, model {{.}}{{end}}{{end}}</span></li>
 {{end -}}
 {{- /* The same lines as a list, which says "none" rather than showing
 nothing: a reader must be able to tell cited-nothing from rendered-nothing. */ -}}
@@ -92,7 +92,6 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 .badge { display: inline-block; border-radius: 3px; padding: 0.05rem 0.5rem; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em; background: var(--unknown-bg); color: var(--unknown-fg); }
 .badge.pass { background: var(--pass-bg); color: var(--pass-fg); }
 .badge.fail { background: var(--fail-bg); color: var(--fail-fg); }
-.badge.unknown { background: var(--unknown-bg); color: var(--unknown-fg); }
 .badge.error { background: var(--error-bg); color: var(--error-fg); }
 .badge.not_applicable { background: var(--not-applicable-bg); color: var(--not-applicable-fg); }
 .badge.incomplete { background: var(--incomplete-bg); color: var(--incomplete-fg); }

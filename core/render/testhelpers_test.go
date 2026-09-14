@@ -47,7 +47,7 @@ func assertGolden(t *testing.T, name string, got []byte) {
 	}
 }
 
-// assertOrder requires every needle to appear in out, once, in order.
+// assertOrder requires every needle to appear in out, in order.
 func assertOrder(t *testing.T, out []byte, needles []string) {
 	t.Helper()
 	last := -1
@@ -70,10 +70,14 @@ func mustRenderer(t *testing.T) render.Renderer {
 	return renderer
 }
 
-// renderFixture renders one fixture with the markdown renderer.
-func renderFixture(t *testing.T, name string) []byte {
+// renderAs renders one report in one format, or fails the test.
+func renderAs(t *testing.T, format string, rep report.Report) []byte {
 	t.Helper()
-	out, err := mustRenderer(t).Render(loadFixture(t, name))
+	renderer, ok := render.ByFormat(format)
+	if !ok {
+		t.Fatalf("%s renderer missing", format)
+	}
+	out, err := renderer.Render(rep)
 	if err != nil {
 		t.Fatal(err)
 	}

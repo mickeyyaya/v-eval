@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/mickeyyaya/v-eval/core/render"
 	"github.com/mickeyyaya/v-eval/core/report"
 )
 
@@ -12,20 +11,6 @@ import (
 // renderers" is written once here and run over all of them, so a format
 // cannot quietly opt out of it.
 var formats = []string{"md", "html"}
-
-// renderAs renders one report in one format, or fails the test.
-func renderAs(t *testing.T, format string, rep report.Report) []byte {
-	t.Helper()
-	renderer, ok := render.ByFormat(format)
-	if !ok {
-		t.Fatalf("%s renderer missing", format)
-	}
-	out, err := renderer.Render(rep)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return out
-}
 
 // assertEveryFormat renders rep in every format and checks that each
 // rendering carries every want and none of the unwanted strings.
@@ -97,7 +82,27 @@ func TestAMissingDimensionValueSaysNotMeasured(t *testing.T) {
 	rep := report.Report{Dimensions: []report.Dimension{
 		{Dimension: "latency", Unit: "ms", Value: nil},
 	}}
-	assertEveryFormat(t, rep, []string{"not measured"}, []string{"0 ms", "missing"})
+	for _, format := range formats {
+		t.Run(format, func(t *testing.T) {
+			out := renderAs(t, format, rep)
+			if !bytes.Contains(out, []byte("not measured")) {
+				t.Error(`rendering does not contain "not measured"`)
+			}
+			if bytes.Contains(out, []byte("0 ms")) {
+				t.Error(`rendering must not contain "0 ms"`)
+			}
+			switch format {
+			case "html":
+				if bytes.Contains(out, []byte("<dd>missing</dd>")) {
+					t.Error(`rendering must not contain "<dd>missing</dd>"`)
+				}
+			case "md":
+				if !bytes.Contains(out, []byte("Value: not measured")) {
+					t.Error(`rendering does not contain "Value: not measured"`)
+				}
+			}
+		})
+	}
 }
 
 func TestEveryEvidenceLineNamesAModelItHasAndOnlyJudgmentsNameARubric(t *testing.T) {
@@ -117,6 +122,18 @@ func TestEveryEvidenceLineNamesAModelItHasAndOnlyJudgmentsNameARubric(t *testing
 			t.Errorf("%s names a rubric on %d evidence lines, want 1: only a judgment applies one", format, got)
 		}
 	}
+}
+
+func TestEvidenceWithNoToolRecordedNamesItRatherThanADanglingVia(t *testing.T) {
+	t.Parallel()
+	rep := report.Report{Criteria: []report.CriterionResult{{
+		ID:     "C1",
+		Result: report.ResultPass,
+		Evidence: []report.Evidence{
+			{Kind: report.KindInspection, Observation: "read the constant"},
+		},
+	}}}
+	assertEveryFormat(t, rep, []string{"via (not recorded)"}, []string{"via  "})
 }
 
 func TestAnEmptyCriteriaListSaysNoneRecorded(t *testing.T) {

@@ -82,7 +82,7 @@ func goldenCases() []goldenCase {
 func TestMarkdownGoldens(t *testing.T) {
 	for _, testCase := range goldenCases() {
 		t.Run(testCase.name, func(t *testing.T) {
-			out := renderFixture(t, testCase.name)
+			out := renderAs(t, "md", loadFixture(t, testCase.name))
 			// The structural checks run first: they name what is wrong,
 			// where a golden mismatch only says that something is.
 			assertOrder(t, out, testCase.sections)
@@ -110,7 +110,7 @@ func TestEveryEvidenceLineShowsKindAndIsolation(t *testing.T) {
 	for _, testCase := range goldenCases() {
 		t.Run(testCase.name, func(t *testing.T) {
 			rep := loadFixture(t, testCase.name)
-			out := renderFixture(t, testCase.name)
+			out := renderAs(t, "md", loadFixture(t, testCase.name))
 			want := len(report.WalkEvidence(rep))
 			if want == 0 {
 				t.Fatal("fixture carries no evidence to render")
@@ -125,7 +125,7 @@ func TestEveryEvidenceLineShowsKindAndIsolation(t *testing.T) {
 func TestRenderingIsCleanMarkdown(t *testing.T) {
 	for _, testCase := range goldenCases() {
 		t.Run(testCase.name, func(t *testing.T) {
-			out := renderFixture(t, testCase.name)
+			out := renderAs(t, "md", loadFixture(t, testCase.name))
 			if !bytes.HasSuffix(out, []byte("\n")) || bytes.HasSuffix(out, []byte("\n\n")) {
 				t.Error("a rendering must end with exactly one newline")
 			}
@@ -182,6 +182,43 @@ func TestResultOutsideTheContractSaysSo(t *testing.T) {
 	}
 	if !bytes.Contains(out, []byte("| X9 | (not in contract) | UNKNOWN |")) {
 		t.Error("a result whose criterion is not in the contract must say so in its row")
+	}
+}
+
+// TestProseWithNewlinesAndPipesIsEscapedInEveryMarkdownField checks fields
+// that were missed when cell was first wired up: a raw newline or pipe in
+// any of them would break the bullet it sits in exactly as it would in a
+// table cell, so they must go through the same escaping.
+func TestProseWithNewlinesAndPipesIsEscapedInEveryMarkdownField(t *testing.T) {
+	t.Parallel()
+	const raw = "first line\nsecond | line"
+	const escaped = `first line<br>second \| line`
+	rep := report.Report{
+		Contract: report.Contract{Conflicts: []report.Conflict{
+			{Between: []string{"C1", "C2"}, Description: raw, Resolution: "unresolved"},
+		}},
+		Improvement: []report.Improvement{
+			{Issue: "I1", SuggestedChange: raw, VerifyBy: raw},
+		},
+		Dimensions: []report.Dimension{
+			{Dimension: "latency", Interpretation: raw},
+		},
+		Routing: report.Routing{Ambiguity: []report.Ambiguity{
+			{Question: raw, Resolution: raw},
+		}},
+	}
+	out := renderAs(t, "md", rep)
+	for i, line := range bytes.Split(out, []byte("\n")) {
+		if bytes.Contains(line, []byte("second | line")) {
+			t.Errorf("line %d: a raw pipe from prose text has not been escaped: %q", i+1, line)
+		}
+	}
+	// Conflict description, suggested change, verify by, interpretation,
+	// ambiguity question, and ambiguity resolution: six fields carry raw
+	// once each.
+	if got := bytes.Count(out, []byte(escaped)); got != 6 {
+		t.Errorf("escaped prose appears %d times, want 6: conflict description, suggested change, "+
+			"verify by, interpretation, ambiguity question, and ambiguity resolution", got)
 	}
 }
 

@@ -90,6 +90,27 @@ func TestRequirementMarksAProvisionalCriterion(t *testing.T) {
 	}
 }
 
+func TestProvenanceNamesAnUnrecordedToolRatherThanADanglingVia(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name string
+		p    report.EvidenceProvenance
+		want string
+	}{
+		{"no tool", report.EvidenceProvenance{}, "via (not recorded)"},
+		{"tool only", report.EvidenceProvenance{Tool: "pytest"}, "via pytest"},
+		{"tool and version", report.EvidenceProvenance{Tool: "pytest", Version: "7.4"}, "via pytest 7.4"},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			if got := provenance(testCase.p); got != testCase.want {
+				t.Errorf("provenance(%+v) = %q, want %q", testCase.p, got, testCase.want)
+			}
+		})
+	}
+}
+
 func TestIsJudgmentAndOrNotRecorded(t *testing.T) {
 	t.Parallel()
 	if !isJudgment(report.Evidence{Kind: report.KindJudgment}) {

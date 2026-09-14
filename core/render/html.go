@@ -31,6 +31,7 @@ func htmlFuncMap() template.FuncMap {
 		"requirement":   requirement,
 		"isJudgment":    isJudgment,
 		"orNotRecorded": orNotRecorded,
+		"provenance":    provenance,
 	}
 }
 

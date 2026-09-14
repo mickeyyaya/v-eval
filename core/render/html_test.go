@@ -2,6 +2,8 @@ package render_test
 
 import (
 	"bytes"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/mickeyyaya/v-eval/core/render"
@@ -28,16 +30,6 @@ func mustHTMLRenderer(t *testing.T) render.Renderer {
 	return renderer
 }
 
-// renderHTML renders one report as HTML, or fails the test.
-func renderHTML(t *testing.T, rep report.Report) []byte {
-	t.Helper()
-	out, err := mustHTMLRenderer(t).Render(rep)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return out
-}
-
 func TestHTMLIsSelfContainedThemedOrderedAndEscaped(t *testing.T) {
 	t.Parallel()
 	rep := loadFixture(t, "worked-example")
@@ -45,7 +37,7 @@ func TestHTMLIsSelfContainedThemedOrderedAndEscaped(t *testing.T) {
 		ID: "O9", Text: "<script>alert(1)</script>", Origin: report.ObservationOriginAssistant,
 		Evidence: []report.Evidence{}, CriterionIDs: []string{},
 	})
-	out := renderHTML(t, rep)
+	out := renderAs(t, "html", rep)
 	for _, forbidden := range []string{"<script", "<link ", "@import", "url(http", "https://fonts"} {
 		if bytes.Contains(out, []byte(forbidden)) {
 			t.Fatalf("external resource reference %q", forbidden)
@@ -122,7 +114,7 @@ func htmlGoldenCases() []htmlGoldenCase {
 func TestHTMLGoldens(t *testing.T) {
 	for _, testCase := range htmlGoldenCases() {
 		t.Run(testCase.name, func(t *testing.T) {
-			out := renderHTML(t, loadFixture(t, testCase.name))
+			out := renderAs(t, "html", loadFixture(t, testCase.name))
 			// The structural checks run first: they name what is wrong,
 			// where a golden mismatch only says that something is.
 			assertOrder(t, out, testCase.sections)
@@ -143,7 +135,7 @@ func TestHTMLGoldens(t *testing.T) {
 
 func TestHTMLOutputIsCleanMarkup(t *testing.T) {
 	t.Parallel()
-	out := renderHTML(t, loadFixture(t, "extended-example"))
+	out := renderAs(t, "html", loadFixture(t, "extended-example"))
 	if !bytes.HasSuffix(out, []byte("</html>\n")) {
 		t.Error("a rendering must be a closed document ending in one newline")
 	}
@@ -156,7 +148,7 @@ func TestHTMLOutputIsCleanMarkup(t *testing.T) {
 
 func TestHTMLRenderingAnEmptyReportSaysSoRatherThanFailing(t *testing.T) {
 	t.Parallel()
-	out := renderHTML(t, report.Report{})
+	out := renderAs(t, "html", report.Report{})
 	for _, want := range []string{`id="status"`, "None recorded.", "Blocked by"} {
 		if !bytes.Contains(out, []byte(want)) {
 			t.Errorf("rendering of an empty report does not contain %q", want)
@@ -177,7 +169,7 @@ func TestHTMLKeepsTheShapeOfAnExcerpt(t *testing.T) {
 		}},
 		Criteria: []report.CriterionResult{{ID: "C1", Result: report.ResultPass, Reasoning: excerpt}},
 	}
-	out := renderHTML(t, rep)
+	out := renderAs(t, "html", rep)
 	if !bytes.Contains(out, []byte("white-space: pre-wrap")) {
 		t.Fatal("excerpt text must keep its newlines and indentation")
 	}
@@ -196,7 +188,7 @@ func TestHTMLKeepsTheShapeOfAnExcerpt(t *testing.T) {
 
 func TestHTMLTablesScrollSidewaysSoTheBodyDoesNot(t *testing.T) {
 	t.Parallel()
-	out := renderHTML(t, loadFixture(t, "extended-example"))
+	out := renderAs(t, "html", loadFixture(t, "extended-example"))
 	const wrapper = `<div class="scroll">`
 	tables := bytes.Count(out, []byte("<table"))
 	if tables == 0 {
@@ -213,6 +205,67 @@ func TestHTMLTablesScrollSidewaysSoTheBodyDoesNot(t *testing.T) {
 	for _, want := range []string{"overflow-x: auto", "overflow-wrap: anywhere", "padding: 2rem 1rem 4rem"} {
 		if !bytes.Contains(out, []byte(want)) {
 			t.Errorf("the stylesheet does not carry %q, so the body can scroll sideways", want)
+		}
+	}
+}
+
+func TestBadgeUnknownRuleDoesNotRepeatTheBaseBadgeColors(t *testing.T) {
+	t.Parallel()
+	out := renderAs(t, "html", report.Report{})
+	if bytes.Contains(out, []byte(".badge.unknown { background: var(--unknown-bg); color: var(--unknown-fg); }")) {
+		t.Error(".badge.unknown repeats colors the base .badge rule already sets as its default")
+	}
+}
+
+// customPropertyNames finds every "--name" custom property declared in a
+// block of CSS text, by a plain regexp scan: good enough for a stylesheet we
+// wrote ourselves, where a property is never assigned as someone else's value
+// inside the block we are scanning.
+var customPropertyNameRE = regexp.MustCompile(`--[a-z-]+`)
+
+func customPropertyNames(t *testing.T, style, openLine string) map[string]bool {
+	t.Helper()
+	start := strings.Index(style, openLine)
+	if start < 0 {
+		t.Fatalf("style block does not contain %q", openLine)
+	}
+	end := strings.Index(style[start:], "\n}")
+	if end < 0 {
+		t.Fatalf("no closing brace found for the block opened by %q", openLine)
+	}
+	names := map[string]bool{}
+	for _, name := range customPropertyNameRE.FindAllString(style[start:start+end], -1) {
+		names[name] = true
+	}
+	return names
+}
+
+func TestDarkThemeRedefinesExactlyTheLightCustomProperties(t *testing.T) {
+	t.Parallel()
+	out := renderAs(t, "html", report.Report{})
+	i, j := bytes.Index(out, []byte("<style>")), bytes.Index(out, []byte("</style>"))
+	if i < 0 || j < 0 || j <= i {
+		t.Fatal("rendering does not carry a <style> block")
+	}
+	style := string(out[i:j])
+
+	// The light-mode block opens unindented, at "\n:root {"; the dark-mode
+	// block nests its :root two spaces in, under the prefers-color-scheme
+	// media query, so the same marker distinguishes the two.
+	light := customPropertyNames(t, style, "\n:root {")
+	dark := customPropertyNames(t, style, "\n  :root {")
+
+	if len(light) == 0 {
+		t.Fatal("no custom properties found under :root")
+	}
+	for name := range light {
+		if !dark[name] {
+			t.Errorf("%s is declared under :root but never redefined for dark mode", name)
+		}
+	}
+	for name := range dark {
+		if !light[name] {
+			t.Errorf("%s is redefined for dark mode but never declared under :root", name)
 		}
 	}
 }

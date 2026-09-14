@@ -2,7 +2,7 @@
 what it said, and whether the candidate supplied it rather than the
 evaluator gathering it. */ -}}
 {{- define "evidence" -}}
-[kind {{.Kind}}, isolation {{.Isolation}}] {{locator .Locator | cell}} — {{cell .Observation}}{{supplied .}} — via {{cell .Provenance.Tool}} {{cell .Provenance.Version}}{{if isJudgment .}}, rubric {{orNotRecorded .RubricVersion | cell}}, model {{orNotRecorded .Model | cell}}{{else}}{{with .Model}}, model {{cell .}}{{end}}{{end}}
+[kind {{.Kind}}, isolation {{.Isolation}}] {{locator .Locator | cell}} — {{cell .Observation}}{{supplied .}} — {{provenance .Provenance | cell}}{{if isJudgment .}}, rubric {{orNotRecorded .RubricVersion | cell}}, model {{orNotRecorded .Model | cell}}{{else}}{{with .Model}}, model {{cell .}}{{end}}{{end}}
 {{- end -}}
 {{- /* The same lines inside one table cell, where a newline would end the row. */ -}}
 {{- define "evidenceCell" -}}
@@ -27,7 +27,7 @@ Overall: {{.Status.Overall}}
 - Rule applied: {{.Status.RuleApplied}}
 - Blocked by: {{joinIDs .Status.BlockedBy}}
 {{- range .Contract.Conflicts}}
-- Contract conflict ({{.Resolution}}) between {{joinIDs .Between}}: {{.Description}}
+- Contract conflict ({{.Resolution}}) between {{joinIDs .Between}}: {{cell .Description}}
 {{- end}}
 
 ## Observations
@@ -77,7 +77,7 @@ None recorded.
 - **{{.Dimension}}** {{.Metric}} version {{.MetricVersion}} ({{.AuthorityType}}), defined at {{.DefinitionRef}}
   - Value: {{if .Value}}{{.Value}} {{.Unit}}{{else}}not measured{{end}}; threshold {{.Threshold}} from {{.ThresholdSource}}
   - Measured by {{.Tool}} {{.ToolVersion}} on workload {{.Workload}}, direction {{.Direction}}, range {{.Range}}
-  - {{.Interpretation}}
+  - {{cell .Interpretation}}
 {{- range .Evidence}}
   - {{template "evidence" .}}
 {{- end}}
@@ -93,9 +93,9 @@ None recorded.
 {{range .Improvement}}
 - **{{cell .Issue}}**
   - Locations: {{joinIDs .Locations}}
-  - Change: {{.SuggestedChange}}
+  - Change: {{cell .SuggestedChange}}
   - Preserve: {{joinIDs .ConstraintsToPreserve}}
-  - Verify by: {{.VerifyBy}}
+  - Verify by: {{cell .VerifyBy}}
   - Criteria: {{joinIDs .LinkedCriteria}}
 {{else}}
 None recorded.
@@ -117,7 +117,7 @@ None recorded.
 - Adapters skipped: {{range $i, $a := .Routing.AdaptersSkipped}}{{if $i}}; {{end}}{{$a.Name}}, missing {{$a.MissingInput}}{{else}}none{{end}}
 - Ambiguity:{{if not .Routing.Ambiguity}} none{{end}}
 {{- range .Routing.Ambiguity}}
-  - {{.Question}} Resolved: {{.Resolution}}
+  - {{cell .Question}} Resolved: {{cell .Resolution}}
 {{- end}}
 
 ## Provenance
