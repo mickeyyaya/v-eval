@@ -33,7 +33,7 @@ Files: `.github/workflows/release.yml`, `.goreleaser.yaml`, `.gitignore`, `tools
 
 - [ ] Tests first for the extractor: finds `## [0.1.0] - 2026-09-15`, prints the body up to the next level-two heading without the trailing link references, exits 2 with a message when the version is absent, ignores fenced code, runs as `python tools/release/release_notes.py CHANGELOG.md 0.1.0`.
 - [ ] Workflow: trigger `push: tags: ['v*']`; `permissions: contents: write`; checkout with `fetch-depth: 0`; `setup-go` with `go-version-file: go.mod`; `go test ./...`; extract notes to `build/release-notes.md`; render `build/examples/example-report-<fixture>.html` from both fixtures with `go run ./cmd/veval render --format html`; `goreleaser/goreleaser-action@v6` with `args: release --clean --release-notes build/release-notes.md`.
-- [ ] `.goreleaser.yaml`: `release: extra_files: - glob: build/examples/*.html`; `build/` git-ignored; `goreleaser check` passes; a local `goreleaser release --snapshot --clean --skip=publish` proves the extra files and notes are picked up.
+- [ ] `.goreleaser.yaml`: `release: extra_files: - glob: build/examples/*.html` and the same glob under `checksum: extra_files` so the reports are listed in `checksums.txt`; `build/` git-ignored; `goreleaser check` passes; a local `goreleaser release --snapshot --clean --skip=publish` proves the extra files and notes are picked up.
 - [ ] Commit: `ci: tag-driven release with notes from the changelog and rendered example reports`
 
 ## Task C: Documents and the release
@@ -50,4 +50,4 @@ Files: `CHANGELOG.md` (`[0.1.0] - 2026-09-15`), `CITATION.cff`, `README.md` (Ins
 
 1. `gh release view v0.1.0` shows six archives, `checksums.txt`, and two example reports.
 2. The darwin_arm64 archive's sha256 matches `checksums.txt`; `veval version` prints `veval 0.1.0 (<sha>) schema 0.1.0`.
-3. The attached `example-report-extended.html` renders offline with the new design in light and dark, and its bytes equal the output of the same binary run locally on the fixture.
+3. The attached `example-report-service-change.html` renders offline with the new design in light and dark, and its bytes equal the output of the same binary run locally on the fixture.

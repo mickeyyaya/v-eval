@@ -52,7 +52,7 @@ tar -xzf veval_darwin_arm64.tar.gz veval
 ./veval version
 ```
 
-On Windows the archive is a `.zip` containing `veval.exe`; `Get-FileHash` prints the checksum to compare. Binaries are unsigned, so a browser download on macOS needs `xattr -d com.apple.quarantine veval` before it runs; the `curl` path above does not. With a Go toolchain, `go install github.com/mickeyyaya/v-eval/cmd/veval@v0.1.0` builds the same program, reporting the module version instead of the release tag.
+On Windows the archive is a `.zip` containing `veval.exe`; `Get-FileHash` prints the checksum to compare. Binaries are unsigned, so a browser download on macOS needs `xattr -d com.apple.quarantine veval` before it runs; the `curl` path above does not. With a Go toolchain, `go install github.com/mickeyyaya/v-eval/cmd/veval@v0.1.0` builds the same program; a build made that way prints `veval 0.0.0-dev (unknown)` because only the release build stamps the version. The two example reports attached to a release are rendered from the repository's fixtures, whose `veval_version` field reads `0.0.0-dev`; the render repeats the report's own words, so that is what the page shows.
 
 ## Try the draft skill
 

@@ -2,7 +2,7 @@
 
 This directory holds v-eval's architecture decision records in the [MADR](https://adr.github.io/madr/) format. Each record states the context, the options considered with their tradeoffs, the maintainer's decision, its consequences, how compliance will be confirmed, and the evidence behind it. New records start from [adr-template.md](adr-template.md) and take the next number.
 
-Records 0001 to 0022 were decided on 2026-09-14 in a maintainer session; 0023 and 0024 were decided on 2026-09-15 while the core walking skeleton was built. Each record states what of it is built in a dated line under its title and again in its Confirmation section, and amends its own text in a dated Amendments section where the building settled something differently. Where a record says neither, nothing it describes is implemented.
+Records 0001 to 0022 were decided on 2026-09-14 in a maintainer session; 0023 and 0024 were decided on 2026-09-15 while the core walking skeleton was built, and 0025 at the first release the same day. Each record states what of it is built in a dated line under its title and again in its Confirmation section, and amends its own text in a dated Amendments section where the building settled something differently. Where a record says neither, nothing it describes is implemented.
 
 | ID | Title | Status | Date | Related requirements |
 | --- | --- | --- | --- | --- |

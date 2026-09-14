@@ -26,6 +26,8 @@ archives:
 
 checksum:
   name_template: checksums.txt
+  extra_files:
+    - glob: build/examples/*.html
 
 release:
   extra_files:

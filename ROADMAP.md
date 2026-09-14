@@ -22,7 +22,7 @@ Done:
 - SARIF 2.1.0 export. The two golden logs were validated by the maintainer on 2026-09-15 with an external JSON Schema validator against the OASIS errata01 schema; no SARIF validator runs in CI yet.
 - `skills/evaluate-output/`: skill draft-3 writes the JSON report and calls the core when present; per-harness reference files for Claude Code, Codex, Gemini CLI, Antigravity, Hermes, and ollama-backed agents, under `skills/evaluate-output/references/hosts/`.
 - Continuous integration on macOS, Linux, and Windows; GoReleaser configuration for the six operating-system and architecture targets.
-- First official release, v0.1.0 (2026-09-15), cut by tag through `release.yml` with binaries for six targets, checksums, notes from the changelog, and the two example reports rendered by the released binary ([decision 0025](docs/decisions/0025-tag-driven-release.md)); the HTML report received a design pass first.
+- First official release, v0.1.0 (2026-09-15), cut by tag through `release.yml` with binaries for six targets, checksums, notes from the changelog, and the two example reports rendered at the tagged commit ([decision 0025](docs/decisions/0025-tag-driven-release.md)); the HTML report received a design pass first.
 
 Remaining:
 
@@ -56,6 +56,7 @@ Exit condition: rerunning the pilot reproduces the reports byte-for-byte for det
 - Reward records for every human reaction; local precedent bank (SQLite, sqlite-vec, ollama embeddings); cold re-judge; retrieval of examples for similar cases with prior scores stripped.
 - Self-improvement loop: auto-propose, auto-reject on the held-out gate, human-promote; budgets; append-only audit log.
 - Measurement: paired before-and-after on the anchor set with intervals; false acceptance, false rejection, and abstention per version.
+- Auto review and release loop: a `gate` job in `release.yml` between the tests and GoReleaser downloads the previous release by its checksums, runs the skill over the anchor and pilot sets with the previous and the candidate binaries, compares false acceptance, false rejection, abstention, evidence validity, and cost, and fails the release on regression; its comparison report is attached beside the example reports and its summary is appended to the release notes ([decision 0025](docs/decisions/0025-tag-driven-release.md)). Human reactions to each release are the reward records.
 
 Exit condition: at least one promoted change shows a non-regressing anchor result and a measured improvement on held-out cases, with the reaction records that drove it.
 

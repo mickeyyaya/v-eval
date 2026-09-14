@@ -13,7 +13,7 @@ Implemented 2026-09-15: `.github/workflows/release.yml`, `.goreleaser.yaml`, `to
 ## Decision Drivers
 
 * Every release must be reproducible from a tag by CI, never from a maintainer's machine, so the published checksums describe a build anyone can rerun.
-* The release must be verifiable the way v-eval asks of everything else: the notes name what changed, the checksums bind the archives, and the example reports are rendered by the released binary rather than copied from test data.
+* The release must be verifiable the way v-eval asks of everything else: the notes name what changed, the checksums bind the archives and the example reports, and the reports are rendered from the tagged commit rather than copied from test data.
 * Release tooling follows [decision 0022](0022-repository-maintenance-tooling.md): standard-library Python under `tools/`, unit-tested, runnable on all three operating systems.
 * The auto review and release loop (Roadmap Stage 4) will later gate releases on v-eval's own evaluation of the candidate against the previous version; the first release must not build anything that loop would have to undo.
 
@@ -25,7 +25,7 @@ Implemented 2026-09-15: `.github/workflows/release.yml`, `.goreleaser.yaml`, `to
 
 ## Decision Outcome
 
-Option 1. A push of a tag matching `v*` runs `release.yml` on ubuntu-latest: it runs the test suite, extracts the tagged version's section from `CHANGELOG.md` with `tools/release/release_notes.py`, renders `examples/*.html` from the two fixtures with `go run ./cmd/veval`, and runs `goreleaser release --clean` with the extracted notes. GoReleaser builds the six archives, `checksums.txt`, and attaches the rendered example reports through `release.extra_files`. The version and short commit are stamped by ldflags, so `veval version` on a released binary names the tag.
+Option 1. A push of a tag matching `v*` runs `release.yml` on ubuntu-latest: it runs the test suite, extracts the tagged version's section from `CHANGELOG.md` with `tools/release/release_notes.py`, renders `build/examples/example-report-code-review.html` and `build/examples/example-report-service-change.html` from the two fixtures with `go run ./cmd/veval` at the tagged commit, and runs `goreleaser release --clean` with the extracted notes. GoReleaser builds the six archives, `checksums.txt` (which also lists the two example reports through `checksum.extra_files`), and attaches the reports through `release.extra_files`. The version and short commit are stamped by ldflags, so `veval version` on a released binary names the tag.
 
 ### Consequences
 
@@ -37,7 +37,7 @@ Option 1. A push of a tag matching `v*` runs `release.yml` on ubuntu-latest: it 
 
 ## Confirmation
 
-`gh release view vX.Y.Z` lists six archives, `checksums.txt`, and the two example reports; `sha256sum -c checksums.txt` passes against a downloaded archive; the binary inside prints `veval X.Y.Z (<short commit>) schema <schema version>`; `python tools/release/release_notes.py CHANGELOG.md X.Y.Z` prints the notes the release page shows. First confirmed for v0.1.0 on 2026-09-15.
+`gh release view vX.Y.Z` lists six archives, `checksums.txt`, and the two example reports; `sha256sum -c --ignore-missing checksums.txt` passes against a downloaded archive; the binary inside prints `veval X.Y.Z (<short commit>) schema <schema version>`; `python tools/release/release_notes.py CHANGELOG.md X.Y.Z` prints the notes the release page shows. The confirmation for each release is recorded here after its workflow has run.
 
 ## Pros and Cons of the Options
 
