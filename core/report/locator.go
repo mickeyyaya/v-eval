@@ -94,25 +94,5 @@ func (l Locator) Qualifies() bool {
 	}
 }
 
-// Evidence is a single piece of support cited for a check's verdict.
-type Evidence struct {
-	Kind          Kind               `json:"kind"`
-	Locator       Locator            `json:"locator"`
-	Observation   string             `json:"observation"`
-	Provenance    EvidenceProvenance `json:"provenance"`
-	Isolation     Isolation          `json:"isolation"`
-	Origin        Origin             `json:"origin"`
-	RubricVersion string             `json:"rubric_version,omitempty"` // required when Kind == judgment
-	Model         string             `json:"model,omitempty"`          // "unknown" is a valid value
-}
-
-// EvidenceProvenance records what produced a piece of evidence and when.
-type EvidenceProvenance struct {
-	Tool      string `json:"tool"`
-	Version   string `json:"version"`
-	Revision  string `json:"revision"`
-	Timestamp string `json:"timestamp"`
-}
-
 // SupportsPass is true only for observed evidence with a qualifying locator.
 func (e Evidence) SupportsPass() bool { return e.Origin == OriginObserved && e.Locator.Qualifies() }
