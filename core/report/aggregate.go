@@ -176,3 +176,15 @@ func bump(t *Tally, result Result) {
 		t.Error++
 	}
 }
+
+// Aggregate returns a copy of rep with its derived fields recomputed from the
+// rest of the report, so that a report never states a count or a verdict its
+// own contents do not support.
+//
+// TODO(task-8): also fill Identity.ReportID and Provenance.EvidenceDigest, and
+// normalise nil slices, so that the four derived-field rules all hold.
+func Aggregate(rep Report) Report {
+	rep.Counts = TallyCounts(rep.Contract, rep.Criteria)
+	rep.Status = Derive(rep.Contract, rep.Criteria, rep.Status.Advisory)
+	return rep
+}

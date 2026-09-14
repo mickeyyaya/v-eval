@@ -21,6 +21,12 @@ func (r Result) IsValid() bool {
 	return false
 }
 
+// validValues lists the defined Result values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (Result) validValues() []string {
+	return []string{string(ResultPass), string(ResultFail), string(ResultUnknown), string(ResultError), string(ResultNotApplicable)}
+}
+
 // Overall is the verdict for the report as a whole.
 type Overall string
 
@@ -38,6 +44,12 @@ func (o Overall) IsValid() bool {
 		return true
 	}
 	return false
+}
+
+// validValues lists the defined Overall values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (Overall) validValues() []string {
+	return []string{string(OverallPass), string(OverallFail), string(OverallIncomplete), string(OverallAdvisory)}
 }
 
 // Method is how a check was carried out.
@@ -62,6 +74,12 @@ func (m Method) IsValid() bool {
 	return false
 }
 
+// validValues lists the defined Method values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (Method) validValues() []string {
+	return []string{string(MethodExecution), string(MethodDeterministicCheck), string(MethodStaticInspection), string(MethodSourceVerification), string(MethodRubricJudgment), string(MethodHumanJudgment)}
+}
+
 // Kind classifies the nature of a check.
 type Kind string
 
@@ -81,6 +99,12 @@ func (k Kind) IsValid() bool {
 	return false
 }
 
+// validValues lists the defined Kind values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (Kind) validValues() []string {
+	return []string{string(KindExecution), string(KindInspection), string(KindSupplied), string(KindJudgment)}
+}
+
 // Origin describes where a piece of evidence came from.
 type Origin string
 
@@ -97,6 +121,12 @@ func (o Origin) IsValid() bool {
 		return true
 	}
 	return false
+}
+
+// validValues lists the defined Origin values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (Origin) validValues() []string {
+	return []string{string(OriginObserved), string(OriginCandidateSupplied), string(OriginRetrieved)}
 }
 
 // Isolation is the sandboxing level a check ran under.
@@ -118,6 +148,12 @@ func (i Isolation) IsValid() bool {
 	return false
 }
 
+// validValues lists the defined Isolation values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (Isolation) validValues() []string {
+	return []string{string(IsolationNone), string(IsolationWorktree), string(IsolationContainer), string(IsolationRemoteSandbox)}
+}
+
 // ContractStatus describes how a contract term was established.
 type ContractStatus string
 
@@ -134,6 +170,12 @@ func (c ContractStatus) IsValid() bool {
 		return true
 	}
 	return false
+}
+
+// validValues lists the defined ContractStatus values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (ContractStatus) validValues() []string {
+	return []string{string(ContractStatusUserSpecified), string(ContractStatusProvisional), string(ContractStatusApproved)}
 }
 
 // ClaimStatus is the verification state of a claim.
@@ -155,6 +197,12 @@ func (c ClaimStatus) IsValid() bool {
 	return false
 }
 
+// validValues lists the defined ClaimStatus values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (ClaimStatus) validValues() []string {
+	return []string{string(ClaimStatusVerified), string(ClaimStatusContradicted), string(ClaimStatusUnverified), string(ClaimStatusNotCheckable)}
+}
+
 // Severity is how serious an observation is.
 type Severity string
 
@@ -173,6 +221,12 @@ func (s Severity) IsValid() bool {
 	return false
 }
 
+// validValues lists the defined Severity values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (Severity) validValues() []string {
+	return []string{string(SeverityObserved), string(SeveritySuspicious), string(SeverityConfirmed)}
+}
+
 // Disposition is the resolution state of an observation.
 type Disposition string
 
@@ -189,6 +243,12 @@ func (d Disposition) IsValid() bool {
 		return true
 	}
 	return false
+}
+
+// validValues lists the defined Disposition values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (Disposition) validValues() []string {
+	return []string{string(DispositionOpen), string(DispositionExplained), string(DispositionConfirmed)}
 }
 
 // Authority is the source of legitimacy for a rubric or measure.
@@ -210,6 +270,12 @@ func (a Authority) IsValid() bool {
 	return false
 }
 
+// validValues lists the defined Authority values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (Authority) validValues() []string {
+	return []string{string(AuthorityFormalStandard), string(AuthorityEstablishedMeasure), string(AuthorityVendorRating), string(AuthorityProjectRubric)}
+}
+
 // ObservationOrigin identifies who or what produced an observation.
 type ObservationOrigin string
 
@@ -226,4 +292,10 @@ func (o ObservationOrigin) IsValid() bool {
 		return true
 	}
 	return false
+}
+
+// validValues lists the defined ObservationOrigin values in schema order, for the
+// drift test that keeps the published schema equal to these constants.
+func (ObservationOrigin) validValues() []string {
+	return []string{string(ObservationOriginAssistant), string(ObservationOriginAdapter), string(ObservationOriginDetector)}
 }
