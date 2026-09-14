@@ -22,7 +22,7 @@ jobs:
         run: go test -count=1 ./...
       - name: release notes
         shell: bash
-        run: python tools/release/release_notes.py CHANGELOG.md "${GITHUB_REF_NAME#v}" -o build/release-notes.md
+        run: python3 tools/release/release_notes.py CHANGELOG.md "${GITHUB_REF_NAME#v}" -o build/release-notes.md
       - name: example reports
         run: |
           mkdir -p build/examples

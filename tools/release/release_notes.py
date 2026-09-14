@@ -6,8 +6,8 @@ accepted too) up to the next level-two heading or the link-reference block at th
 file, trimmed, with one trailing newline. Headings and link references inside fenced code
 blocks are not boundaries. ``-o FILE`` writes the notes to a file with LF line endings instead
 of standard output, creating the parent directory. Exits 2 with a message on standard error
-when the version has no section or the file cannot be read, so an undocumented tag fails the
-release workflow (decision 0025).
+when the version has no section, the section is empty, or the file cannot be read, so an
+undocumented or empty tag fails the release workflow (decision 0025).
 
 Repository maintenance tool only (decision 0022): standard library only; runs on macOS,
 Linux, and Windows with ``python tools/release/release_notes.py CHANGELOG.md 0.1.0``.
@@ -20,7 +20,7 @@ import re
 import sys
 from typing import Sequence
 
-FENCE_OPEN = re.compile(r"^[ \t]{0,3}(`{3,}|~{3,})")  # kept identical to tools/docs/check_links.py on purpose
+FENCE_OPEN = re.compile(r"^[ \t]{0,3}(`{3,}|~{3,})")  # kept identical to tools/docs/gen_sources.py and tools/docs/check_links.py on purpose
 LEVEL_TWO = re.compile(r"^##[ \t]")
 LINK_REFERENCE = re.compile(r"^\[[^\]]+\]:[ \t]+\S")
 
@@ -104,6 +104,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         notes = section(read_text(args.changelog), args.version)
         if notes is None:
             raise ToolError(f"no section for version {args.version} in {args.changelog}")
+        if not notes.strip():
+            raise ToolError(f"section for version {args.version} in {args.changelog} is empty")
         if args.output:
             write_notes(args.output, notes)
         else:

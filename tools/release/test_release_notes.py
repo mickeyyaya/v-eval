@@ -68,7 +68,6 @@ class SectionTest(unittest.TestCase):
     def test_last_section_stops_before_the_link_references(self) -> None:
         body = release_notes.section(CHANGELOG, "0.1.0")
         self.assertEqual(body, "First release.\n\n### Added\n\n- The core.\n- The command line.\n")
-        self.assertNotIn("example.org", body)
 
     def test_headings_inside_fenced_code_are_not_section_boundaries(self) -> None:
         text = (
@@ -90,6 +89,16 @@ class SectionTest(unittest.TestCase):
         self.assertEqual(release_notes.section(text, "0.1.0"), "Body.\n")
 
 
+class ProseLinesTest(unittest.TestCase):
+    def test_tilde_fence_hides_lines_inside_from_being_prose(self) -> None:
+        text = "~~~\n## not a heading\n~~~"
+        self.assertEqual([prose for _, prose in release_notes.prose_lines(text)], [False, False, False])
+
+    def test_unterminated_fence_runs_to_the_end_of_the_document(self) -> None:
+        text = "```\n## not a heading\nstill fenced"
+        self.assertEqual([prose for _, prose in release_notes.prose_lines(text)], [False, False, False])
+
+
 class MainTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
@@ -109,6 +118,27 @@ class MainTest(unittest.TestCase):
         self.assertEqual((code, out), (2, ""))
         self.assertEqual(err, f"error: no section for version 9.9.9 in {self.changelog}\n")
 
+    def test_v_prefixed_version_exits_2_with_the_no_section_message(self) -> None:
+        code, out, err = run_main([str(self.changelog), "v0.1.0"])
+        self.assertEqual((code, out), (2, ""))
+        self.assertEqual(err, f"error: no section for version v0.1.0 in {self.changelog}\n")
+
+    def test_empty_section_exits_2_and_writes_nothing(self) -> None:
+        empty = self.root / "empty.md"
+        empty.write_text("## [0.1.0] - 2026-09-15\n\n## [0.0.9]\n", encoding="utf-8")
+        target = self.root / "notes.md"
+        code, out, err = run_main([str(empty), "0.1.0", "-o", str(target)])
+        self.assertEqual((code, out), (2, ""))
+        self.assertEqual(err, f"error: section for version 0.1.0 in {empty} is empty\n")
+        self.assertFalse(target.exists())
+
+    def test_blank_only_section_exits_2_with_a_message(self) -> None:
+        blank = self.root / "blank.md"
+        blank.write_text("## [0.1.0] - 2026-09-15\n\n\n\n## [0.0.9]\n", encoding="utf-8")
+        code, out, err = run_main([str(blank), "0.1.0"])
+        self.assertEqual((code, out), (2, ""))
+        self.assertEqual(err, f"error: section for version 0.1.0 in {blank} is empty\n")
+
     def test_unreadable_input_exits_2(self) -> None:
         missing = self.root / "missing.md"
         code, out, err = run_main([str(missing), "0.1.0"])
@@ -126,7 +156,7 @@ class MainTest(unittest.TestCase):
         target = self.root / "notes.md"
         code, _, _ = run_main([str(self.changelog), "0.1.0", "-o", str(target)])
         self.assertEqual(code, 0)
-        self.assertNotIn(b"\r", target.read_bytes())
+        self.assertEqual(target.read_bytes(), b"First release.\n\n### Added\n\n- The core.\n- The command line.\n")
 
 
 if __name__ == "__main__":
