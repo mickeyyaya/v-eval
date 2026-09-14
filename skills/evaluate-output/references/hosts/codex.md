@@ -9,7 +9,7 @@ That reference documents Codex's multi-agent and shell behavior; it names no sep
 | Read a file | Not named in the source. Codex reads through the shell (`cat`, `sed -n`) unless your tool list offers a file tool; confirm before citing. |
 | Search file contents | Not named in the source. Use `grep` or `rg` through the shell. |
 | List files | Not named in the source. Use `ls` or `find` through the shell. |
-| Run a command | The shell tool, as the source's environment-detection commands are run. Hooks on Windows take the `commandWindows` override. |
+| Run a command | The shell tool, as the source's environment-detection commands are run. |
 | Fetch a URL | Not named in the source. Without a fetch tool, criteria that need a retrieved source stay UNKNOWN with the reason stated. |
 | Dispatch a subagent | `spawn_agent` with `fork_turns: "none"` for a clean context (requires `multi_agent = true` in `~/.codex/config.toml`); resume a child with `followup_task`; wait with `wait_agent` in bounded stretches; `list_agents` reconciles. Set `model` and `reasoning_effort` together on every spawn. |
 | Invoke the v-eval core | The shell tool, running the binary with its arguments. |
