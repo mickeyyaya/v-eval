@@ -541,27 +541,104 @@ func ruleDimensionsNoComposite(rep Report) []Violation {
 	return violations
 }
 
-// ruleCountsMatch requires the stated counts to be the counts the results give.
+// ruleCountsMatch requires the stated counts to be the counts the results
+// give. The message names only the bucket.field pairs that differ, in words,
+// rather than dumping both structs: a report can be wrong about one tally
+// field as often as about all fifteen.
 func ruleCountsMatch(rep Report) []Violation {
 	want := TallyCounts(rep.Contract, rep.Criteria)
 	if rep.Counts == want {
 		return nil
 	}
 	return []Violation{{Path: "counts", Rule: RuleCountsMatch,
-		Message: fmt.Sprintf("stated %+v, recomputed %+v", rep.Counts, want)}}
+		Message: strings.Join(countsFieldDiffs(rep.Counts, want), "; ")}}
+}
+
+// countsFieldDiffs names every bucket.field where stated counts differ from
+// computed, e.g. "required.fail stated 2, computed 3".
+func countsFieldDiffs(stated, computed Counts) []string {
+	var diffs []string
+	diffs = append(diffs, tallyFieldDiffs("required", stated.Required, computed.Required)...)
+	diffs = append(diffs, tallyFieldDiffs("optional", stated.Optional, computed.Optional)...)
+	diffs = append(diffs, coverageFieldDiffs(stated.Coverage, computed.Coverage)...)
+	return diffs
+}
+
+// tallyFieldDiffs names every field where two tallies in the same bucket
+// differ, prefixed with the bucket name so "required.fail" and
+// "optional.fail" cannot be confused.
+func tallyFieldDiffs(bucket string, stated, computed Tally) []string {
+	fields := []struct {
+		name             string
+		stated, computed int
+	}{
+		{"applicable", stated.Applicable, computed.Applicable},
+		{"pass", stated.Pass, computed.Pass},
+		{"fail", stated.Fail, computed.Fail},
+		{"unknown", stated.Unknown, computed.Unknown},
+		{"error", stated.Error, computed.Error},
+		{"not_applicable", stated.NotApplicable, computed.NotApplicable},
+	}
+	var diffs []string
+	for _, field := range fields {
+		if field.stated != field.computed {
+			diffs = append(diffs, fmt.Sprintf("%s.%s stated %d, computed %d",
+				bucket, field.name, field.stated, field.computed))
+		}
+	}
+	return diffs
+}
+
+// coverageFieldDiffs names every field where two coverage values differ.
+func coverageFieldDiffs(stated, computed Coverage) []string {
+	var diffs []string
+	if stated.Numerator != computed.Numerator {
+		diffs = append(diffs, fmt.Sprintf("coverage.numerator stated %d, computed %d",
+			stated.Numerator, computed.Numerator))
+	}
+	if stated.Denominator != computed.Denominator {
+		diffs = append(diffs, fmt.Sprintf("coverage.denominator stated %d, computed %d",
+			stated.Denominator, computed.Denominator))
+	}
+	if stated.Undefined != computed.Undefined {
+		diffs = append(diffs, fmt.Sprintf("coverage.undefined stated %t, computed %t",
+			stated.Undefined, computed.Undefined))
+	}
+	return diffs
 }
 
 // ruleStatusMatch requires the stated verdict to be the verdict the rules
-// give. The message quotes both sides in full Go syntax: a status differs from
-// its recomputation by one field as often as by all four, and %+v renders a
-// changed Overall and a changed BlockedBy alike.
+// give. The message names only the fields that differ, in words: a status
+// differs from its recomputation by one field as often as by all four.
 func ruleStatusMatch(rep Report) []Violation {
 	want := Derive(rep.Contract, rep.Criteria, rep.Status.Advisory)
 	if reflect.DeepEqual(rep.Status, want) {
 		return nil
 	}
 	return []Violation{{Path: "status", Rule: RuleStatusMatch,
-		Message: fmt.Sprintf("stated %#v, recomputed %#v", rep.Status, want)}}
+		Message: strings.Join(statusFieldDiffs(rep.Status, want), "; ")}}
+}
+
+// statusFieldDiffs names every field where a stated status differs from its
+// recomputation, e.g. `stated overall PASS, computed FAIL`. BlockedBy uses
+// reflect.DeepEqual, matching the nil-vs-empty sensitivity of the equality
+// check above it, so a difference this function finds is never invisible
+// there and vice versa.
+func statusFieldDiffs(stated, computed Status) []string {
+	var diffs []string
+	if stated.Overall != computed.Overall {
+		diffs = append(diffs, fmt.Sprintf("stated overall %s, computed %s", stated.Overall, computed.Overall))
+	}
+	if stated.RuleApplied != computed.RuleApplied {
+		diffs = append(diffs, fmt.Sprintf("stated rule %q, computed %q", stated.RuleApplied, computed.RuleApplied))
+	}
+	if !reflect.DeepEqual(stated.BlockedBy, computed.BlockedBy) {
+		diffs = append(diffs, fmt.Sprintf("stated blocked_by %v, computed %v", stated.BlockedBy, computed.BlockedBy))
+	}
+	if stated.Advisory != computed.Advisory {
+		diffs = append(diffs, fmt.Sprintf("stated advisory %t, computed %t", stated.Advisory, computed.Advisory))
+	}
+	return diffs
 }
 
 // ruleEvidenceDigest requires the stated evidence digest to be the digest of

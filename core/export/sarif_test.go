@@ -2,7 +2,9 @@ package export_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -650,6 +652,39 @@ func oneCriterionReport(evidence report.Evidence) report.Report {
 	}
 }
 
+// assertNoJSONNull decodes out and walks every map and slice looking for a
+// JSON null. Matching on the token itself, rather than the bytes "null",
+// means a passage of prose that happens to contain the word is never
+// mistaken for the hole a consumer would otherwise have to guess at: an
+// empty list and a list nobody wrote read the same once they are both null,
+// so a log must state the empty container instead.
+func assertNoJSONNull(t *testing.T, name string, out []byte) {
+	t.Helper()
+	var decoded any
+	if err := json.Unmarshal(out, &decoded); err != nil {
+		t.Fatalf("%s: %v", name, err)
+	}
+	walkForNull(t, name, "$", decoded)
+}
+
+// walkForNull recurses through a decoded JSON value, failing the test at the
+// first null it finds, named by its path.
+func walkForNull(t *testing.T, name, path string, v any) {
+	t.Helper()
+	switch value := v.(type) {
+	case nil:
+		t.Errorf("%s: %s is null, where an empty container says what is meant", name, path)
+	case map[string]any:
+		for key, child := range value {
+			walkForNull(t, name, path+"."+key, child)
+		}
+	case []any:
+		for i, child := range value {
+			walkForNull(t, name, fmt.Sprintf("%s[%d]", path, i), child)
+		}
+	}
+}
+
 func TestSARIFGoldens(t *testing.T) {
 	// Not parallel: the goldens are written under -update.
 	for _, name := range []string{"worked-example", "extended-example"} {
@@ -657,12 +692,7 @@ func TestSARIFGoldens(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// A null is a hole a consumer has to guess at: an empty list and a
-		// list nobody wrote read the same once they are both null, so a log
-		// states the empty container instead.
-		if bytes.Contains(out, []byte("null")) {
-			t.Errorf("%s: the log carries a null, where an empty container says what is meant", name)
-		}
+		assertNoJSONNull(t, name, out)
 		assertGolden(t, name+".sarif.json", out)
 	}
 }

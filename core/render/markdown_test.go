@@ -95,19 +95,7 @@ func TestMarkdownGoldens(t *testing.T) {
 var evidenceBadge = regexp.MustCompile(`\[kind [a-z_]+, isolation [a-z_]+\]`)
 
 func TestEveryEvidenceLineShowsKindAndIsolation(t *testing.T) {
-	for _, testCase := range goldenCases() {
-		t.Run(testCase.name, func(t *testing.T) {
-			rep := loadFixture(t, testCase.name)
-			out := renderAs(t, "md", loadFixture(t, testCase.name))
-			want := len(report.WalkEvidence(rep))
-			if want == 0 {
-				t.Fatal("fixture carries no evidence to render")
-			}
-			if got := len(evidenceBadge.FindAll(out, -1)); got != want {
-				t.Errorf("%d evidence lines carry a kind and an isolation, want %d", got, want)
-			}
-		})
-	}
+	assertEveryEvidenceRendered(t, "md", evidenceBadge)
 }
 
 func TestRenderingIsCleanMarkdown(t *testing.T) {

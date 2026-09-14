@@ -5,6 +5,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"testing"
 
@@ -101,23 +102,31 @@ func sectionMarkers(t *testing.T, format string, present []string) (want, unwant
 			t.Fatalf("section %q is not in the section table", name)
 		}
 	}
+	marker, ok := sectionMarkerFunc(format)
+	if !ok {
+		t.Fatalf("no section markers for format %q", format)
+	}
 	for _, section := range reportSections {
-		var marker string
-		switch format {
-		case "md":
-			marker = section.heading
-		case "html":
-			marker = section.anchor
-		default:
-			t.Fatalf("no section markers for format %q", format)
-		}
 		if slices.Contains(present, section.name) {
-			want = append(want, marker)
+			want = append(want, marker(section))
 			continue
 		}
-		unwanted = append(unwanted, marker)
+		unwanted = append(unwanted, marker(section))
 	}
 	return want, unwanted
+}
+
+// sectionMarkerFunc returns the function that names one section's marker in
+// the given format, and whether the format is known.
+func sectionMarkerFunc(format string) (marker func(reportSection) string, ok bool) {
+	switch format {
+	case "md":
+		return func(s reportSection) string { return s.heading }, true
+	case "html":
+		return func(s reportSection) string { return s.anchor }, true
+	default:
+		return nil, false
+	}
 }
 
 // assertOrder requires every needle to appear in out, in order.
@@ -155,4 +164,30 @@ func renderAs(t *testing.T, format string, rep report.Report) []byte {
 		t.Fatal(err)
 	}
 	return out
+}
+
+// evidenceFixtures are the fixtures assertEveryEvidenceRendered checks: both
+// carry evidence, so a renderer that drops a citation is caught without
+// hand-picking which fixture would show it.
+var evidenceFixtures = []string{"worked-example", "extended-example"}
+
+// assertEveryEvidenceRendered renders each fixture in format and asserts that
+// pattern matches exactly once per evidence entry the fixture carries: a
+// renderer that silently drops a citation is a failure no golden alone can
+// catch, because a golden only knows what was rendered last time.
+func assertEveryEvidenceRendered(t *testing.T, format string, pattern *regexp.Regexp) {
+	t.Helper()
+	for _, name := range evidenceFixtures {
+		t.Run(name, func(t *testing.T) {
+			rep := loadFixture(t, name)
+			out := renderAs(t, format, rep)
+			want := len(report.WalkEvidence(rep))
+			if want == 0 {
+				t.Fatal("fixture carries no evidence to render")
+			}
+			if got := len(pattern.FindAll(out, -1)); got != want {
+				t.Errorf("%d evidence entries rendered, want %d", got, want)
+			}
+		})
+	}
 }

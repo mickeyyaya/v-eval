@@ -128,19 +128,7 @@ var htmlEvidenceEntry = regexp.MustCompile(`<li><span class="tag">kind [a-z_]+</
 // a renderer that silently drops a citation is the one failure a golden
 // cannot name, because a golden only knows what was rendered last time.
 func TestHTMLShowsEveryEvidenceRecord(t *testing.T) {
-	for _, testCase := range htmlGoldenCases() {
-		t.Run(testCase.name, func(t *testing.T) {
-			rep := loadFixture(t, testCase.name)
-			out := renderAs(t, "html", rep)
-			want := len(report.WalkEvidence(rep))
-			if want == 0 {
-				t.Fatal("fixture carries no evidence to render")
-			}
-			if got := len(htmlEvidenceEntry.FindAll(out, -1)); got != want {
-				t.Errorf("%d evidence entries rendered, want %d", got, want)
-			}
-		})
-	}
+	assertEveryEvidenceRendered(t, "html", htmlEvidenceEntry)
 }
 
 func TestHTMLOutputIsCleanMarkup(t *testing.T) {

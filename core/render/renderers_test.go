@@ -72,14 +72,18 @@ func TestOptionalCriterionIsMarkedInEveryFormat(t *testing.T) {
 	}
 }
 
-func TestRequiredCriteriaCarryNoOptionalMarker(t *testing.T) {
+// TestUnmarkedCriteriaCarryNoOptionalOrProvisionalMarker covers both markers
+// the worked example's required, unmarked criteria must never carry: the two
+// cases differ only in which marker they check for, so they run as one
+// table over both.
+func TestUnmarkedCriteriaCarryNoOptionalOrProvisionalMarker(t *testing.T) {
 	t.Parallel()
-	assertEveryFormat(t, loadFixture(t, "worked-example"), nil, []string{"(optional)"})
-}
-
-func TestUnmarkedCriteriaCarryNoProvisionalMarker(t *testing.T) {
-	t.Parallel()
-	assertEveryFormat(t, loadFixture(t, "worked-example"), nil, []string{"(provisional)"})
+	rep := loadFixture(t, "worked-example")
+	for _, marker := range []string{"(optional)", "(provisional)"} {
+		t.Run(marker, func(t *testing.T) {
+			assertEveryFormat(t, rep, nil, []string{marker})
+		})
+	}
 }
 
 func TestCoverageIsUndefinedWhenNothingIsApplicable(t *testing.T) {

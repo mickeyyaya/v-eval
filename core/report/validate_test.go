@@ -199,6 +199,46 @@ func TestAggregateRecomputesCountsAndStatus(t *testing.T) {
 	}
 }
 
+// TestStatusMismatchMessageNamesDifferingFieldsInWords guards the
+// status.match message: it must name which fields of the stated status
+// disagree with the recomputed one, in words, rather than dump both structs
+// in Go syntax. Only overall and rule_applied are mutated, so blocked_by and
+// advisory -- unchanged and matching -- must not appear in the message.
+func TestStatusMismatchMessageNamesDifferingFieldsInWords(t *testing.T) {
+	t.Parallel()
+	rep := loadFixture(t)
+	rep.Status.Overall = OverallPass
+	rep.Status.RuleApplied = "made up"
+	violations := ruleStatusMatch(rep)
+	if len(violations) != 1 {
+		t.Fatalf("violations = %v, want exactly one", violations)
+	}
+	want := `stated overall PASS, computed FAIL; stated rule "made up", computed "required applicable criterion failed"`
+	if got := violations[0].Message; got != want {
+		t.Errorf("message = %q, want %q", got, want)
+	}
+}
+
+// TestCountsMismatchMessageNamesDifferingFieldsInWords guards the
+// counts.match message: it must name the bucket and field that disagree, in
+// words, rather than dump both structs in Go syntax. Only required.fail and
+// coverage.numerator are mutated, so every other field -- unchanged and
+// matching -- must not appear in the message.
+func TestCountsMismatchMessageNamesDifferingFieldsInWords(t *testing.T) {
+	t.Parallel()
+	rep := loadFixture(t)
+	rep.Counts.Required.Fail = 2
+	rep.Counts.Coverage.Numerator = 5
+	violations := ruleCountsMatch(rep)
+	if len(violations) != 1 {
+		t.Fatalf("violations = %v, want exactly one", violations)
+	}
+	want := "required.fail stated 2, computed 3; coverage.numerator stated 5, computed 4"
+	if got := violations[0].Message; got != want {
+		t.Errorf("message = %q, want %q", got, want)
+	}
+}
+
 // TestWalkEvidenceIsOrderedAndUnique pins the exported walk, which both the
 // validation rules and the evidence digest read: sections come in document
 // order, and every entry has a path of its own, because a violation and a
