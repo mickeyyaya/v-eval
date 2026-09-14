@@ -21,6 +21,12 @@ func TestEnumValidators(t *testing.T) {
 		{"project_rubric", true, Authority("project_rubric").IsValid},
 		{"detector", true, ObservationOrigin("detector").IsValid},
 		{"", false, Kind("").IsValid},
+		{"approved", true, ContractStatus("approved").IsValid},
+		{"pending", false, ContractStatus("pending").IsValid},
+		{"suspicious", true, Severity("suspicious").IsValid},
+		{"critical", false, Severity("critical").IsValid},
+		{"explained", true, Disposition("explained").IsValid},
+		{"closed", false, Disposition("closed").IsValid},
 	}
 	for _, c := range cases {
 		if c.fn() != c.ok {
