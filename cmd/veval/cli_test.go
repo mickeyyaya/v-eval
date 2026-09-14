@@ -26,22 +26,23 @@ func mustRead(t *testing.T, path string) string {
 }
 
 func TestRunValidateAndExitCodes(t *testing.T) {
-	var out, errb bytes.Buffer
-	if code := run([]string{"validate", fixturePath()}, nil, &out, &errb); code != 0 || !strings.HasPrefix(out.String(), "valid:") {
-		t.Fatalf("validate: code=%d out=%q err=%q", code, out.String(), errb.String())
+	code, out, errOut := call([]string{"validate", fixturePath()}, "")
+	if code != 0 || !strings.HasPrefix(out, "valid:") {
+		t.Fatalf("validate: code=%d out=%q err=%q", code, out, errOut)
 	}
-	out.Reset()
 	broken := strings.Replace(mustRead(t, fixturePath()), `"overall": "FAIL"`, `"overall": "PASS"`, 1)
-	if code := run([]string{"validate", "-"}, strings.NewReader(broken), &out, &errb); code != 1 || !strings.Contains(out.String(), "status.match") {
-		t.Fatalf("broken: code=%d out=%q", code, out.String())
+	code, out, _ = call([]string{"validate", "-"}, broken)
+	if code != 1 || !strings.Contains(out, "status.match") {
+		t.Fatalf("broken: code=%d out=%q", code, out)
 	}
-	if code := run([]string{"frobnicate"}, nil, &out, &errb); code != 2 || !strings.Contains(errb.String(), "error:") {
-		t.Fatalf("unknown subcommand code=%d err=%q", code, errb.String())
+	code, _, errOut = call([]string{"frobnicate"}, "")
+	if code != 2 || !strings.Contains(errOut, "error:") {
+		t.Fatalf("unknown subcommand code=%d err=%q", code, errOut)
 	}
-	if code := run([]string{"render", "--format", "pdf", fixturePath()}, nil, &out, &errb); code != 2 {
+	if code, _, _ := call([]string{"render", "--format", "pdf", fixturePath()}, ""); code != 2 {
 		t.Fatalf("unknown format code=%d", code)
 	}
-	if code := run([]string{"validate", "does-not-exist.json"}, nil, &out, &errb); code != 2 {
+	if code, _, _ := call([]string{"validate", "does-not-exist.json"}, ""); code != 2 {
 		t.Fatalf("missing input code=%d", code)
 	}
 }
@@ -50,24 +51,25 @@ func TestRunAggregateRenderExport(t *testing.T) {
 	dir := t.TempDir()
 	stripped := strings.Replace(mustRead(t, fixturePath()), `"overall": "FAIL"`, `"overall": ""`, 1)
 	outPath := filepath.Join(dir, "agg.json")
-	var out, errb bytes.Buffer
-	if code := run([]string{"aggregate", "-", "-o", outPath}, strings.NewReader(stripped), &out, &errb); code != 0 {
-		t.Fatalf("aggregate: code=%d err=%q", code, errb.String())
+	code, _, errOut := call([]string{"aggregate", "-", "-o", outPath}, stripped)
+	if code != 0 {
+		t.Fatalf("aggregate: code=%d err=%q", code, errOut)
 	}
 	if !strings.Contains(mustRead(t, outPath), `"overall": "FAIL"`) {
 		t.Fatal("aggregate must recompute status")
 	}
 	htmlPath := filepath.Join(dir, "r.html")
-	if code := run([]string{"render", outPath, "--format", "html", "-o", htmlPath}, nil, &out, &errb); code != 0 || !strings.HasPrefix(mustRead(t, htmlPath), "<!doctype html>") {
-		t.Fatalf("render html: code=%d err=%q", code, errb.String())
+	code, _, errOut = call([]string{"render", outPath, "--format", "html", "-o", htmlPath}, "")
+	if code != 0 || !strings.HasPrefix(mustRead(t, htmlPath), "<!doctype html>") {
+		t.Fatalf("render html: code=%d err=%q", code, errOut)
 	}
-	out.Reset()
-	if code := run([]string{"render", "--format", "md", outPath}, nil, &out, &errb); code != 0 || !strings.Contains(out.String(), "## Criteria") {
+	code, out, _ := call([]string{"render", "--format", "md", outPath}, "")
+	if code != 0 || !strings.Contains(out, "## Criteria") {
 		t.Fatalf("render md: code=%d", code)
 	}
-	out.Reset()
-	if code := run([]string{"export", "sarif", outPath}, nil, &out, &errb); code != 0 || !strings.Contains(out.String(), `"version": "2.1.0"`) {
-		t.Fatalf("export: code=%d out=%q", code, out.String())
+	code, out, _ = call([]string{"export", "sarif", outPath}, "")
+	if code != 0 || !strings.Contains(out, `"version": "2.1.0"`) {
+		t.Fatalf("export: code=%d out=%q", code, out)
 	}
 }
 

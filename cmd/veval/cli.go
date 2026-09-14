@@ -107,3 +107,17 @@ func unknownFormat(stderr io.Writer, format string, accepted []string) int {
 	fmt.Fprintf(stderr, "error: unknown format %q (accepted: %s)\n", format, strings.Join(accepted, ", "))
 	return exitError
 }
+
+// writeEncoded finishes a command that has already encoded a report: it
+// reports err if the encoding failed, otherwise writes data to output (or
+// standard output) and reports any failure to do that. Aggregate, render,
+// and export all end this way, once the encoding is specific to each.
+func writeEncoded(stdout, stderr io.Writer, output string, data []byte, err error) int {
+	if err != nil {
+		return fail(stderr, err)
+	}
+	if err := writeOutput(output, stdout, data); err != nil {
+		return fail(stderr, err)
+	}
+	return exitOK
+}

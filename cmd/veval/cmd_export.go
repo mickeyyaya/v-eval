@@ -50,11 +50,5 @@ func runExport(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return code
 	}
 	data, err := encode(rep)
-	if err != nil {
-		return fail(stderr, err)
-	}
-	if err := writeOutput(*output, stdout, data); err != nil {
-		return fail(stderr, err)
-	}
-	return exitOK
+	return writeEncoded(stdout, stderr, *output, data, err)
 }
