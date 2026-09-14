@@ -1,0 +1,423 @@
+{
+  "identity": {
+    "report_id": "",
+    "schema_version": "0.1.0",
+    "veval_version": "0.0.0-dev",
+    "skill_revision": "draft-2",
+    "artifact": {
+      "kind": "code_change",
+      "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+      "paths": [
+        "examples/code-review/input.md"
+      ],
+      "bundle_digest": ""
+    },
+    "task": {
+      "requested_outcome": "Deduplicate email-address strings for a contact import. Compare addresses ignoring surrounding whitespace and case. Keep the first occurrence's spelling after trimming. Preserve first-seen order. Do not add dependencies.",
+      "intended_user": "developer reviewing an AI-generated change",
+      "brief_ref": "examples/code-review/input.md#intent"
+    },
+    "created_at": "2026-09-14T00:00:00Z",
+    "host": {
+      "cli": "fixture",
+      "os": "any",
+      "arch": "any"
+    }
+  },
+  "contract": {
+    "contract_id": "code-review-example",
+    "contract_version": "1",
+    "status": "user_specified",
+    "conflicts": [],
+    "criteria": [
+      {
+        "id": "C1",
+        "requirement": "Whitespace and case variants collapse into one address",
+        "source_ref": "examples/code-review/input.md#acceptance-criteria",
+        "required": true,
+        "applicability": "always",
+        "methods_allowed": [
+          "static_inspection",
+          "execution"
+        ],
+        "acceptance_rule": "Addresses differing only in surrounding whitespace or letter case appear exactly once in the output.",
+        "expected_evidence": "Inspection of the comparison key, or an executed test over whitespace and case variants.",
+        "provisional": false
+      },
+      {
+        "id": "C2",
+        "requirement": "Output preserves first-seen order",
+        "source_ref": "examples/code-review/input.md#acceptance-criteria",
+        "required": true,
+        "applicability": "always",
+        "methods_allowed": [
+          "static_inspection",
+          "execution"
+        ],
+        "acceptance_rule": "Kept addresses appear in the order of their first occurrence in the input.",
+        "expected_evidence": "Inspection of how the output list is built, or an executed test over unsorted input.",
+        "provisional": false
+      },
+      {
+        "id": "C3",
+        "requirement": "Each kept address retains the first occurrence's spelling after trimming",
+        "source_ref": "examples/code-review/input.md#acceptance-criteria",
+        "required": true,
+        "applicability": "always",
+        "methods_allowed": [
+          "static_inspection",
+          "execution"
+        ],
+        "acceptance_rule": "For each normalized key the output carries the trimmed spelling of the first occurrence and no other.",
+        "expected_evidence": "Inspection of which value is stored per key, or an executed test over mixed-case duplicates.",
+        "provisional": false
+      },
+      {
+        "id": "C4",
+        "requirement": "Complete supplied implementation uses no third-party dependency",
+        "source_ref": "examples/code-review/input.md#acceptance-criteria",
+        "required": true,
+        "applicability": "always",
+        "methods_allowed": [
+          "static_inspection",
+          "execution"
+        ],
+        "acceptance_rule": "The complete supplied implementation imports and calls nothing outside the standard library.",
+        "expected_evidence": "Inspection of every import and call in the supplied snippet.",
+        "provisional": false
+      },
+      {
+        "id": "C5",
+        "requirement": "Regression tests pass for this exact artifact",
+        "source_ref": "examples/code-review/input.md#acceptance-criteria",
+        "required": true,
+        "applicability": "always",
+        "methods_allowed": [
+          "execution"
+        ],
+        "acceptance_rule": "A regression suite runs against this exact artifact revision and reports no failures.",
+        "expected_evidence": "A command locator with cwd, exit status, and a log reference bound to the artifact revision.",
+        "provisional": false
+      }
+    ]
+  },
+  "routing": {
+    "supplied": [
+      {
+        "source_type": "brief",
+        "count": 1,
+        "origin": "user"
+      },
+      {
+        "source_type": "artifact",
+        "count": 1,
+        "origin": "candidate"
+      },
+      {
+        "source_type": "candidate_claim",
+        "count": 1,
+        "origin": "candidate"
+      }
+    ],
+    "profiles": [
+      {
+        "name": "requirements-and-tests",
+        "version": "0.1"
+      }
+    ],
+    "adapters_run": [],
+    "adapters_skipped": [
+      {
+        "name": "test-evidence",
+        "missing_input": "test definitions and execution record"
+      }
+    ],
+    "ambiguity": [],
+    "rationale": "Code change with explicit criteria; no tests or execution record supplied, so execution criteria stay UNKNOWN."
+  },
+  "observations": [
+    {
+      "id": "O1",
+      "text": "The function sorts its output with sorted(), so first-seen order cannot be preserved.",
+      "evidence": [
+        {
+          "kind": "inspection",
+          "locator": {
+            "file": "examples/code-review/input.md",
+            "line_start": 27,
+            "line_end": 27
+          },
+          "observation": "    return sorted(set(email.strip() for email in emails))",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+            "timestamp": "2026-09-14T00:00:00Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        }
+      ],
+      "criterion_ids": [
+        "C2"
+      ],
+      "origin": "assistant"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "CL1",
+      "text": "The code is production-ready and all tests passed.",
+      "location": "input.md, Candidate author's statement",
+      "status": "unverified",
+      "verification": [],
+      "notes": "No tests, command, environment, or logs accompany the statement."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C1",
+      "result": "FAIL",
+      "method_used": "static_inspection",
+      "evidence": [
+        {
+          "kind": "inspection",
+          "locator": {
+            "file": "examples/code-review/input.md",
+            "line_start": 27,
+            "line_end": 27
+          },
+          "observation": "    return sorted(set(email.strip() for email in emails))",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+            "timestamp": "2026-09-14T00:00:00Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        }
+      ],
+      "reasoning": "The candidate strips whitespace but puts original-case strings in a set. For [' A@x.test ', 'a@x.test'], the two stripped strings remain distinct by Python string comparison. This is a reasoned counterexample, not an executed result.",
+      "next_action": "Deduplicate using a normalized comparison key.",
+      "shared_cause_with": [],
+      "dimension_refs": []
+    },
+    {
+      "id": "C2",
+      "result": "FAIL",
+      "method_used": "static_inspection",
+      "evidence": [
+        {
+          "kind": "inspection",
+          "locator": {
+            "file": "examples/code-review/input.md",
+            "line_start": 27,
+            "line_end": 27
+          },
+          "observation": "    return sorted(set(email.strip() for email in emails))",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+            "timestamp": "2026-09-14T00:00:00Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        }
+      ],
+      "reasoning": "sorted(...) replaces input order with sorting order. ['z@x.test', 'a@x.test'] therefore cannot preserve first-seen order.",
+      "next_action": "Append first occurrences to an output list while tracking seen keys.",
+      "shared_cause_with": [],
+      "dimension_refs": []
+    },
+    {
+      "id": "C3",
+      "result": "FAIL",
+      "method_used": "static_inspection",
+      "evidence": [
+        {
+          "kind": "inspection",
+          "locator": {
+            "file": "examples/code-review/input.md",
+            "line_start": 27,
+            "line_end": 27
+          },
+          "observation": "    return sorted(set(email.strip() for email in emails))",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+            "timestamp": "2026-09-14T00:00:00Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        }
+      ],
+      "reasoning": "['A@x.test', 'a@x.test'] retains both spellings, including the second occurrence. This violates the rule to keep only the first occurrence's spelling for an equivalent address.",
+      "next_action": "Store the first trimmed value for each normalized key.",
+      "shared_cause_with": [],
+      "dimension_refs": []
+    },
+    {
+      "id": "C4",
+      "result": "PASS",
+      "method_used": "static_inspection",
+      "evidence": [
+        {
+          "kind": "inspection",
+          "locator": {
+            "file": "examples/code-review/input.md",
+            "line_start": 26,
+            "line_end": 27
+          },
+          "observation": "The complete supplied function uses built-ins and a string method only.",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+            "timestamp": "2026-09-14T00:00:00Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        }
+      ],
+      "reasoning": "The complete supplied function uses built-ins and a string method; it imports or calls no third-party dependency. The conclusion covers only this snippet.",
+      "next_action": "None.",
+      "shared_cause_with": [],
+      "dimension_refs": []
+    },
+    {
+      "id": "C5",
+      "result": "UNKNOWN",
+      "method_used": "execution",
+      "evidence": [
+        {
+          "kind": "supplied",
+          "locator": {
+            "note": "Candidate author's statement in input.md"
+          },
+          "observation": "Claims tests passed; no tests, command, logs, or verified artifact binding supplied.",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+            "timestamp": "2026-09-14T00:00:00Z"
+          },
+          "isolation": "none",
+          "origin": "candidate_supplied"
+        }
+      ],
+      "reasoning": "The candidate author's statement supplies no tests, command, environment, logs, or verified artifact binding.",
+      "next_action": "Provide and run the regression suite against the exact artifact in an authorized environment.",
+      "shared_cause_with": [],
+      "dimension_refs": []
+    }
+  ],
+  "forensics": [],
+  "counts": {
+    "required": {
+      "applicable": 5,
+      "pass": 1,
+      "fail": 3,
+      "unknown": 1,
+      "error": 0,
+      "not_applicable": 0
+    },
+    "optional": {
+      "applicable": 0,
+      "pass": 0,
+      "fail": 0,
+      "unknown": 0,
+      "error": 0,
+      "not_applicable": 0
+    },
+    "coverage": {
+      "numerator": 4,
+      "denominator": 5,
+      "undefined": false
+    }
+  },
+  "status": {
+    "overall": "FAIL",
+    "rule_applied": "required applicable criterion failed",
+    "blocked_by": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "advisory": false
+  },
+  "improvement": [
+    {
+      "issue": "Whitespace and case variants are not collapsed into one address.",
+      "locations": [
+        "examples/code-review/input.md:27"
+      ],
+      "suggested_change": "Deduplicate using a normalized comparison key.",
+      "constraints_to_preserve": [
+        "Do not add dependencies."
+      ],
+      "verify_by": "Inspect the comparison key, or run a test over whitespace and case variants.",
+      "linked_criteria": [
+        "C1"
+      ]
+    },
+    {
+      "issue": "Output order follows sorting order, not first-seen order.",
+      "locations": [
+        "examples/code-review/input.md:27"
+      ],
+      "suggested_change": "Append first occurrences to an output list while tracking seen keys.",
+      "constraints_to_preserve": [
+        "Do not add dependencies."
+      ],
+      "verify_by": "Inspect how the output list is built, or run a test over unsorted input.",
+      "linked_criteria": [
+        "C2"
+      ]
+    },
+    {
+      "issue": "Both spellings of an equivalent address are kept.",
+      "locations": [
+        "examples/code-review/input.md:27"
+      ],
+      "suggested_change": "Store the first trimmed value for each normalized key.",
+      "constraints_to_preserve": [
+        "Do not add dependencies."
+      ],
+      "verify_by": "Inspect which value is stored per key, or run a test over mixed-case duplicates.",
+      "linked_criteria": [
+        "C3"
+      ]
+    }
+  ],
+  "limitations": {
+    "not_inspected": [],
+    "not_executed": [
+      "regression suite"
+    ],
+    "unknown_metadata": [
+      "test environment"
+    ],
+    "assumptions": []
+  },
+  "provenance": {
+    "tools": [
+      {
+        "name": "veval",
+        "version": "0.0.0-dev"
+      }
+    ],
+    "commands": [],
+    "environment": {
+      "os": "any",
+      "arch": "any",
+      "runtime_versions": {}
+    },
+    "isolation_levels_used": [
+      "none"
+    ],
+    "evidence_digest": ""
+  }
+}
