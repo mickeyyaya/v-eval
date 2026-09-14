@@ -1,0 +1,713 @@
+{
+  "identity": {
+    "report_id": "sha256:8133cd5af3691431144e38ab5e39c701833b2a53e6a08040139195d374b55465",
+    "schema_version": "0.1.0",
+    "veval_version": "0.0.0-dev",
+    "skill_revision": "draft-2",
+    "artifact": {
+      "kind": "service_change",
+      "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "paths": [
+        "examples/extended/service.go",
+        "examples/extended/service_test.go"
+      ],
+      "bundle_digest": "sha256:1f0a5c7f2b3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7"
+    },
+    "task": {
+      "requested_outcome": "Enforce the vendor's published per-key rate limit in the request path, keep the regression suite passing, and ship a reproducible container image.",
+      "intended_user": "release engineer deciding whether to deploy the change",
+      "brief_ref": "examples/extended/brief.md#intent"
+    },
+    "created_at": "2026-09-14T00:03:00Z",
+    "host": {
+      "cli": "fixture",
+      "model": "unknown",
+      "os": "any",
+      "arch": "any"
+    }
+  },
+  "contract": {
+    "contract_id": "extended-example",
+    "contract_version": "1",
+    "status": "provisional",
+    "conflicts": [
+      {
+        "between": [
+          "E1",
+          "E4"
+        ],
+        "description": "The suite is run against the worktree toolchain while the image is built from a pinned one; the brief does not say which toolchain the release is accepted on.",
+        "resolution": "unresolved"
+      }
+    ],
+    "criteria": [
+      {
+        "id": "E1",
+        "requirement": "The regression suite passes against this exact revision",
+        "source_ref": "examples/extended/brief.md#acceptance-criteria",
+        "required": true,
+        "applicability": "always",
+        "methods_allowed": [
+          "execution"
+        ],
+        "acceptance_rule": "A regression suite runs against this revision in an isolated worktree and reports no failures.",
+        "expected_evidence": "A command locator with cwd, exit status, and a log reference bound to the revision.",
+        "provisional": false
+      },
+      {
+        "id": "E2",
+        "requirement": "The enforced rate limit matches the vendor's published limit",
+        "source_ref": "examples/extended/brief.md#acceptance-criteria",
+        "required": true,
+        "applicability": "always",
+        "methods_allowed": [
+          "source_verification",
+          "static_inspection"
+        ],
+        "acceptance_rule": "The limit the change enforces equals the limit stated by the vendor's published documentation at a named version.",
+        "expected_evidence": "A passage locator naming the source and its date, and the line that enforces the limit.",
+        "provisional": false
+      },
+      {
+        "id": "E3",
+        "requirement": "Throughput stays at or above the stated target",
+        "source_ref": "examples/extended/brief.md#throughput",
+        "required": false,
+        "applicability": "when a benchmark workload is supplied",
+        "methods_allowed": [
+          "deterministic_check",
+          "execution"
+        ],
+        "acceptance_rule": "Measured throughput on the stated workload is at or above 500 requests per second.",
+        "expected_evidence": "A dimension entry with a measured value, its unit, and the tool that produced it.",
+        "provisional": false
+      },
+      {
+        "id": "E4",
+        "requirement": "The container image builds reproducibly from the revision",
+        "source_ref": "examples/extended/brief.md#acceptance-criteria",
+        "required": true,
+        "applicability": "always",
+        "methods_allowed": [
+          "execution"
+        ],
+        "acceptance_rule": "Two builds of this revision produce the same image digest.",
+        "expected_evidence": "Command locators for both builds and the digests they printed.",
+        "provisional": false
+      },
+      {
+        "id": "E5",
+        "requirement": "Vendored third-party sources carry their upstream license headers",
+        "source_ref": "examples/extended/brief.md#acceptance-criteria",
+        "required": true,
+        "applicability": "when the revision vendors third-party sources",
+        "methods_allowed": [
+          "static_inspection"
+        ],
+        "acceptance_rule": "Every vendored file carries the upstream license header.",
+        "expected_evidence": "Inspection of each vendored file's first lines.",
+        "provisional": false
+      },
+      {
+        "id": "E6",
+        "requirement": "The artifact was not modified during evaluation",
+        "source_ref": "examples/extended/brief.md#integrity",
+        "required": true,
+        "applicability": "always",
+        "methods_allowed": [
+          "static_inspection",
+          "rubric_judgment"
+        ],
+        "acceptance_rule": "The artifact tree after evaluation matches the tree the evaluation started from.",
+        "expected_evidence": "Pre- and post-evaluation tree digests, or a reasoned reading of what changed.",
+        "provisional": false
+      }
+    ]
+  },
+  "routing": {
+    "supplied": [
+      {
+        "source_type": "brief",
+        "count": 1,
+        "origin": "user"
+      },
+      {
+        "source_type": "artifact",
+        "count": 2,
+        "origin": "candidate"
+      },
+      {
+        "source_type": "candidate_claim",
+        "count": 1,
+        "origin": "candidate"
+      }
+    ],
+    "profiles": [
+      {
+        "name": "requirements-and-tests",
+        "version": "0.1"
+      },
+      {
+        "name": "release-readiness",
+        "version": "0.2"
+      }
+    ],
+    "adapters_run": [
+      {
+        "name": "go-test",
+        "version": "0.1",
+        "inputs_used": [
+          "examples/extended/service_test.go"
+        ]
+      },
+      {
+        "name": "mtime-drift",
+        "version": "0.3",
+        "inputs_used": [
+          "examples/extended/service.go"
+        ]
+      }
+    ],
+    "adapters_skipped": [
+      {
+        "name": "container-build",
+        "missing_input": "container toolchain on the evaluation host"
+      }
+    ],
+    "ambiguity": [
+      {
+        "question": "Does the rate limit apply per API key or per client address?",
+        "resolution": "Read as per API key: the brief and the vendor documentation both state the limit per key."
+      }
+    ],
+    "rationale": "Service change with a supplied test suite and a cited external limit, so execution and source verification both ran; the container and benchmark adapters had no toolchain to run on."
+  },
+  "observations": [
+    {
+      "id": "O1",
+      "text": "The request path enforces the limit per API key, matching the published documentation.",
+      "evidence": [
+        {
+          "kind": "inspection",
+          "locator": {
+            "file": "examples/extended/service.go",
+            "line_start": 48,
+            "line_end": 52
+          },
+          "observation": "const rateLimitPerMinute = 100 // per API key",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:04:00Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        }
+      ],
+      "criterion_ids": [
+        "E2"
+      ],
+      "origin": "assistant"
+    },
+    {
+      "id": "O2",
+      "text": "The evaluation host has no container toolchain, so the reproducibility and throughput checks could not run.",
+      "evidence": [
+        {
+          "kind": "execution",
+          "locator": {
+            "command": "docker --version",
+            "cwd": "/tmp/veval-worktree",
+            "exit_status": 127,
+            "log_ref": "logs/o2-docker-version.log"
+          },
+          "observation": "zsh: command not found: docker",
+          "provenance": {
+            "tool": "shell",
+            "version": "zsh 5.9",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:06:00Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        }
+      ],
+      "criterion_ids": [
+        "E3",
+        "E4"
+      ],
+      "origin": "adapter"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "CL1",
+      "text": "The regression suite passes on this revision.",
+      "location": "pull request description, paragraph 1",
+      "status": "verified",
+      "verification": [
+        {
+          "kind": "execution",
+          "locator": {
+            "command": "go test ./...",
+            "cwd": "/tmp/veval-worktree",
+            "exit_status": 0,
+            "log_ref": "logs/e1-go-test.log"
+          },
+          "observation": "ok  github.com/example/service  1.204s; 42 tests, 0 failures",
+          "provenance": {
+            "tool": "go",
+            "version": "1.23.1",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:03:12Z"
+          },
+          "isolation": "worktree",
+          "origin": "observed"
+        }
+      ],
+      "notes": "Re-run by the evaluator in a worktree checked out at this revision."
+    },
+    {
+      "claim_id": "CL2",
+      "text": "Throughput improved to 610 requests per second.",
+      "location": "pull request description, paragraph 2",
+      "status": "unverified",
+      "verification": [],
+      "notes": "No workload, tool, or log accompanies the number."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "E1",
+      "result": "PASS",
+      "method_used": "execution",
+      "evidence": [
+        {
+          "kind": "execution",
+          "locator": {
+            "command": "go test ./...",
+            "cwd": "/tmp/veval-worktree",
+            "exit_status": 0,
+            "log_ref": "logs/e1-go-test.log"
+          },
+          "observation": "ok  github.com/example/service  1.204s; 42 tests, 0 failures",
+          "provenance": {
+            "tool": "go",
+            "version": "1.23.1",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:03:12Z"
+          },
+          "isolation": "worktree",
+          "origin": "observed"
+        }
+      ],
+      "reasoning": "The suite ran in a worktree checked out at this revision and exited zero with no failures reported. The conclusion covers the suite as supplied, not untested paths.",
+      "next_action": "None.",
+      "shared_cause_with": [],
+      "dimension_refs": []
+    },
+    {
+      "id": "E2",
+      "result": "PASS",
+      "method_used": "source_verification",
+      "evidence": [
+        {
+          "kind": "inspection",
+          "locator": {
+            "passage": "Clients may issue at most 100 requests per minute per API key.",
+            "source_ref": "https://api.example.test/docs/rate-limits",
+            "source_date_or_version": "2026-08-30",
+            "access_date": "2026-09-14"
+          },
+          "observation": "The vendor states the limit as 100 requests per minute per API key.",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:04:00Z"
+          },
+          "isolation": "none",
+          "origin": "retrieved"
+        },
+        {
+          "kind": "inspection",
+          "locator": {
+            "file": "examples/extended/service.go",
+            "line_start": 48,
+            "line_end": 52
+          },
+          "observation": "const rateLimitPerMinute = 100 // per API key",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:04:00Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        }
+      ],
+      "reasoning": "The enforced constant is 100 per minute per key, the same limit and the same unit the cited documentation states at the version read.",
+      "next_action": "None.",
+      "shared_cause_with": [],
+      "dimension_refs": []
+    },
+    {
+      "id": "E3",
+      "result": "UNKNOWN",
+      "method_used": "deterministic_check",
+      "evidence": [
+        {
+          "kind": "supplied",
+          "locator": {
+            "note": "Benchmark number quoted in the pull request description, paragraph 2"
+          },
+          "observation": "Quotes 610 requests per second; no workload, tool, or log accompanies the number.",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:06:00Z"
+          },
+          "isolation": "none",
+          "origin": "candidate_supplied"
+        }
+      ],
+      "reasoning": "No benchmark ran on this host, so the throughput dimension carries no measured value and the target is neither met nor missed.",
+      "next_action": "Run the stated workload and record throughput with the tool and version that produced it.",
+      "shared_cause_with": [
+        "E4"
+      ],
+      "dimension_refs": [
+        "throughput"
+      ]
+    },
+    {
+      "id": "E4",
+      "result": "ERROR",
+      "method_used": "execution",
+      "evidence": [
+        {
+          "kind": "execution",
+          "locator": {
+            "command": "docker build --no-cache .",
+            "cwd": "/tmp/veval-worktree",
+            "exit_status": 127,
+            "log_ref": "logs/e4-docker-build.log"
+          },
+          "observation": "zsh: command not found: docker",
+          "provenance": {
+            "tool": "shell",
+            "version": "zsh 5.9",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:06:30Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        }
+      ],
+      "reasoning": "The build never started: the container toolchain is absent from the evaluation host. Reproducibility is untested here, not refuted.",
+      "next_action": "Re-run the evaluation on a host that has the container toolchain installed.",
+      "shared_cause_with": [
+        "E3"
+      ],
+      "dimension_refs": []
+    },
+    {
+      "id": "E5",
+      "result": "NOT_APPLICABLE",
+      "method_used": "static_inspection",
+      "evidence": [
+        {
+          "kind": "inspection",
+          "locator": {
+            "file": "examples/extended/vendor.txt",
+            "line_start": 1,
+            "line_end": 1
+          },
+          "observation": "# no vendored third-party sources at this revision",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:04:30Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        }
+      ],
+      "reasoning": "This revision vendors no third-party sources, so the header requirement has nothing to apply to.",
+      "next_action": "None while the revision vendors nothing.",
+      "shared_cause_with": [],
+      "dimension_refs": []
+    },
+    {
+      "id": "E6",
+      "result": "UNKNOWN",
+      "method_used": "rubric_judgment",
+      "evidence": [
+        {
+          "kind": "inspection",
+          "locator": {
+            "file": "examples/extended/service.go",
+            "line_start": 1,
+            "line_end": 1
+          },
+          "observation": "Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.",
+          "provenance": {
+            "tool": "mtime-drift",
+            "version": "0.3",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:07:00Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        },
+        {
+          "kind": "judgment",
+          "locator": {
+            "note": "Integrity rubric applied to the modification-time drift above"
+          },
+          "observation": "The rubric cannot separate a benign checkout touch from a content change without the pre-evaluation tree digest.",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:07:10Z"
+          },
+          "isolation": "none",
+          "origin": "observed",
+          "rubric_version": "integrity-rubric-0.2",
+          "model": "unknown"
+        }
+      ],
+      "reasoning": "A tracked file's modification time moved during the evaluation, and no pre-evaluation tree digest was recorded, so whether the artifact changed cannot be settled either way.",
+      "next_action": "Record a tree digest before evaluation begins, then re-run and compare.",
+      "shared_cause_with": [],
+      "dimension_refs": []
+    }
+  ],
+  "forensics": [
+    {
+      "finding_id": "F1",
+      "detector": "mtime-drift",
+      "detector_version": "0.3",
+      "criterion_id": "E6",
+      "severity": "suspicious",
+      "evidence": [
+        {
+          "kind": "inspection",
+          "locator": {
+            "file": "examples/extended/service.go",
+            "line_start": 1,
+            "line_end": 1
+          },
+          "observation": "Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.",
+          "provenance": {
+            "tool": "mtime-drift",
+            "version": "0.3",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:07:00Z"
+          },
+          "isolation": "none",
+          "origin": "observed"
+        }
+      ],
+      "benign_alternative": "A checkout or a formatter touched the file without changing its contents.",
+      "disposition": "open"
+    }
+  ],
+  "dimensions": [
+    {
+      "dimension": "throughput",
+      "metric": "requests_per_second",
+      "metric_version": "1",
+      "authority_type": "established_measure",
+      "definition_ref": "examples/extended/brief.md#throughput",
+      "unit": "req/s",
+      "range": "0 and above",
+      "direction": "higher_is_better",
+      "value": null,
+      "threshold": "at or above 500",
+      "threshold_source": "examples/extended/brief.md#throughput",
+      "tool": "bench",
+      "tool_version": "unknown",
+      "workload": "steady 60s at 8 concurrent workers",
+      "evidence": [
+        {
+          "kind": "supplied",
+          "locator": {
+            "note": "Benchmark number quoted in the pull request description, paragraph 2"
+          },
+          "observation": "Quotes 610 requests per second; no workload, tool, or log accompanies the number.",
+          "provenance": {
+            "tool": "assistant",
+            "version": "fixture",
+            "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+            "timestamp": "2026-09-14T00:06:00Z"
+          },
+          "isolation": "none",
+          "origin": "candidate_supplied"
+        }
+      ],
+      "interpretation": "Not measured on this host: the quoted number has no workload or tool behind it, so no comparison to the target is possible."
+    }
+  ],
+  "counts": {
+    "required": {
+      "applicable": 4,
+      "pass": 2,
+      "fail": 0,
+      "unknown": 1,
+      "error": 1,
+      "not_applicable": 1
+    },
+    "optional": {
+      "applicable": 1,
+      "pass": 0,
+      "fail": 0,
+      "unknown": 1,
+      "error": 0,
+      "not_applicable": 0
+    },
+    "coverage": {
+      "numerator": 2,
+      "denominator": 5,
+      "undefined": false
+    }
+  },
+  "status": {
+    "overall": "INCOMPLETE",
+    "rule_applied": "unresolved contract conflict",
+    "blocked_by": [],
+    "advisory": false
+  },
+  "improvement": [
+    {
+      "issue": "Reproducibility of the container image is untested: the toolchain is absent from the evaluation host.",
+      "locations": [
+        "examples/extended/Dockerfile"
+      ],
+      "suggested_change": "Run the evaluation on a host with the container toolchain, or pin a builder image the evaluator can fetch itself.",
+      "constraints_to_preserve": [
+        "Do not change the published rate limit."
+      ],
+      "verify_by": "Two builds of this revision print the same image digest.",
+      "linked_criteria": [
+        "E4"
+      ]
+    },
+    {
+      "issue": "Throughput is quoted in prose but never measured.",
+      "locations": [
+        "pull request description, paragraph 2"
+      ],
+      "suggested_change": "Run the stated workload and record the measurement with the tool and version that produced it.",
+      "constraints_to_preserve": [],
+      "verify_by": "The throughput dimension carries a value, a unit, and a named tool.",
+      "linked_criteria": [
+        "E3"
+      ]
+    },
+    {
+      "issue": "The evaluation cannot tell a benign touch from a modification of the artifact.",
+      "locations": [
+        "examples/extended/service.go"
+      ],
+      "suggested_change": "Record a tree digest and file timestamps before evaluation begins.",
+      "constraints_to_preserve": [
+        "Do not write into the artifact tree during evaluation."
+      ],
+      "verify_by": "The integrity detector compares pre- and post-evaluation tree digests.",
+      "linked_criteria": [
+        "E6"
+      ]
+    }
+  ],
+  "limitations": {
+    "not_inspected": [
+      "deployment manifests, which this contract does not cover"
+    ],
+    "not_executed": [
+      "container image build",
+      "benchmark workload"
+    ],
+    "unknown_metadata": [
+      "pre-evaluation file timestamps",
+      "the toolchain the release is accepted on"
+    ],
+    "assumptions": [
+      "The vendor documentation read at version 2026-08-30 is the version the change targets."
+    ]
+  },
+  "provenance": {
+    "tools": [
+      {
+        "name": "veval",
+        "version": "0.0.0-dev"
+      },
+      {
+        "name": "go",
+        "version": "1.23.1"
+      },
+      {
+        "name": "mtime-drift",
+        "version": "0.3"
+      }
+    ],
+    "commands": [
+      {
+        "command": "go test ./...",
+        "cwd": "/tmp/veval-worktree",
+        "exit_status": 0,
+        "started_at": "2026-09-14T00:03:10Z",
+        "ended_at": "2026-09-14T00:03:12Z",
+        "log_ref": "logs/e1-go-test.log",
+        "isolation": "worktree"
+      },
+      {
+        "command": "docker --version",
+        "cwd": "/tmp/veval-worktree",
+        "exit_status": 127,
+        "started_at": "2026-09-14T00:06:00Z",
+        "ended_at": "2026-09-14T00:06:00Z",
+        "log_ref": "logs/o2-docker-version.log",
+        "isolation": "none"
+      },
+      {
+        "command": "docker build --no-cache .",
+        "cwd": "/tmp/veval-worktree",
+        "exit_status": 127,
+        "started_at": "2026-09-14T00:06:30Z",
+        "ended_at": "2026-09-14T00:06:30Z",
+        "log_ref": "logs/e4-docker-build.log",
+        "isolation": "none"
+      }
+    ],
+    "environment": {
+      "os": "any",
+      "arch": "any",
+      "runtime_versions": {
+        "go": "1.23.1"
+      }
+    },
+    "isolation_levels_used": [
+      "none",
+      "worktree"
+    ],
+    "evidence_digest": "sha256:14f86f9069d39c8b3be2115a6fb9cbd61b063ee7fa4e9aaa218c111786620d9d"
+  },
+  "learning": {
+    "precedents_retrieved": [
+      {
+        "precedent_id": "sha256:4b2f8d1c6e0a9735bd4c1e8f206a3b5c7d9e0f1a2b3c4d5e6f708192a3b4c5d6",
+        "criterion": "E6",
+        "similarity": 0.82
+      }
+    ],
+    "reward_records_created": [
+      "rr-2026-09-14-e6-integrity-unknown"
+    ]
+  }
+}
