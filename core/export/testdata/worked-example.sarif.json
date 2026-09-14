@@ -1,0 +1,284 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "veval",
+          "version": "0.0.0-dev",
+          "informationUri": "https://github.com/mickeyyaya/v-eval",
+          "rules": [
+            {
+              "id": "C1",
+              "name": "C1",
+              "shortDescription": {
+                "text": "Whitespace and case variants collapse into one address"
+              },
+              "fullDescription": {
+                "text": "Addresses differing only in surrounding whitespace or letter case appear exactly once in the output."
+              },
+              "properties": {
+                "veval_provisional": false,
+                "veval_required": true
+              }
+            },
+            {
+              "id": "C2",
+              "name": "C2",
+              "shortDescription": {
+                "text": "Output preserves first-seen order"
+              },
+              "fullDescription": {
+                "text": "Kept addresses appear in the order of their first occurrence in the input."
+              },
+              "properties": {
+                "veval_provisional": false,
+                "veval_required": true
+              }
+            },
+            {
+              "id": "C3",
+              "name": "C3",
+              "shortDescription": {
+                "text": "Each kept address retains the first occurrence's spelling after trimming"
+              },
+              "fullDescription": {
+                "text": "For each normalized key the output carries the trimmed spelling of the first occurrence and no other."
+              },
+              "properties": {
+                "veval_provisional": false,
+                "veval_required": true
+              }
+            },
+            {
+              "id": "C4",
+              "name": "C4",
+              "shortDescription": {
+                "text": "Complete supplied implementation uses no third-party dependency"
+              },
+              "fullDescription": {
+                "text": "The complete supplied implementation imports and calls nothing outside the standard library."
+              },
+              "properties": {
+                "veval_provisional": false,
+                "veval_required": true
+              }
+            },
+            {
+              "id": "C5",
+              "name": "C5",
+              "shortDescription": {
+                "text": "Regression tests pass for this exact artifact"
+              },
+              "fullDescription": {
+                "text": "A regression suite runs against this exact artifact revision and reports no failures."
+              },
+              "properties": {
+                "veval_provisional": false,
+                "veval_required": true
+              }
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "location": {
+            "uri": "examples/code-review/input.md"
+          },
+          "hashes": {
+            "sha-256": "befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8"
+          }
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "C1",
+          "kind": "fail",
+          "level": "error",
+          "message": {
+            "text": "The candidate strips whitespace but puts original-case strings in a set. For [' A@x.test ', 'a@x.test'], the two stripped strings remain distinct by Python string comparison. This is a reasoned counterexample, not an executed result."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "examples/code-review/input.md"
+                },
+                "region": {
+                  "startLine": 27,
+                  "endLine": 27
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              {
+                "isolation": "none",
+                "kind": "inspection",
+                "observation": "    return sorted(set(email.strip() for email in emails))",
+                "origin": "observed"
+              }
+            ],
+            "veval_result": "FAIL"
+          }
+        },
+        {
+          "ruleId": "C2",
+          "kind": "fail",
+          "level": "error",
+          "message": {
+            "text": "sorted(...) replaces input order with sorting order. ['z@x.test', 'a@x.test'] therefore cannot preserve first-seen order."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "examples/code-review/input.md"
+                },
+                "region": {
+                  "startLine": 27,
+                  "endLine": 27
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              {
+                "isolation": "none",
+                "kind": "inspection",
+                "observation": "    return sorted(set(email.strip() for email in emails))",
+                "origin": "observed"
+              }
+            ],
+            "veval_result": "FAIL"
+          }
+        },
+        {
+          "ruleId": "C3",
+          "kind": "fail",
+          "level": "error",
+          "message": {
+            "text": "['A@x.test', 'a@x.test'] retains both spellings, including the second occurrence. This violates the rule to keep only the first occurrence's spelling for an equivalent address."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "examples/code-review/input.md"
+                },
+                "region": {
+                  "startLine": 27,
+                  "endLine": 27
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              {
+                "isolation": "none",
+                "kind": "inspection",
+                "observation": "    return sorted(set(email.strip() for email in emails))",
+                "origin": "observed"
+              }
+            ],
+            "veval_result": "FAIL"
+          }
+        },
+        {
+          "ruleId": "C4",
+          "kind": "pass",
+          "message": {
+            "text": "The complete supplied function uses built-ins and a string method; it imports or calls no third-party dependency. The conclusion covers only this snippet."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "examples/code-review/input.md"
+                },
+                "region": {
+                  "startLine": 26,
+                  "endLine": 27
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              {
+                "isolation": "none",
+                "kind": "inspection",
+                "observation": "The complete supplied function uses built-ins and a string method only.",
+                "origin": "observed"
+              }
+            ],
+            "veval_result": "PASS"
+          }
+        },
+        {
+          "ruleId": "C5",
+          "kind": "review",
+          "message": {
+            "text": "The candidate author's statement supplies no tests, command, environment, logs, or verified artifact binding."
+          },
+          "properties": {
+            "evidence": [
+              {
+                "isolation": "none",
+                "kind": "supplied",
+                "note": "Candidate author's statement in input.md",
+                "observation": "Claims tests passed; no tests, command, logs, or verified artifact binding supplied.",
+                "origin": "candidate_supplied"
+              }
+            ],
+            "veval_result": "UNKNOWN"
+          }
+        }
+      ],
+      "properties": {
+        "veval": {
+          "advisory": false,
+          "blocked_by": [
+            "C1",
+            "C2",
+            "C3"
+          ],
+          "counts": {
+            "required": {
+              "applicable": 5,
+              "pass": 1,
+              "fail": 3,
+              "unknown": 1,
+              "error": 0,
+              "not_applicable": 0
+            },
+            "optional": {
+              "applicable": 0,
+              "pass": 0,
+              "fail": 0,
+              "unknown": 0,
+              "error": 0,
+              "not_applicable": 0
+            },
+            "coverage": {
+              "numerator": 4,
+              "denominator": 5,
+              "undefined": false
+            }
+          },
+          "evidence_digest": "sha256:97ad849882cb469710b6936e039815324d3c8f1e226732e37f3c36b50712db34",
+          "overall": "FAIL",
+          "report_id": "sha256:980127c94f0d4d54d823d69e78f1108cb50c2212e7e82cde283f4a3e99ae487a",
+          "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+          "rule_applied": "required applicable criterion failed",
+          "schema_version": "0.1.0"
+        }
+      }
+    }
+  ]
+}

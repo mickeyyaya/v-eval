@@ -1,0 +1,403 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "veval",
+          "version": "0.0.0-dev",
+          "informationUri": "https://github.com/mickeyyaya/v-eval",
+          "rules": [
+            {
+              "id": "E1",
+              "name": "E1",
+              "shortDescription": {
+                "text": "The regression suite passes against this exact revision"
+              },
+              "fullDescription": {
+                "text": "A regression suite runs against this revision in an isolated worktree and reports no failures."
+              },
+              "properties": {
+                "veval_provisional": false,
+                "veval_required": true
+              }
+            },
+            {
+              "id": "E2",
+              "name": "E2",
+              "shortDescription": {
+                "text": "The enforced rate limit matches the vendor's published limit"
+              },
+              "fullDescription": {
+                "text": "The limit the change enforces equals the limit stated by the vendor's published documentation at a named version."
+              },
+              "properties": {
+                "veval_provisional": false,
+                "veval_required": true
+              }
+            },
+            {
+              "id": "E3",
+              "name": "E3",
+              "shortDescription": {
+                "text": "Throughput stays at or above the stated target"
+              },
+              "fullDescription": {
+                "text": "Measured throughput on the stated workload is at or above 500 requests per second."
+              },
+              "properties": {
+                "veval_provisional": false,
+                "veval_required": false
+              }
+            },
+            {
+              "id": "E4",
+              "name": "E4",
+              "shortDescription": {
+                "text": "The container image builds reproducibly from the revision"
+              },
+              "fullDescription": {
+                "text": "Two builds of this revision produce the same image digest."
+              },
+              "properties": {
+                "veval_provisional": false,
+                "veval_required": true
+              }
+            },
+            {
+              "id": "E5",
+              "name": "E5",
+              "shortDescription": {
+                "text": "Vendored third-party sources carry their upstream license headers"
+              },
+              "fullDescription": {
+                "text": "Every vendored file carries the upstream license header."
+              },
+              "properties": {
+                "veval_provisional": false,
+                "veval_required": true
+              }
+            },
+            {
+              "id": "E6",
+              "name": "E6",
+              "shortDescription": {
+                "text": "The artifact was not modified during evaluation"
+              },
+              "fullDescription": {
+                "text": "The artifact tree after evaluation matches the tree the evaluation started from."
+              },
+              "properties": {
+                "veval_provisional": false,
+                "veval_required": true
+              }
+            }
+          ]
+        }
+      },
+      "invocations": [
+        {
+          "commandLine": "go test ./...",
+          "workingDirectory": {
+            "uri": "/tmp/veval-worktree"
+          },
+          "exitCode": 0,
+          "startTimeUtc": "2026-09-14T00:03:10Z",
+          "endTimeUtc": "2026-09-14T00:03:12Z",
+          "executionSuccessful": false,
+          "toolExecutionNotifications": [
+            {
+              "level": "error",
+              "message": {
+                "text": "criterion E4 could not be evaluated: the evaluation errored"
+              }
+            }
+          ],
+          "properties": {
+            "veval_isolation": "worktree",
+            "veval_log_ref": "logs/e1-go-test.log"
+          }
+        },
+        {
+          "commandLine": "docker --version",
+          "workingDirectory": {
+            "uri": "/tmp/veval-worktree"
+          },
+          "exitCode": 127,
+          "startTimeUtc": "2026-09-14T00:06:00Z",
+          "endTimeUtc": "2026-09-14T00:06:00Z",
+          "executionSuccessful": false,
+          "properties": {
+            "veval_isolation": "none",
+            "veval_log_ref": "logs/o2-docker-version.log"
+          }
+        },
+        {
+          "commandLine": "docker build --no-cache .",
+          "workingDirectory": {
+            "uri": "/tmp/veval-worktree"
+          },
+          "exitCode": 127,
+          "startTimeUtc": "2026-09-14T00:06:30Z",
+          "endTimeUtc": "2026-09-14T00:06:30Z",
+          "executionSuccessful": false,
+          "properties": {
+            "veval_isolation": "none",
+            "veval_log_ref": "logs/e4-docker-build.log"
+          }
+        }
+      ],
+      "versionControlProvenance": [
+        {
+          "revisionId": "9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f"
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "E1",
+          "kind": "pass",
+          "message": {
+            "text": "The suite ran in a worktree checked out at this revision and exited zero with no failures reported. The conclusion covers the suite as supplied, not untested paths."
+          },
+          "properties": {
+            "evidence": [
+              {
+                "command": "go test ./...",
+                "cwd": "/tmp/veval-worktree",
+                "exit_status": 0,
+                "isolation": "worktree",
+                "kind": "execution",
+                "log_ref": "logs/e1-go-test.log",
+                "observation": "ok  github.com/example/service  1.204s; 42 tests, 0 failures",
+                "origin": "observed"
+              }
+            ],
+            "veval_result": "PASS"
+          }
+        },
+        {
+          "ruleId": "E2",
+          "kind": "pass",
+          "message": {
+            "text": "The enforced constant is 100 per minute per key, the same limit and the same unit the cited documentation states at the version read."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "examples/extended/service.go"
+                },
+                "region": {
+                  "startLine": 48,
+                  "endLine": 52
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              {
+                "access_date": "2026-09-14",
+                "isolation": "none",
+                "kind": "inspection",
+                "observation": "The vendor states the limit as 100 requests per minute per API key.",
+                "origin": "retrieved",
+                "passage": "Clients may issue at most 100 requests per minute per API key.",
+                "source_date_or_version": "2026-08-30",
+                "source_ref": "https://api.example.test/docs/rate-limits"
+              },
+              {
+                "isolation": "none",
+                "kind": "inspection",
+                "observation": "const rateLimitPerMinute = 100 // per API key",
+                "origin": "observed"
+              }
+            ],
+            "veval_result": "PASS"
+          }
+        },
+        {
+          "ruleId": "E3",
+          "kind": "review",
+          "message": {
+            "text": "No benchmark ran on this host, so the throughput dimension carries no measured value and the target is neither met nor missed."
+          },
+          "properties": {
+            "evidence": [
+              {
+                "isolation": "none",
+                "kind": "supplied",
+                "note": "Benchmark number quoted in the pull request description, paragraph 2",
+                "observation": "Quotes 610 requests per second; no workload, tool, or log accompanies the number.",
+                "origin": "candidate_supplied"
+              }
+            ],
+            "veval_result": "UNKNOWN"
+          }
+        },
+        {
+          "ruleId": "E4",
+          "kind": "review",
+          "message": {
+            "text": "The build never started: the container toolchain is absent from the evaluation host. Reproducibility is untested here, not refuted."
+          },
+          "properties": {
+            "evidence": [
+              {
+                "command": "docker build --no-cache .",
+                "cwd": "/tmp/veval-worktree",
+                "exit_status": 127,
+                "isolation": "none",
+                "kind": "execution",
+                "log_ref": "logs/e4-docker-build.log",
+                "observation": "zsh: command not found: docker",
+                "origin": "observed"
+              }
+            ],
+            "veval_result": "ERROR"
+          }
+        },
+        {
+          "ruleId": "E5",
+          "kind": "notApplicable",
+          "message": {
+            "text": "This revision vendors no third-party sources, so the header requirement has nothing to apply to."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "examples/extended/vendor.txt"
+                },
+                "region": {
+                  "startLine": 1,
+                  "endLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              {
+                "isolation": "none",
+                "kind": "inspection",
+                "observation": "# no vendored third-party sources at this revision",
+                "origin": "observed"
+              }
+            ],
+            "veval_result": "NOT_APPLICABLE"
+          }
+        },
+        {
+          "ruleId": "E6",
+          "kind": "review",
+          "message": {
+            "text": "A tracked file's modification time moved during the evaluation, and no pre-evaluation tree digest was recorded, so whether the artifact changed cannot be settled either way."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "examples/extended/service.go"
+                },
+                "region": {
+                  "startLine": 1,
+                  "endLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              {
+                "isolation": "none",
+                "kind": "inspection",
+                "observation": "Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.",
+                "origin": "observed"
+              },
+              {
+                "isolation": "none",
+                "kind": "judgment",
+                "note": "Integrity rubric applied to the modification-time drift above",
+                "observation": "The rubric cannot separate a benign checkout touch from a content change without the pre-evaluation tree digest.",
+                "origin": "observed"
+              }
+            ],
+            "veval_result": "UNKNOWN"
+          }
+        },
+        {
+          "ruleId": "E6",
+          "kind": "review",
+          "message": {
+            "text": "forensic finding F1 from detector mtime-drift"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "examples/extended/service.go"
+                },
+                "region": {
+                  "startLine": 1,
+                  "endLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "evidence": [
+              {
+                "isolation": "none",
+                "kind": "inspection",
+                "observation": "Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.",
+                "origin": "observed"
+              }
+            ],
+            "veval_benign_alternative": "A checkout or a formatter touched the file without changing its contents.",
+            "veval_detector": "mtime-drift",
+            "veval_disposition": "open",
+            "veval_finding_id": "F1",
+            "veval_severity": "suspicious"
+          }
+        }
+      ],
+      "properties": {
+        "veval": {
+          "advisory": false,
+          "blocked_by": [],
+          "counts": {
+            "required": {
+              "applicable": 4,
+              "pass": 2,
+              "fail": 0,
+              "unknown": 1,
+              "error": 1,
+              "not_applicable": 1
+            },
+            "optional": {
+              "applicable": 1,
+              "pass": 0,
+              "fail": 0,
+              "unknown": 1,
+              "error": 0,
+              "not_applicable": 0
+            },
+            "coverage": {
+              "numerator": 2,
+              "denominator": 5,
+              "undefined": false
+            }
+          },
+          "evidence_digest": "sha256:16b12842a5d5420296a18d9d03ee5be6461b32ea7a165a8742b8c95e03eb3bd7",
+          "overall": "INCOMPLETE",
+          "report_id": "sha256:72760dea420ab21ef325ba034cc44081769cc290b495a524b53efd3c0f895ac4",
+          "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+          "rule_applied": "unresolved contract conflict",
+          "schema_version": "0.1.0"
+        }
+      }
+    }
+  ]
+}
