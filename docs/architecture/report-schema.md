@@ -1,6 +1,6 @@
 # Report schema: the JSON-first contract
 
-Status: design, 2026-09-14. Not implemented. This is the human-readable specification; the machine-checkable JSON Schema will live under `schema/` and is versioned with the core. Decisions: [decision 0006 JSON-first](../decisions/0006-json-first-report-contract.md), [decision 0007 verdicts](../decisions/0007-verdict-vocabulary.md), [decision 0008 evidence policy](../decisions/0008-evidence-policy-verify-over-summary.md), [decision 0013 evaluator-not-auditor](../decisions/0013-evaluator-not-auditor.md), [decision 0021 HTML report](../decisions/0021-html-report-every-evaluation.md). Field names are **proposals** until the schema file exists.
+Status: design of 2026-09-14, implemented as schema v0.1.0. This is the human-readable specification; the machine-checkable JSON Schema lives at [`schema/report.schema.json`](../../schema/report.schema.json), is embedded in the core, and is versioned with it. Decisions: [decision 0006 JSON-first](../decisions/0006-json-first-report-contract.md), [decision 0007 verdicts](../decisions/0007-verdict-vocabulary.md), [decision 0008 evidence policy](../decisions/0008-evidence-policy-verify-over-summary.md), [decision 0013 evaluator-not-auditor](../decisions/0013-evaluator-not-auditor.md), [decision 0021 HTML report](../decisions/0021-html-report-every-evaluation.md). Field names are no longer proposals: the schema file exists and a drift test in `core/report` fails when the Go types and the schema disagree. Statements still marked **proposal** below are the ones the schema file did not settle.
 
 ## Why JSON first
 
@@ -143,7 +143,7 @@ The export targets the OASIS SARIF 2.1.0 errata01 specification (<https://docs.o
 | `ERROR` | `invocation.executionSuccessful: false` plus a `toolExecutionNotifications` entry, `properties.veval_result: ERROR` |
 | Evidence locator | `result.locations[].physicalLocation` (file, region) or `result.properties.evidence` |
 | Commands | `invocations[]` with `commandLine`, `workingDirectory`, `exitCode`, `startTimeUtc`, `endTimeUtc`, `environmentVariables` |
-| Artifact revision | `versionControlProvenance[].revisionId`, `branch`, `repositoryUri` |
+| Artifact revision | `run.properties.veval.vcs_revision_id`. `versionControlProvenance[]` is not emitted: SARIF requires `repositoryUri` on every entry and the report carries no repository URI, so the git revision goes into the run properties until it does. |
 | Artifact hashes | `artifacts[].hashes` |
 | Forensic finding | A result on the integrity rule with `properties.veval_severity` |
 | Overall status, counts | `run.properties.veval` object |

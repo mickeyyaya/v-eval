@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from typing import Callable, Mapping, Sequence
 from urllib.parse import unquote
 
-SKIP_DIRS = frozenset({".git", "node_modules"})  # kept identical to gen_sources.py on purpose
+SKIP_DIRS = frozenset({".git", "node_modules", ".superpowers"})  # kept identical to gen_sources.py on purpose
 LINK_TARGET = re.compile(r"\[[^\]]*\]\(\s*(?:<([^>]+)>|((?:[^\s()]|\([^\s()]*\))+))")  # group 1: <...> target; group 2: bare target, one level of balanced parentheses
 HEADING = re.compile(r"^#{1,6}\s+(.+?)\s*#*\s*$", re.M)
 INLINE_CODE = re.compile(r"`[^`\n]*`")

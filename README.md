@@ -6,7 +6,7 @@ Repository: <https://github.com/mickeyyaya/v-eval>
 
 Evaluate AI-generated work against the intent, design, sources, and acceptance criteria that define success.
 
-**Status: research and design prototype.** This repository contains cited research, a consolidated requirements record, twenty-two decision records, an architecture design, a proposed evaluation contract, a draft agent skill, and a worked example. There is still no implemented runner, CLI, or validated quality model.
+**Status: walking skeleton.** The report schema v0.1.0 (`schema/`), the Go core (`core/`: validation, aggregation, canonical JSON and digests, Markdown and self-contained HTML renderers, SARIF 2.1.0 export), and the `veval` command line (`cmd/veval/`) exist, with continuous integration on macOS, Linux, and Windows. The adapters, the classifier, the forensic detectors, the learning loop, the agent profile, and the plugin manifests are designed but not built, and there is no validated quality model yet. The repository also carries cited research, a consolidated requirements record, twenty-two decision records, an architecture design, a proposed evaluation contract, a draft agent skill, and a worked example.
 
 **[Open the learning handbook](docs/README.md)** for a guided path through generated context, scoring, deterministic tools, evaluation gaming, and practitioner research.
 
@@ -92,7 +92,12 @@ CITATION.cff         how to cite the project
 .editorconfig        shared editor settings
 .gitignore           ignored paths
 .markdownlint-cli2.yaml  Markdown lint configuration used by CI
+.goreleaser.yaml     release build matrix for the six binary targets
 .github/             issue and pull request templates, workflows
+schema/              report JSON Schema v0.1.0, embedded in the core
+core/                Go library: report types, validation, aggregation, renderers, SARIF export
+cmd/veval/           the veval command line: version, validate, aggregate, render, export
+internal/            build metadata shared by the core and the command line
 docs/
   README.md          handbook index and reading paths
   requirements.md    consolidated requirements with IDs
@@ -100,7 +105,7 @@ docs/
   research/          dated, cited research memos and the foundational notes
   decisions/         one MADR-style record per decision
   architecture/      pipeline, report contract, learning loop, packaging
-skills/              the evaluation skill in Agent Skills format
+skills/              the evaluation skill in Agent Skills format, with per-host reference files
 tools/docs/          maintainer-only documentation tooling with tests (Python; decision 0022; not shipped)
 templates/           evaluation contract template
 examples/            worked example input and report

@@ -58,6 +58,12 @@ class CollectLinksTest(unittest.TestCase):
         links = gen_sources.collect_links(str(self.root))
         self.assertEqual(set(links), {"https://example.org/keep", "https://example.org/tpl"})
 
+    def test_superpowers_scratch_is_not_collected(self) -> None:
+        write(self.root, ".superpowers/sdd/task-1-brief.md", "[Scratch](https://example.org/scratch)")
+        write(self.root, "a.md", "[Keep](https://example.org/keep)")
+        links = gen_sources.collect_links(str(self.root))
+        self.assertEqual(set(links), {"https://example.org/keep"})
+
     def test_a_file_merely_named_sources_md_elsewhere_is_not_ignored(self) -> None:
         write(self.root, "notes/sources.md", "[Elsewhere](https://example.org/elsewhere)")
         links = gen_sources.collect_links(str(self.root))

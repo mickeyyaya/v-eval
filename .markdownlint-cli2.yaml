@@ -8,3 +8,5 @@ config:
     siblings_only: true
 ignores:
   - node_modules
+  - "**/testdata/**"   # renderer and exporter goldens are generated output, not prose
+  - .superpowers       # local, git-ignored scratch; never part of a checkout

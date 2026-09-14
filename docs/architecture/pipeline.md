@@ -142,10 +142,12 @@ type Classifier interface {
 }
 
 type Renderer interface {
-    Format() string // json, markdown, html, sarif
+    Format() string // md, html
     Render(report Report) ([]byte, error)
 }
 ```
+
+Amended during execution: the implemented `render.Renderer` covers the two prose formats only, `md` and `html`, and `render.Formats()` lists them. JSON and SARIF are separate entry points rather than renderers, because neither produces prose from a template: canonical JSON is `report.Encode`, and SARIF is `export.ToSARIF` followed by `export.Marshal`.
 
 ## Renderers
 

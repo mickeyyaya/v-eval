@@ -425,6 +425,8 @@ func Derive(contract Contract, results []CriterionResult, advisory bool) Status
 func Aggregate(rep Report) Report                    // copy with Counts, Status, Provenance.EvidenceDigest, Identity.ReportID filled
 ```
 
+Amended during execution: the counting function is `TallyCounts`, not `Tally`, because `Tally` is already the name of the per-category count struct that the returned `Counts` holds two of. `Encode` also turns HTML escaping off (`SetEscapeHTML(false)`), so a `<`, `>`, or `&` inside an observation survives the round trip instead of becoming `\u003c`; the shared encoder is exported as `CanonicalJSON`. `EvidenceDigest` hashes each evidence array tagged with its section name rather than a bare list of lists, so moving an evidence record between sections changes the digest.
+
 Rule ids and rules (each is one small function returning `[]Violation`):
 
 - `json`: raw is not valid JSON, or has unknown fields (path `$`).
@@ -467,6 +469,8 @@ veval aggregate <report.json|-> [-o out]            ValidateForAggregate (exit 1
 veval render <report.json|-> --format md|html [-o out]   Validate (exit 1); render; bytes to -o or stdout
 veval export sarif <report.json|-> [-o out]         Validate (exit 1); SARIF JSON to -o or stdout
 ```
+
+Amended during execution: `version` prints one line, `veval <Version> (<BuildDigest>) schema <schema.Version>` (`veval 0.0.0-dev (unknown) schema 0.1.0` from an unstamped build). `-` is the stream sentinel in both directions, so `-o -` writes the document to standard output instead of creating a file named `-`, and `--` ends flag parsing, so `veval validate -- -weird.json` reads that file.
 
 Exit `2` with `error: <message>` on stderr for unknown subcommand or flag, missing argument, unreadable input, unwritable output, unknown format, internal failure. `-` reads stdin. Output is LF, no color, no prompts. `run(args []string, stdin io.Reader, stdout, stderr io.Writer) int` is the testable seam; `main` only calls it. Subcommands are a table `[]subcommand{Name, Summary, Run}`; flags use `flag.NewFlagSet(name, flag.ContinueOnError)` with output set to `stderr`; flags may follow positionals (reorder before parsing).
 
@@ -1261,7 +1265,7 @@ func TestSARIFErrorCriterionMarksInvocationFailed(t *testing.T) {
 ```
 
 - [ ] **Step 2: Run red.**
-- [ ] **Step 3: Implement** the mapping table from `report-schema.md`: rules from contract criteria; results with `kind` (`pass`, `fail`, `notApplicable`, `review` for UNKNOWN, and for ERROR `kind: review` plus `properties.veval_result: ERROR` and the invocation marked failed with one notification per ERROR criterion); `level` `error` for required FAIL, `warning` otherwise; file locators become `physicalLocation` with `artifactLocation.uri` and `region.startLine/endLine`; other locators go to `properties.evidence`; commands become `invocations` (`executionSuccessful = exit_status == 0 && no ERROR criteria`); `versionControlProvenance` from `identity.artifact.revision` when it starts with a git-like id, else `artifacts[]` with `hashes.sha-256` when the revision is `content:sha256:…`; `run.properties.veval` carries overall status, rule, counts. Golden file via the same `-update` idiom.
+- [ ] **Step 3: Implement** the mapping table from `report-schema.md`: rules from contract criteria; results with `kind` (`pass`, `fail`, `notApplicable`, `review` for UNKNOWN, and for ERROR `kind: review` plus `properties.veval_result: ERROR` and the invocation marked failed with one notification per ERROR criterion); `level` `error` for required FAIL, `warning` otherwise; file locators become `physicalLocation` with `artifactLocation.uri` and `region.startLine/endLine`; other locators go to `properties.evidence`; commands become `invocations` (`executionSuccessful = exit_status == 0 && no ERROR criteria`); `versionControlProvenance` from `identity.artifact.revision` when it starts with a git-like id, else `artifacts[]` with `hashes.sha-256` when the revision is `content:sha256:…` (amended during execution: `versionControlProvenance` is not emitted at all. SARIF requires `repositoryUri` on every entry and the report carries no repository URI, so a git-like revision goes to `run.properties.veval.vcs_revision_id` instead; the `artifacts[].hashes` half is unchanged); `run.properties.veval` carries overall status, rule, counts. Golden file via the same `-update` idiom.
 - [ ] **Step 4: Run green.**
 - [ ] **Step 5: Commit:** `feat(export): SARIF 2.1.0 exporter`
 
@@ -1371,7 +1375,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 }
 ```
 
-`io.go`: `readInput(path string, stdin io.Reader) ([]byte, error)` (`-` → stdin), `writeOutput(path string, stdout io.Writer, data []byte) error`, `reorderArgs(args []string) []string` moving `-o x` and `--format x` before positionals. Each `cmd_*.go` parses its flag set, reads input, calls the core, prints violations one per line as `<path>: <rule>: <message>` and returns 1, or writes output and returns 0; any operational error prints `error: <msg>` to stderr and returns 2. `main.go` is `os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr))`.
+`io.go`: `readInput(path string, stdin io.Reader) ([]byte, error)` (`-` → stdin), `writeOutput(path string, stdout io.Writer, data []byte) error`, `splitArgs(flags *flag.FlagSet, args []string) (flagArgs, operands []string)` (amended during execution: it was planned as `reorderArgs` returning one reordered slice; it returns the flag tokens and the operands separately instead, because Go's flag package stops at the first operand, so only a separate flag slice lets the set report `flag needs an argument: -o` for a trailing `-o`. Which flags take a following value comes from the command's own `FlagSet`). Each `cmd_*.go` parses its flag set, reads input, calls the core, prints violations one per line as `<path>: <rule>: <message>` and returns 1, or writes output and returns 0; any operational error prints `error: <msg>` to stderr and returns 2. `main.go` is `os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr))`.
 
 - [ ] **Step 4: Run green.** Also `go vet ./...`.
 - [ ] **Step 5: Commit:** `feat(veval): validate, aggregate, render, and export commands`

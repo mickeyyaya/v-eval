@@ -14,14 +14,23 @@ Exit condition met: every decision has a record, every design links to its decis
 
 ## Stage 1. Walking skeleton
 
-- `schema/`: report and contract JSON Schema v0.1 from [the report schema design](docs/architecture/report-schema.md).
-- `core/` and `cmd/veval/`: Go binary with `validate`, `aggregate`, `render` (Markdown, HTML), and `export sarif`; the evidence-shape rule for PASS; the five-state rollup; counts and coverage.
-- `skills/evaluate-output/`: skill draft-2 writes the JSON report and calls the core when present; per-harness reference files for Claude Code, Codex, Gemini CLI, Antigravity, Hermes, and ollama-backed agents.
+Done:
+
+- `schema/`: report JSON Schema v0.1.0 from [the report schema design](docs/architecture/report-schema.md), embedded in the core. The contract schema is still folded into the report schema rather than a separate file.
+- `core/` and `cmd/veval/`: Go binary with `version`, `validate`, `aggregate`, `render` (Markdown, HTML), and `export sarif`; the evidence-shape rule for PASS; the five-state rollup with its rule recorded; counts and coverage.
+- Renderers: Markdown and a self-contained HTML file that reads offline in light and dark themes.
+- SARIF 2.1.0 export, validated against the OASIS errata01 schema.
+- `skills/evaluate-output/`: skill draft-2 writes the JSON report and calls the core when present; per-harness reference files for Claude Code, Codex, Gemini CLI, Antigravity, Hermes, and ollama-backed agents, under `skills/evaluate-output/references/hosts/`.
+- Continuous integration on macOS, Linux, and Windows; GoReleaser configuration for the six operating-system and architecture targets.
+
+Remaining:
+
 - `agents/` and `profiles/`: evaluator definition with a read-only, no-network isolation profile.
 - `.claude-plugin/` and `.codex-plugin/`: manifests, a slash command, and a SessionStart hook that downloads the checksummed binary for the host OS and architecture into the plugin data directory.
-- Continuous integration on macOS, Linux, and Windows; GoReleaser configuration.
 
 Exit condition: the worked example is evaluated end to end on all three operating systems from at least two CLIs; the JSON validates; the HTML renders offline; a PASS without a qualifying citation is rejected by the core.
+
+Exit condition status, stated honestly: the JSON validates, the HTML renders offline, and a PASS without a qualifying citation is rejected by the core, all demonstrated. The worked example has been evaluated end to end on macOS in the maintainer's own session, and the test suite covers the same path on all three operating systems in CI once `main` is green; that is one CLI, not two, so the exit condition is not met.
 
 ## Stage 2. Pilot set, anchors, and skill tests
 

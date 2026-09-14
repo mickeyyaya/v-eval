@@ -1,6 +1,6 @@
 # Packaging and portability
 
-Status: design, 2026-09-14. Not implemented. Decisions: [decision 0004 start at rungs 2 to 4](../decisions/0004-start-at-rungs-2-to-4.md), [decision 0005 Go core binary](../decisions/0005-go-core-binary.md), [decision 0020 portability constraints](../decisions/0020-portability-constraints.md), [decision 0018 skill regression testing](../decisions/0018-skill-regression-testing.md). Research: [skill packaging memo](../research/2026-09-14-skill-packaging.md), [language and portability memo](../research/2026-09-14-language-and-portability.md). All sources accessed 2026-09-14. Items marked **proposal** were not decided by the maintainer. Repository maintenance tooling: [decision 0022](../decisions/0022-repository-maintenance-tooling.md).
+Status: design of 2026-09-14, partly implemented. The schema, the core, the command line, the skill with its per-host reference files, the three-OS CI matrix, and the GoReleaser configuration exist; the agent and isolation profile, the plugin manifests and hooks, and the MCP server do not. Decisions: [decision 0004 start at rungs 2 to 4](../decisions/0004-start-at-rungs-2-to-4.md), [decision 0005 Go core binary](../decisions/0005-go-core-binary.md), [decision 0020 portability constraints](../decisions/0020-portability-constraints.md), [decision 0018 skill regression testing](../decisions/0018-skill-regression-testing.md). Research: [skill packaging memo](../research/2026-09-14-skill-packaging.md), [language and portability memo](../research/2026-09-14-language-and-portability.md). All sources accessed 2026-09-14. Items marked **proposal** were not decided by the maintainer. Repository maintenance tooling: [decision 0022](../decisions/0022-repository-maintenance-tooling.md).
 
 ## Constraints
 
@@ -14,15 +14,20 @@ The principle is separation of three layers so that later forms are wrappers, no
 
 ```text
 v-eval/
-  schema/                    contract and report JSON Schema, versioned
-  core/  cmd/veval/          Go library and CLI: validate, classify, adapters, detectors, aggregate, render, export
-  skills/evaluate-output/    SKILL.md, references/ (per-harness mappings), scripts/ (thin launchers)
-  agents/  profiles/         evaluator persona and isolation profile (rung 3)
-  .claude-plugin/ .codex-plugin/ commands/ hooks/    plugin manifests, slash command, hooks (rung 4)
-  server/                    MCP server exposure (rung 5, later)
-  evals/  anchors/           regression cases; locked labeled set kept out of the public tree
-  tools/                     maintainer-only tooling, never shipped (decision 0022; the one entry that exists today)
-  docs/
+  schema/                    exists: report JSON Schema v0.1.0, versioned, embedded in the core
+  core/  cmd/veval/          exists: Go library and CLI with validate, aggregate, render, export sarif;
+                             classify, adapters, and detectors are still to come
+  internal/version/          exists: version and build digest stamped at link time
+  skills/evaluate-output/    exists: SKILL.md and references/hosts/ (six per-harness mappings);
+                             scripts/ (thin launchers) not needed so far
+  .github/workflows/         exists: go.yml (three-OS matrix) and docs.yml
+  .goreleaser.yaml           exists: six operating-system and architecture targets
+  agents/  profiles/         later: evaluator persona and isolation profile (rung 3)
+  .claude-plugin/ .codex-plugin/ commands/ hooks/    later: plugin manifests, slash command, hooks (rung 4)
+  server/                    later: MCP server exposure (rung 5)
+  evals/  anchors/           later: regression cases; locked labeled set kept out of the public tree
+  tools/                     exists: maintainer-only tooling, never shipped (decision 0022)
+  docs/                      exists
 ```
 
 ## Growth rungs
@@ -61,16 +66,9 @@ The plugin stays source-only; binaries are never committed, and claude.ai reject
 
 The skill speaks in actions; a reference file per harness maps actions to that harness's tools, following the pattern superpowers uses for Codex, Gemini, Antigravity, Hermes, and Pi. SKILL.md itself contains no Claude-only tool names on the required path and stays within the Agent Skills spec (<https://agentskills.io/specification>: `name`, `description`, optional `license`, `compatibility`, `metadata`, body under roughly 500 lines, `scripts/`, `references/`).
 
-| Action the skill requests | Claude Code | Codex | Gemini CLI | Antigravity (`agy`) | Hermes | ollama-backed agent |
-| --- | --- | --- | --- | --- | --- | --- |
-| Read a file | Read | fill in | fill in | fill in | `read_file` | via harness or MCP |
-| Search file contents | Grep | fill in | fill in | fill in | `search_files` | via harness or MCP |
-| Run the core binary | Bash exec form | `commandWindows` on Windows | command hook | terminal tool | `terminal` | MCP tool `veval.evaluate` |
-| Write the evidence file | Write | fill in | fill in | `write_to_file` | `write_file` | MCP tool |
-| Dispatch a fresh context for cold re-judge | Agent | fill in | fill in | `invoke_subagent` | `delegate_task` | sequential self-pass |
-| Track multi-step progress | TodoWrite | fill in | fill in | task artifact | `todo` | in the evidence file |
+The mapping tables now live with the skill, one file per harness, under [`skills/evaluate-output/references/hosts/`](../../skills/evaluate-output/references/hosts/): `claude-code.md`, `codex.md`, `gemini-cli.md`, `antigravity.md`, `hermes.md`, and `ollama.md`. Each file names its source and its read date, and says which cells the source did not name rather than guessing. The table that stood here, with cells marked "fill in", is superseded by those files.
 
-Cells marked "fill in" are to be completed against each harness's current documentation when the reference files are written; the Hermes and Antigravity entries come from superpowers' verified mappings. Where a harness lacks a capability, the skill applies the rule's intent with what exists, as the evo:fable overlay already does: a fresh subagent becomes a structured self-pass, background monitoring becomes explicit re-checks.
+Where a harness lacks a capability, the skill applies the rule's intent with what exists, as the evo:fable overlay already does: a fresh subagent becomes a structured self-pass, background monitoring becomes explicit re-checks. Where a reference file and the harness's actual tool list disagree, the tool list wins and the tool actually used is recorded in the report's provenance.
 
 ## Multi-CLI reference: evolve-loop's bridge
 
