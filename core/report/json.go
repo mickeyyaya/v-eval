@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 )
 
@@ -15,6 +16,13 @@ import (
 // second value, or text that is not JSON, means the bytes do not say what they
 // appear to say, and a decoder that stopped at the first value would let the
 // rest through unread.
+//
+// The end is established by reading the next token and requiring io.EOF, not
+// by asking whether more of the current value follows: a decoder asked the
+// second question reads a closing brace as "no more", and everything behind
+// that brace would go unread -- which is the whole of what this rejects.
+// Whitespace is not data: the token reader skips it, so the trailing newline
+// canonical form ends with is accepted, as is any more of it.
 func Decode(raw []byte) (Report, error) {
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.DisallowUnknownFields()
@@ -22,7 +30,7 @@ func Decode(raw []byte) (Report, error) {
 	if err := dec.Decode(&rep); err != nil {
 		return Report{}, fmt.Errorf("report: decode: %w", err)
 	}
-	if dec.More() {
+	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
 		return Report{}, errors.New("report: decode: trailing data after the report")
 	}
 	return rep, nil

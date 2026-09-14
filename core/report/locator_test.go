@@ -40,3 +40,48 @@ func TestSupportsPassNeedsObservedQualifyingLocator(t *testing.T) {
 		t.Fatal("note locator must never support PASS")
 	}
 }
+
+// TestSupportsErrorSurvivesACommandLocatorWithNoExitStatus covers the one way
+// the exit status could be read before it exists. A command group is complete
+// only with an exit status, so Shape already rules this out and the answer is
+// false either way; the guard is there so that a later change to what makes a
+// command group complete cannot turn this into a panic in a validation rule.
+func TestSupportsErrorSurvivesACommandLocatorWithNoExitStatus(t *testing.T) {
+	t.Parallel()
+	evidence := Evidence{
+		Kind:    KindInspection,
+		Locator: Locator{Command: "go test ./...", Cwd: "/w", LogRef: "logs/1.txt"},
+	}
+	if evidence.SupportsError() {
+		t.Fatal("a command locator with no exit status shows no failed attempt")
+	}
+}
+
+// TestSupportsErrorReadsExecutionAndNonZeroExits pins what an ERROR may rest
+// on: evidence that ran, or evidence pointing at a command that came back
+// non-zero. A command that exited zero shows an attempt that succeeded, which
+// is not what an ERROR is about.
+func TestSupportsErrorReadsExecutionAndNonZeroExits(t *testing.T) {
+	t.Parallel()
+	zero, failed := 0, 127
+	command := func(exit *int) Locator {
+		return Locator{Command: "docker build .", Cwd: "/w", ExitStatus: exit, LogRef: "logs/1.txt"}
+	}
+	cases := map[string]struct {
+		evidence Evidence
+		want     bool
+	}{
+		"execution evidence":      {Evidence{Kind: KindExecution, Locator: Locator{Note: "the runner died"}}, true},
+		"a command that failed":   {Evidence{Kind: KindInspection, Locator: command(&failed)}, true},
+		"a command that exited 0": {Evidence{Kind: KindInspection, Locator: command(&zero)}, false},
+		"a note":                  {Evidence{Kind: KindSupplied, Locator: Locator{Note: "the author says so"}}, false},
+	}
+	for name, testCase := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			if got := testCase.evidence.SupportsError(); got != testCase.want {
+				t.Errorf("SupportsError() = %v, want %v", got, testCase.want)
+			}
+		})
+	}
+}

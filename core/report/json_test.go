@@ -116,9 +116,15 @@ func TestDecodeRejectsTrailingData(t *testing.T) {
 		t.Fatal(err)
 	}
 	cases := map[string]string{
-		"a second JSON value":    "{\"junk\":1}\n",
-		"prose after the report": "this is not JSON at all\n",
-		"a bare token":           "true\n",
+		"a second JSON value":     "{\"junk\":1}\n",
+		"prose after the report":  "this is not JSON at all\n",
+		"a bare token":            "true\n",
+		"a stray closing brace":   "}\n",
+		"a stray closing bracket": "]\n",
+		// A closing brace is what a decoder asked only whether more of the
+		// current value follows reads as "no more": everything after it would
+		// then go unread, which is the whole of what this rule is against.
+		"a second value behind a closing brace": "}{\"junk\":1}\n",
 	}
 	for name, trailer := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -138,6 +144,39 @@ func TestDecodeRejectsTrailingData(t *testing.T) {
 			}
 			if len(violations) != 1 || violations[0].Rule != RuleJSON {
 				t.Fatalf("violations = %v, want the single json violation", violations)
+			}
+		})
+	}
+}
+
+// TestDecodeAcceptsTrailingWhitespace keeps the check to what it is about.
+// Canonical form ends with a newline, and an editor or a shell pipeline may
+// leave more of it: whitespace after the report says nothing and hides
+// nothing, so rejecting it would reject reports that are exactly right.
+func TestDecodeAcceptsTrailingWhitespace(t *testing.T) {
+	t.Parallel()
+	raw, err := os.ReadFile("testdata/worked-example.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := map[string]string{
+		"the canonical trailing newline": "",
+		"a blank line after it":          "\n",
+		"spaces, tabs, and a CRLF":       "  \t\n \r\n",
+	}
+	for name, trailer := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			with := append(append([]byte(nil), raw...), trailer...)
+			if _, err := Decode(with); err != nil {
+				t.Fatalf("whitespace after a report is not trailing data: %v", err)
+			}
+			_, violations, err := Validate(with)
+			if err != nil {
+				t.Fatalf("validate: %v", err)
+			}
+			if len(violations) != 0 {
+				t.Fatalf("violations = %v, want none", violations)
 			}
 		})
 	}

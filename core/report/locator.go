@@ -101,9 +101,13 @@ func (e Evidence) SupportsPass() bool { return e.Origin == OriginObserved && e.L
 // did not come back clean: execution evidence, or a locator naming a command
 // that exited non-zero. It is what an ERROR rests on, as SupportsPass is what
 // a PASS rests on.
+//
+// A command shape already carries an exit status, so the nil check reads as
+// redundant; it is there so that a later change to what makes a command group
+// complete cannot turn a validation rule into a panic.
 func (e Evidence) SupportsError() bool {
 	if e.Kind == KindExecution {
 		return true
 	}
-	return e.Locator.Shape() == ShapeCommand && *e.Locator.ExitStatus != 0
+	return e.Locator.Shape() == ShapeCommand && e.Locator.ExitStatus != nil && *e.Locator.ExitStatus != 0
 }

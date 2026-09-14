@@ -19,7 +19,7 @@ Done:
 - `schema/`: report JSON Schema v0.1.0 from [the report schema design](docs/architecture/report-schema.md), embedded in the core. The contract is the report schema's `contract` section rather than a file of its own ([decision 0024](docs/decisions/0024-contract-inside-report-schema.md)).
 - `core/` and `cmd/veval/`: Go binary with `version`, `validate`, `aggregate`, `render` (Markdown, HTML), and `export sarif`; the evidence-shape rule for PASS; the five-state rollup with its rule recorded; counts and coverage.
 - Renderers: Markdown and a self-contained HTML file that reads offline in light and dark themes.
-- SARIF 2.1.0 export, validated against the OASIS errata01 schema.
+- SARIF 2.1.0 export. The two golden logs were validated by the maintainer on 2026-09-15 with an external JSON Schema validator against the OASIS errata01 schema; no SARIF validator runs in CI yet.
 - `skills/evaluate-output/`: skill draft-3 writes the JSON report and calls the core when present; per-harness reference files for Claude Code, Codex, Gemini CLI, Antigravity, Hermes, and ollama-backed agents, under `skills/evaluate-output/references/hosts/`.
 - Continuous integration on macOS, Linux, and Windows; GoReleaser configuration for the six operating-system and architecture targets.
 
