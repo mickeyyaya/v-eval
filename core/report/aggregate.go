@@ -5,13 +5,13 @@ import "sort"
 // Rule strings identify which status-derivation rule produced a Status, so
 // the outcome is auditable rather than a bare enum value.
 const (
-	RuleAdvisory       = "advisory: acceptance not requested; per-criterion results stand"
-	RuleFailed         = "required applicable criterion failed"
-	RuleProvisional    = "provisional required criterion prevents acceptance"
-	RuleConflict       = "unresolved contract conflict"
-	RuleUnknownOrError = "required applicable criterion unknown or error"
-	RuleNoGating       = "no required applicable criteria"
-	RuleAllPass        = "all required applicable criteria pass"
+	StatusRuleAdvisory       = "advisory: acceptance not requested; per-criterion results stand"
+	StatusRuleFailed         = "required applicable criterion failed"
+	StatusRuleProvisional    = "provisional required criterion prevents acceptance"
+	StatusRuleConflict       = "unresolved contract conflict"
+	StatusRuleUnknownOrError = "required applicable criterion unknown or error"
+	StatusRuleNoGating       = "no required applicable criteria"
+	StatusRuleAllPass        = "all required applicable criteria pass"
 )
 
 // Derive computes the report-level Status from a contract and its criterion
@@ -21,24 +21,24 @@ func Derive(contract Contract, results []CriterionResult, advisory bool) Status 
 	g := gatingSet(contract, results)
 
 	if ids, hit := ruleAdvisory(g, advisory); hit {
-		return newStatus(OverallAdvisory, RuleAdvisory, ids, advisory)
+		return newStatus(OverallAdvisory, StatusRuleAdvisory, ids, advisory)
 	}
 	if ids, hit := ruleFailed(g); hit {
-		return newStatus(OverallFail, RuleFailed, ids, advisory)
+		return newStatus(OverallFail, StatusRuleFailed, ids, advisory)
 	}
 	if ids, hit := ruleProvisional(contract, results); hit {
-		return newStatus(OverallIncomplete, RuleProvisional, ids, advisory)
+		return newStatus(OverallIncomplete, StatusRuleProvisional, ids, advisory)
 	}
 	if ids, hit := ruleConflict(contract); hit {
-		return newStatus(OverallIncomplete, RuleConflict, ids, advisory)
+		return newStatus(OverallIncomplete, StatusRuleConflict, ids, advisory)
 	}
 	if ids, hit := ruleUnknownOrError(g); hit {
-		return newStatus(OverallIncomplete, RuleUnknownOrError, ids, advisory)
+		return newStatus(OverallIncomplete, StatusRuleUnknownOrError, ids, advisory)
 	}
 	if ids, hit := ruleNoGating(g); hit {
-		return newStatus(OverallIncomplete, RuleNoGating, ids, advisory)
+		return newStatus(OverallIncomplete, StatusRuleNoGating, ids, advisory)
 	}
-	return newStatus(OverallPass, RuleAllPass, nil, advisory)
+	return newStatus(OverallPass, StatusRuleAllPass, nil, advisory)
 }
 
 // newStatus builds a Status, ensuring BlockedBy is always non-nil so

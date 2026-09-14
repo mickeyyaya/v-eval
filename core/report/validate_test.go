@@ -178,7 +178,7 @@ func TestAggregateRecomputesCountsAndStatus(t *testing.T) {
 	if want := TallyCounts(rep.Contract, rep.Criteria); got.Counts != want {
 		t.Fatalf("counts = %+v, want %+v", got.Counts, want)
 	}
-	if got.Status.Overall != OverallFail || got.Status.RuleApplied != RuleFailed {
+	if got.Status.Overall != OverallFail || got.Status.RuleApplied != StatusRuleFailed {
 		t.Fatalf("status = %+v", got.Status)
 	}
 }
