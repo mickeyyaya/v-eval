@@ -1,0 +1,10 @@
+config:
+  default: true
+  MD013: false   # line length: long cited sentences and tables are expected
+  MD033: false   # inline HTML: mermaid and details blocks
+  MD041: false   # first line heading: front matter in skills
+  MD060: false   # table pipe spacing: both compact and padded tables are accepted
+  MD024:
+    siblings_only: true
+ignores:
+  - node_modules

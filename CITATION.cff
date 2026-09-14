@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you refer to this research or design, please cite the repository."
+title: "v-eval: evaluate AI-generated work against intent, design, sources, and acceptance criteria"
+type: software
+authors:
+  - name: "v-eval contributors"
+repository-code: "https://github.com/mickeyyaya/v-eval"
+license: MIT
+date-released: "2026-09-14"
