@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -91,6 +92,15 @@ func aggregated(t *testing.T) string {
 	return path
 }
 
+// wantUsageLines is the usage the command line promises: one line per
+// command, naming that command's own flags and operands.
+var wantUsageLines = []string{
+	"veval validate <report.json|->",
+	"veval aggregate [-o out] <report.json|->",
+	"veval render [--format md|html] [-o out] <report.json|->",
+	"veval export sarif [-o out] <report.json|->",
+}
+
 func TestUsageGoesToStderrAndNamesEveryCommand(t *testing.T) {
 	for _, args := range [][]string{nil, {"-h"}, {"--help"}} {
 		code, stdout, stderr := call(args, "")
@@ -104,6 +114,17 @@ func TestUsageGoesToStderrAndNamesEveryCommand(t *testing.T) {
 			if !strings.Contains(stderr, cmd.Name) {
 				t.Errorf("%v: usage does not name %q", args, cmd.Name)
 			}
+			if !strings.Contains(stderr, cmd.Usage) {
+				t.Errorf("%v: usage does not carry %q", args, cmd.Usage)
+			}
+		}
+		for _, line := range wantUsageLines {
+			if !strings.Contains(stderr, line) {
+				t.Errorf("%v: usage does not carry %q", args, line)
+			}
+		}
+		if strings.Contains(stderr, "write to this file instead") {
+			t.Errorf("%v: usage still carries the global flags block", args)
 		}
 	}
 	code, _, stderr := call([]string{"frobnicate"}, "")
@@ -142,25 +163,54 @@ func TestFlagsMayFollowPositionals(t *testing.T) {
 	}
 }
 
-func TestReorderArgsMovesFlagsBeforePositionals(t *testing.T) {
+// testFlags is a flag set shaped like the commands' own -- a string flag
+// whose value is a separate token, a joined form, and a boolean flag that
+// takes none -- so reorderArgs is exercised over every kind of flag a
+// command defines.
+func testFlags() *flag.FlagSet {
+	flags := flag.NewFlagSet("test", flag.ContinueOnError)
+	flags.String("format", "md", "")
+	flags.String("o", "", "")
+	flags.Bool("strict", false, "")
+	return flags
+}
+
+func TestReorderArgsSplitsFlagsFromOperands(t *testing.T) {
 	cases := []struct {
-		name string
-		in   []string
-		want []string
+		name         string
+		in           []string
+		wantFlags    []string
+		wantOperands []string
 	}{
-		{"flags already first", []string{"--format", "md", "r.json"}, []string{"--format", "md", "r.json"}},
-		{"flag after positional", []string{"r.json", "--format", "md"}, []string{"--format", "md", "r.json"}},
-		{"joined value", []string{"r.json", "--format=md"}, []string{"--format=md", "r.json"}},
-		{"two flags around two positionals", []string{"sarif", "-o", "x", "r.json"}, []string{"-o", "x", "sarif", "r.json"}},
-		{"dash stays a positional", []string{"-", "-o", "x"}, []string{"-o", "x", "-"}},
-		{"trailing flag without a value", []string{"r.json", "-o"}, []string{"-o", "r.json"}},
+		{"flags already first", []string{"--format", "md", "r.json"}, []string{"--format", "md"}, []string{"r.json"}},
+		{"flag after operand", []string{"r.json", "--format", "md"}, []string{"--format", "md"}, []string{"r.json"}},
+		{"joined value", []string{"r.json", "--format=md"}, []string{"--format=md"}, []string{"r.json"}},
+		{"two flags around two operands", []string{"sarif", "-o", "x", "r.json"}, []string{"-o", "x"}, []string{"sarif", "r.json"}},
+		{"dash stays an operand", []string{"-", "-o", "x"}, []string{"-o", "x"}, []string{"-"}},
+		{"trailing flag keeps its missing value", []string{"r.json", "-o"}, []string{"-o"}, []string{"r.json"}},
+		{"a boolean flag swallows nothing", []string{"-strict", "r.json"}, []string{"-strict"}, []string{"r.json"}},
+		{"an undefined flag swallows nothing", []string{"r.json", "--nope", "x"}, []string{"--nope"}, []string{"r.json", "x"}},
+		{"terminator hands the rest over", []string{"--", "-weird.json"}, []string{}, []string{"-weird.json"}},
+		{"terminator ends flag parsing", []string{"-o", "x", "--", "-weird.json", "--format"}, []string{"-o", "x"}, []string{"-weird.json", "--format"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := reorderArgs(tc.in); !slices.Equal(got, tc.want) {
-				t.Errorf("reorderArgs(%q) = %q, want %q", tc.in, got, tc.want)
+			gotFlags, gotOperands := reorderArgs(testFlags(), tc.in)
+			if !slices.Equal(gotFlags, tc.wantFlags) || !slices.Equal(gotOperands, tc.wantOperands) {
+				t.Errorf("reorderArgs(%q) = %q, %q, want %q, %q",
+					tc.in, gotFlags, gotOperands, tc.wantFlags, tc.wantOperands)
 			}
 		})
+	}
+}
+
+func TestATrailingFlagWithoutAValueIsReported(t *testing.T) {
+	code, stdout, stderr := call([]string{"render", aggregated(t), "-o"}, "")
+	if code != 2 || !strings.Contains(stderr, "flag needs an argument: -o") {
+		t.Errorf("code=%d err=%q, want 2 and `flag needs an argument: -o`", code, stderr)
+	}
+	if stdout != "" {
+		t.Errorf("wrote %q to stdout, want stderr only", stdout)
 	}
 }
 
@@ -313,5 +363,59 @@ func TestNoDocumentIsWrittenForAReportThatBreaksARule(t *testing.T) {
 	}
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Error("render wrote a document from a report that breaks a rule")
+	}
+}
+
+// inTempDir runs the rest of the test in a new empty directory, so that a
+// relative path the command writes or reads can be checked without touching
+// the package directory.
+func inTempDir(t *testing.T) string {
+	t.Helper()
+	here, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(here); err != nil {
+			t.Fatal(err)
+		}
+	})
+	return dir
+}
+
+func TestDashOutputWritesToStandardOutput(t *testing.T) {
+	source := aggregated(t)
+	inTempDir(t)
+	code, stdout, stderr := call([]string{"render", "--format", "md", source, "-o", "-"}, "")
+	if code != 0 || !strings.Contains(stdout, "## Criteria") {
+		t.Fatalf("code=%d out=%q err=%q", code, stdout, stderr)
+	}
+	if _, err := os.Stat("-"); !os.IsNotExist(err) {
+		t.Error(`-o - created a file named "-" instead of writing to standard output`)
+	}
+}
+
+func TestTerminatorHandsEveryLaterTokenOver(t *testing.T) {
+	raw := mustRead(t, aggregated(t))
+	dir := inTempDir(t)
+	awkward := filepath.Join(dir, "-weird.json")
+	if err := os.WriteFile(awkward, []byte(raw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	code, stdout, stderr := call([]string{"validate", "--", "-weird.json"}, "")
+	if code != 0 || !strings.HasPrefix(stdout, "valid:") {
+		t.Fatalf("code=%d out=%q err=%q", code, stdout, stderr)
+	}
+}
+
+func TestNilStandardInputIsReportedNotPanicked(t *testing.T) {
+	var out, errb bytes.Buffer
+	code := run([]string{"validate", streamPath}, nil, &out, &errb)
+	if code != 2 || !strings.HasPrefix(errb.String(), "error:") {
+		t.Errorf("code=%d err=%q, want 2 and an error: line", code, errb.String())
 	}
 }

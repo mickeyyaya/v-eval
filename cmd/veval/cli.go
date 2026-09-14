@@ -17,25 +17,41 @@ const (
 	exitError      = 2 // the command could not run: wrong usage, or an operational failure
 )
 
-// stdinPath is the input path that means standard input.
-const stdinPath = "-"
+// streamPath is the path that means a standard stream: standard input for a
+// report read, standard output for a document written. One sentinel, both
+// directions, so a caller who knows "-" as an input knows it as an output.
+const streamPath = "-"
 
 // subcommand is one verb the command line offers. The handler takes its
 // streams rather than reaching for the process's own, so a test drives it
 // exactly as a shell does.
 type subcommand struct {
-	Name    string
-	Summary string
-	Run     func(args []string, stdin io.Reader, stdout, stderr io.Writer) int
+	Name  string
+	Usage string // the whole invocation, flags and operands, as it may be typed
+	Run   func(args []string, stdin io.Reader, stdout, stderr io.Writer) int
 }
 
 // commands is the whole command line in one table: the dispatch, the usage
 // text, and the order both are read in. A new verb is one entry here.
 var commands = []subcommand{
-	{"validate", "check a report against every rule", runValidate},
-	{"aggregate", "recompute counts, status, and digests", runAggregate},
-	{"render", "write a report as " + strings.Join(render.Formats(), " or "), runRender},
-	{"export", "write a report as " + strings.Join(exportFormats(), " or "), runExport},
+	{"validate", "veval validate <report.json|->", runValidate},
+	{"aggregate", "veval aggregate [-o out] <report.json|->", runAggregate},
+	{"render", "veval render [--format " + formatChoices() + "] [-o out] <report.json|->", runRender},
+	{"export", "veval export " + strings.Join(exportFormats(), "|") + " [-o out] <report.json|->", runExport},
+}
+
+// formatChoices lists the formats render writes, the default first, so that
+// the usage line both names every format this build offers and shows which
+// one a caller gets by saying nothing. The list comes from the registry: a
+// format added to the build appears here without a second edit.
+func formatChoices() string {
+	choices := []string{defaultFormat}
+	for _, format := range render.Formats() {
+		if format != defaultFormat {
+			choices = append(choices, format)
+		}
+	}
+	return strings.Join(choices, "|")
 }
 
 // run dispatches one invocation. No subcommand and an explicit request for
@@ -55,17 +71,17 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	return exitError
 }
 
-// usage describes the command line, reading the command table and the format
-// registry rather than repeating either.
+// usage describes the command line: one line per command, taken from the
+// table, each naming that command's own flags and operands. There is no
+// block of shared flags, because there are none -- what validate accepts and
+// what render accepts are not the same list.
 func usage() string {
 	var b strings.Builder
-	b.WriteString("usage: veval <command> [flags] <report.json|->\n\ncommands:\n")
+	b.WriteString("usage:\n")
 	for _, cmd := range commands {
-		fmt.Fprintf(&b, "  %-9s  %s\n", cmd.Name, cmd.Summary)
+		fmt.Fprintf(&b, "  %s\n", cmd.Usage)
 	}
-	fmt.Fprintf(&b, "\nflags:\n  -o <path>       write to this file instead of standard output\n"+
-		"  -format <name>  what render writes: %s\n", strings.Join(render.Formats(), ", "))
-	fmt.Fprintf(&b, "\nan input of %q reads the report from standard input.\n", stdinPath)
+	fmt.Fprintf(&b, "\nan input or output of %q is the standard stream.\n", streamPath)
 	b.WriteString("exit codes: 0 the report is sound, 1 it breaks a rule, 2 the command could not run.\n")
 	return b.String()
 }

@@ -23,47 +23,58 @@ func newFlags(name, operands string, stderr io.Writer) *flag.FlagSet {
 	return flags
 }
 
-// parseArgs parses args against flags and requires exactly want operands. It
+// parseArgs parses the flags in args and requires exactly want operands. It
 // returns the operands, and the exit code to end on when it could not: the
 // flag set has already written what went wrong.
+//
+// Only the flag tokens reach the flag set. The operands never do, so a path
+// that begins with a dash is a path, and a value-taking flag left without a
+// value is the last thing the set parses -- which is how it comes to say so.
 func parseArgs(flags *flag.FlagSet, args []string, want int) ([]string, int) {
-	if err := flags.Parse(reorderArgs(args)); err != nil {
+	flagArgs, operands := reorderArgs(flags, args)
+	if err := flags.Parse(flagArgs); err != nil {
 		return nil, exitError
 	}
-	if flags.NArg() != want {
-		fmt.Fprintf(flags.Output(), "error: %s takes %d argument(s), got %d\n", flags.Name(), want, flags.NArg())
+	if len(operands) != want {
+		fmt.Fprintf(flags.Output(), "error: %s takes %d argument(s), got %d\n", flags.Name(), want, len(operands))
 		flags.Usage()
 		return nil, exitError
 	}
-	return flags.Args(), exitOK
+	return operands, exitOK
 }
 
-// valueFlags names the flags whose value is a separate argument, so that
-// reorderArgs keeps a flag and its value together.
-var valueFlags = map[string]bool{"o": true, "format": true}
+// terminator ends flag parsing: every token after it is an operand, however
+// it is spelled.
+const terminator = "--"
 
-// reorderArgs moves every flag, with its value, in front of the operands, so
-// that "veval render report.json --format html" and "veval render --format
-// html report.json" are the same command. Go's flag package stops at the
-// first operand; a person typing a path first does not.
+// reorderArgs separates the flag tokens, each with its value, from the
+// operands, so that "veval render report.json --format html" and "veval
+// render --format html report.json" are the same command. Go's flag package
+// stops at the first operand; a person typing a path first does not.
 //
-// Order within each group is kept, and "-" is an operand: it is the input
-// that means standard input, not a flag.
-func reorderArgs(args []string) []string {
-	flags := make([]string, 0, len(args))
-	operands := make([]string, 0, len(args))
+// Which flags take a following value is read from the command's own flag
+// set, so the two can never disagree. Order within each group is kept, "-"
+// is an operand -- the standard stream, not a flag -- and a value-taking
+// flag with nothing after it stays where it is, with nothing after it, so
+// that the flag set is the one to report the missing value.
+func reorderArgs(flags *flag.FlagSet, args []string) (flagArgs, operands []string) {
+	flagArgs = make([]string, 0, len(args))
+	operands = make([]string, 0, len(args))
 	for i := 0; i < len(args); i++ {
+		if args[i] == terminator {
+			return flagArgs, append(operands, args[i+1:]...)
+		}
 		if !isFlag(args[i]) {
 			operands = append(operands, args[i])
 			continue
 		}
-		flags = append(flags, args[i])
-		if takesValue(args[i]) && i+1 < len(args) {
+		flagArgs = append(flagArgs, args[i])
+		if takesValue(flags, args[i]) && i+1 < len(args) {
 			i++
-			flags = append(flags, args[i])
+			flagArgs = append(flagArgs, args[i])
 		}
 	}
-	return append(flags, operands...)
+	return flagArgs, operands
 }
 
 // isFlag reports whether an argument is a flag rather than an operand.
@@ -71,19 +82,27 @@ func isFlag(arg string) bool {
 	return len(arg) > 1 && strings.HasPrefix(arg, "-")
 }
 
-// takesValue reports whether a flag's value is the argument after it. A
-// "-format=html" carries its own value and takes nothing.
-func takesValue(arg string) bool {
+// takesValue reports whether a flag's value is the argument after it: the
+// flag set defines it, it is not a boolean, and it is not the "-format=html"
+// form that carries its own value. A flag the set does not define takes
+// nothing, so an operand after it stays an operand and the flag set reports
+// the undefined flag itself.
+func takesValue(flags *flag.FlagSet, arg string) bool {
 	name := strings.TrimLeft(arg, "-")
 	if strings.Contains(name, "=") {
 		return false
 	}
-	return valueFlags[name]
+	defined := flags.Lookup(name)
+	if defined == nil {
+		return false
+	}
+	asBool, ok := defined.Value.(interface{ IsBoolFlag() bool })
+	return !ok || !asBool.IsBoolFlag()
 }
 
 // readInput reads the report at path, or standard input when path is "-".
 func readInput(path string, stdin io.Reader) ([]byte, error) {
-	if path != stdinPath {
+	if path != streamPath {
 		raw, err := os.ReadFile(filepath.Clean(path))
 		if err != nil {
 			return nil, fmt.Errorf("veval: read input: %w", err)
@@ -100,11 +119,13 @@ func readInput(path string, stdin io.Reader) ([]byte, error) {
 	return raw, nil
 }
 
-// writeOutput writes data to path, or to stdout when path is empty. The bytes
-// go out exactly as they came in: what the core produced, line endings
-// included, is what lands on disk on every operating system.
+// writeOutput writes data to path, or to stdout when no path was named or
+// the path is "-": the sentinel means the standard stream when a document
+// goes out exactly as it does when a report comes in. The bytes go out
+// exactly as they came in: what the core produced, line endings included, is
+// what lands on disk on every operating system.
 func writeOutput(path string, stdout io.Writer, data []byte) error {
-	if path == "" {
+	if path == "" || path == streamPath {
 		if _, err := stdout.Write(data); err != nil {
 			return fmt.Errorf("veval: write output: %w", err)
 		}

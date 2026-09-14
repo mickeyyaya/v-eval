@@ -8,8 +8,10 @@ import (
 )
 
 // runValidate applies every rule to one report and says which ones it breaks.
-// It is the command the other three are gated by: nothing is rendered,
-// exported, or aggregated from a report that does not hold together.
+// It is that check on its own: render and export run the same report.Validate
+// before they write anything, and aggregate runs the structural half of it,
+// report.ValidateForAggregate, because the rest is what it is about to
+// recompute.
 func runValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	flags := newFlags("validate", "<report.json|->", stderr)
 	operands, code := parseArgs(flags, args, 1)
