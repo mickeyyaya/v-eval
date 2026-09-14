@@ -2,15 +2,18 @@ package render_test
 
 import (
 	"bytes"
+	"slices"
 	"testing"
 
+	"github.com/mickeyyaya/v-eval/core/render"
 	"github.com/mickeyyaya/v-eval/core/report"
 )
 
 // formats is every registered output format. A rule that must hold "in both
 // renderers" is written once here and run over all of them, so a format
-// cannot quietly opt out of it.
-var formats = []string{"md", "html"}
+// cannot quietly opt out of it: the list is the registry's own, so a format
+// added to the build is covered without a second edit here.
+var formats = render.Formats()
 
 // assertEveryFormat renders rep in every format and checks that each
 // rendering carries every want and none of the unwanted strings.
@@ -49,6 +52,29 @@ func TestProvisionalCriterionIsMarkedInEveryFormat(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOptionalCriterionIsMarkedInEveryFormat(t *testing.T) {
+	t.Parallel()
+	rep := loadFixture(t, "extended-example")
+	for _, format := range formats {
+		t.Run(format, func(t *testing.T) {
+			out := renderAs(t, format, rep)
+			// E3 is the one criterion the contract does not require.
+			want := "Throughput stays at or above the stated target (optional)"
+			if !bytes.Contains(out, []byte(want)) {
+				t.Errorf("an optional criterion is not marked in its row: want %q", want)
+			}
+			if got := bytes.Count(out, []byte("(optional)")); got != 1 {
+				t.Errorf("%d criteria carry the optional marker, want 1", got)
+			}
+		})
+	}
+}
+
+func TestRequiredCriteriaCarryNoOptionalMarker(t *testing.T) {
+	t.Parallel()
+	assertEveryFormat(t, loadFixture(t, "worked-example"), nil, []string{"(optional)"})
 }
 
 func TestUnmarkedCriteriaCarryNoProvisionalMarker(t *testing.T) {
@@ -153,5 +179,23 @@ func TestAnEmptyCriteriaListSaysNoneRecorded(t *testing.T) {
 				t.Errorf("an empty criteria list must not render a header-only table: %q", testCase.unwanted)
 			}
 		})
+	}
+}
+
+func TestFormatsListsEveryRegisteredRendererInOrder(t *testing.T) {
+	t.Parallel()
+	got := render.Formats()
+	want := []string{"html", "md"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("Formats() = %v, want %v", got, want)
+	}
+	for _, format := range got {
+		renderer, ok := render.ByFormat(format)
+		if !ok {
+			t.Fatalf("Formats() names %q, which ByFormat does not resolve", format)
+		}
+		if renderer.Format() != format {
+			t.Errorf("ByFormat(%q).Format() = %q: a name must round-trip", format, renderer.Format())
+		}
 	}
 }

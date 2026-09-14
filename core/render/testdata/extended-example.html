@@ -120,7 +120,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <p class="text">The request path enforces the limit per API key, matching the published documentation.</p>
 <p class="note">Criteria: E2</p>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:48-52</code> <span class="text">const rateLimitPerMinute = 100 // per API key</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:48-52</code> <span class="text">const rateLimitPerMinute = 100 // per API key</span> <span class="via">via assistant fixture at 2026-09-14T00:04:00Z</span></li>
 </ul>
 </article>
 <article>
@@ -128,7 +128,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <p class="text">The evaluation host has no container toolchain, so the reproducibility and throughput checks could not run.</p>
 <p class="note">Criteria: E3, E4</p>
 <ul class="evidence">
-<li><span class="tag">kind execution</span> <span class="tag">isolation none</span> <code>docker --version (exit 127)</code> <span class="text">zsh: command not found: docker</span> <span class="via">via shell zsh 5.9</span></li>
+<li><span class="tag">kind execution</span> <span class="tag">isolation none</span> <code>docker --version (exit 127)</code> <span class="text">zsh: command not found: docker</span> <span class="via">via shell zsh 5.9 at 2026-09-14T00:06:00Z</span></li>
 </ul>
 </article>
 </section>
@@ -145,7 +145,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>pull request description, paragraph 1</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind execution</span> <span class="tag">isolation worktree</span> <code>go test ./... (exit 0)</code> <span class="text">ok  github.com/example/service  1.204s; 42 tests, 0 failures</span> <span class="via">via go 1.23.1</span></li>
+<li><span class="tag">kind execution</span> <span class="tag">isolation worktree</span> <code>go test ./... (exit 0)</code> <span class="text">ok  github.com/example/service  1.204s; 42 tests, 0 failures</span> <span class="via">via go 1.23.1 at 2026-09-14T00:03:12Z</span></li>
 </ul>
 </td>
 <td>Re-run by the evaluator in a worktree checked out at this revision.</td>
@@ -177,7 +177,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>execution</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind execution</span> <span class="tag">isolation worktree</span> <code>go test ./... (exit 0)</code> <span class="text">ok  github.com/example/service  1.204s; 42 tests, 0 failures</span> <span class="via">via go 1.23.1</span></li>
+<li><span class="tag">kind execution</span> <span class="tag">isolation worktree</span> <code>go test ./... (exit 0)</code> <span class="text">ok  github.com/example/service  1.204s; 42 tests, 0 failures</span> <span class="via">via go 1.23.1 at 2026-09-14T00:03:12Z</span></li>
 </ul>
 <p class="text">The suite ran in a worktree checked out at this revision and exited zero with no failures reported. The conclusion covers the suite as supplied, not untested paths.</p>
 </td>
@@ -190,8 +190,8 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>source_verification</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>Clients may issue at most 100 requests per minute per API key. from https://api.example.test/docs/rate-limits (2026-08-30)</code> <span class="text">The vendor states the limit as 100 requests per minute per API key.</span> <span class="via">via assistant fixture</span></li>
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:48-52</code> <span class="text">const rateLimitPerMinute = 100 // per API key</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>Clients may issue at most 100 requests per minute per API key. from https://api.example.test/docs/rate-limits (2026-08-30)</code> <span class="text">The vendor states the limit as 100 requests per minute per API key.</span> <span class="via">via assistant fixture at 2026-09-14T00:04:00Z</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:48-52</code> <span class="text">const rateLimitPerMinute = 100 // per API key</span> <span class="via">via assistant fixture at 2026-09-14T00:04:00Z</span></li>
 </ul>
 <p class="text">The enforced constant is 100 per minute per key, the same limit and the same unit the cited documentation states at the version read.</p>
 </td>
@@ -199,12 +199,12 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 </tr>
 <tr>
 <td>E3</td>
-<td>Throughput stays at or above the stated target</td>
+<td>Throughput stays at or above the stated target (optional)</td>
 <td><span class="badge unknown">UNKNOWN</span></td>
 <td>deterministic_check</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Benchmark number quoted in the pull request description, paragraph 2</code> <span class="text">Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied)</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Benchmark number quoted in the pull request description, paragraph 2</code> <span class="text">Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied)</span> <span class="via">via assistant fixture at 2026-09-14T00:06:00Z</span></li>
 </ul>
 <p class="text">No benchmark ran on this host, so the throughput dimension carries no measured value and the target is neither met nor missed.</p>
 <p class="note">Shared cause with E4.</p>
@@ -219,7 +219,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>execution</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind execution</span> <span class="tag">isolation none</span> <code>docker build --no-cache . (exit 127)</code> <span class="text">zsh: command not found: docker</span> <span class="via">via shell zsh 5.9</span></li>
+<li><span class="tag">kind execution</span> <span class="tag">isolation none</span> <code>docker build --no-cache . (exit 127)</code> <span class="text">zsh: command not found: docker</span> <span class="via">via shell zsh 5.9 at 2026-09-14T00:06:30Z</span></li>
 </ul>
 <p class="text">The build never started: the container toolchain is absent from the evaluation host. Reproducibility is untested here, not refuted.</p>
 <p class="note">Shared cause with E3.</p>
@@ -233,7 +233,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/vendor.txt:1-1</code> <span class="text"># no vendored third-party sources at this revision</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/vendor.txt:1-1</code> <span class="text"># no vendored third-party sources at this revision</span> <span class="via">via assistant fixture at 2026-09-14T00:04:30Z</span></li>
 </ul>
 <p class="text">This revision vendors no third-party sources, so the header requirement has nothing to apply to.</p>
 </td>
@@ -246,8 +246,8 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>rubric_judgment</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:1-1</code> <span class="text">Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.</span> <span class="via">via mtime-drift 0.3</span></li>
-<li><span class="tag">kind judgment</span> <span class="tag">isolation none</span> <code>Integrity rubric applied to the modification-time drift above</code> <span class="text">The rubric cannot separate a benign checkout touch from a content change without the pre-evaluation tree digest.</span> <span class="via">via assistant fixture, rubric integrity-rubric-0.2, model unknown</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:1-1</code> <span class="text">Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.</span> <span class="via">via mtime-drift 0.3 at 2026-09-14T00:07:00Z</span></li>
+<li><span class="tag">kind judgment</span> <span class="tag">isolation none</span> <code>Integrity rubric applied to the modification-time drift above</code> <span class="text">The rubric cannot separate a benign checkout touch from a content change without the pre-evaluation tree digest.</span> <span class="via">via assistant fixture at 2026-09-14T00:07:10Z, rubric integrity-rubric-0.2, model unknown</span></li>
 </ul>
 <p class="text">A tracked file&#39;s modification time moved during the evaluation, and no pre-evaluation tree digest was recorded, so whether the artifact changed cannot be settled either way.</p>
 </td>
@@ -264,7 +264,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <p>On E6: severity suspicious, disposition open.</p>
 <p>Benign alternative: A checkout or a formatter touched the file without changing its contents.</p>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:1-1</code> <span class="text">Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.</span> <span class="via">via mtime-drift 0.3</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:1-1</code> <span class="text">Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.</span> <span class="via">via mtime-drift 0.3 at 2026-09-14T00:07:00Z</span></li>
 </ul>
 </article>
 </section>
@@ -280,7 +280,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 </dl>
 <p>Not measured on this host: the quoted number has no workload or tool behind it, so no comparison to the target is possible.</p>
 <ul class="evidence">
-<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Benchmark number quoted in the pull request description, paragraph 2</code> <span class="text">Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied)</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Benchmark number quoted in the pull request description, paragraph 2</code> <span class="text">Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied)</span> <span class="via">via assistant fixture at 2026-09-14T00:06:00Z</span></li>
 </ul>
 </article>
 </section>

@@ -119,7 +119,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <p class="text">The function sorts its output with sorted(), so first-seen order cannot be preserved.</p>
 <p class="note">Criteria: C2</p>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 </article>
 </section>
@@ -156,7 +156,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 <p class="text">The candidate strips whitespace but puts original-case strings in a set. For [&#39; A@x.test &#39;, &#39;a@x.test&#39;], the two stripped strings remain distinct by Python string comparison. This is a reasoned counterexample, not an executed result.</p>
 </td>
@@ -169,7 +169,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 <p class="text">sorted(...) replaces input order with sorting order. [&#39;z@x.test&#39;, &#39;a@x.test&#39;] therefore cannot preserve first-seen order.</p>
 </td>
@@ -182,7 +182,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 <p class="text">[&#39;A@x.test&#39;, &#39;a@x.test&#39;] retains both spellings, including the second occurrence. This violates the rule to keep only the first occurrence&#39;s spelling for an equivalent address.</p>
 </td>
@@ -195,7 +195,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:26-27</code> <span class="text">The complete supplied function uses built-ins and a string method only.</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:26-27</code> <span class="text">The complete supplied function uses built-ins and a string method only.</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 <p class="text">The complete supplied function uses built-ins and a string method; it imports or calls no third-party dependency. The conclusion covers only this snippet.</p>
 </td>
@@ -208,7 +208,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>execution</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Candidate author&#39;s statement in input.md</code> <span class="text">Claims tests passed; no tests, command, logs, or verified artifact binding supplied. (supplied)</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Candidate author&#39;s statement in input.md</code> <span class="text">Claims tests passed; no tests, command, logs, or verified artifact binding supplied. (supplied)</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 <p class="text">The candidate author&#39;s statement supplies no tests, command, environment, logs, or verified artifact binding.</p>
 </td>

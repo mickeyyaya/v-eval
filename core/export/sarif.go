@@ -88,11 +88,11 @@ func criterionResults(rep report.Report) ([]Result, error) {
 	for _, verdict := range rep.Criteria {
 		criterion, ok := rep.Contract.CriterionByID(verdict.ID)
 		if !ok {
-			return nil, fmt.Errorf("export: criterion %q: no such criterion in the contract", verdict.ID)
+			return nil, fmt.Errorf("export: sarif: criterion %q: no such criterion in the contract", verdict.ID)
 		}
 		kind, ok := kindFor(verdict.Result)
 		if !ok {
-			return nil, fmt.Errorf("export: criterion %q: result %q has no SARIF kind", verdict.ID, verdict.Result)
+			return nil, fmt.Errorf("export: sarif: criterion %q: result %q has no SARIF kind", verdict.ID, verdict.Result)
 		}
 		out = append(out, Result{
 			RuleID:    verdict.ID,
@@ -115,7 +115,7 @@ func forensicResults(rep report.Report) ([]Result, error) {
 	out := make([]Result, 0, len(rep.Forensics))
 	for _, finding := range rep.Forensics {
 		if _, ok := rep.Contract.CriterionByID(finding.CriterionID); !ok {
-			return nil, fmt.Errorf("export: finding %q: no such criterion %q in the contract", finding.FindingID, finding.CriterionID)
+			return nil, fmt.Errorf("export: sarif: finding %q: no such criterion %q in the contract", finding.FindingID, finding.CriterionID)
 		}
 		out = append(out, Result{
 			RuleID:    finding.CriterionID,

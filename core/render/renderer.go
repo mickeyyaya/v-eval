@@ -5,6 +5,8 @@ package render
 
 import (
 	"embed"
+	"maps"
+	"slices"
 
 	"github.com/mickeyyaya/v-eval/core/report"
 )
@@ -37,4 +39,11 @@ var renderers = map[string]Renderer{
 func ByFormat(format string) (Renderer, bool) {
 	renderer, ok := renderers[format]
 	return renderer, ok
+}
+
+// Formats names every format this build renders, sorted, so that a caller
+// listing the choices -- a CLI usage line, a test that must cover them all --
+// reads the registry rather than repeating it.
+func Formats() []string {
+	return slices.Sorted(maps.Keys(renderers))
 }

@@ -553,22 +553,34 @@ func TestSARIFForensicFindingBecomesResult(t *testing.T) {
 	}
 }
 
+// assertMappingError requires a mapping to fail, naming the package and the
+// operation before the detail, so that an error read far from here says which
+// export refused and why.
+func assertMappingError(t *testing.T, rep report.Report, wantPrefix string) {
+	t.Helper()
+	_, err := export.ToSARIF(rep)
+	if err == nil {
+		t.Fatalf("mapping must fail with an error starting %q", wantPrefix)
+	}
+	if !strings.HasPrefix(err.Error(), wantPrefix) {
+		t.Errorf("error = %q, want it to start %q", err, wantPrefix)
+	}
+}
+
 func TestSARIFRejectsResultOutsideTheSchema(t *testing.T) {
 	t.Parallel()
 	rep := loadFixture(t)
 	rep.Criteria[0].Result = report.Result("PROBABLY")
-	if _, err := export.ToSARIF(rep); err == nil {
-		t.Fatal("a result with no SARIF kind must be an error, not a blank kind")
-	}
+	// A result with no SARIF kind is an error, not a blank kind.
+	assertMappingError(t, rep, `export: sarif: criterion "C1": result "PROBABLY"`)
 }
 
 func TestSARIFRejectsCriterionMissingFromContract(t *testing.T) {
 	t.Parallel()
 	rep := loadFixture(t)
 	rep.Criteria[0].ID = "C9"
-	if _, err := export.ToSARIF(rep); err == nil {
-		t.Fatal("a result with no contract criterion has no rule and must be an error")
-	}
+	// A result with no contract criterion has no rule to report against.
+	assertMappingError(t, rep, `export: sarif: criterion "C9":`)
 }
 
 // blockedByOf returns the blocked_by list a run states.
@@ -606,9 +618,8 @@ func TestSARIFRejectsFindingMissingFromContract(t *testing.T) {
 	t.Parallel()
 	rep := loadReport(t, "extended-example")
 	rep.Forensics[0].CriterionID = "E9"
-	if _, err := export.ToSARIF(rep); err == nil {
-		t.Fatal("a finding on no contract criterion has no rule and must be an error")
-	}
+	// A finding on no contract criterion has no rule to report against.
+	assertMappingError(t, rep, `export: sarif: finding "F1":`)
 }
 
 func TestMarshalIsCanonicalJSON(t *testing.T) {
@@ -645,6 +656,12 @@ func TestSARIFGoldens(t *testing.T) {
 		out, err := export.Marshal(mustSARIF(t, loadReport(t, name)))
 		if err != nil {
 			t.Fatal(err)
+		}
+		// A null is a hole a consumer has to guess at: an empty list and a
+		// list nobody wrote read the same once they are both null, so a log
+		// states the empty container instead.
+		if bytes.Contains(out, []byte("null")) {
+			t.Errorf("%s: the log carries a null, where an empty container says what is meant", name)
 		}
 		assertGolden(t, name+".sarif.json", out)
 	}

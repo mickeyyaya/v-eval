@@ -9,18 +9,10 @@ import (
 	"github.com/mickeyyaya/v-eval/core/report"
 )
 
-// commonSections are the headings every report shows, in the order it shows
-// them. Dimensions and Learning are absent: both are conditional.
-var commonSections = []string{
-	"## Status", "## Observations", "## Claims", "## Criteria", "## Forensics",
-	"## Counts", "## Improvement", "## Limitations", "## Routing", "## Provenance",
-}
-
 // goldenCase is one fixture and what its rendering must say.
 type goldenCase struct {
 	name     string   // fixture basename, under core/report/testdata and testdata
-	sections []string // every heading it must carry, in order
-	absent   []string // headings it must not carry
+	sections []string // every section it carries, named as the section table names them
 	contains []string // substrings that prove a rendering decision was made
 }
 
@@ -31,8 +23,7 @@ func goldenCases() []goldenCase {
 	return []goldenCase{
 		{
 			name:     "worked-example",
-			sections: commonSections,
-			absent:   []string{"## Dimensions", "## Learning"},
+			sections: sectionNamesExcept("dimensions", "learning"),
 			contains: []string{
 				"# v-eval report: code_change ",
 				"Overall: FAIL",
@@ -51,12 +42,8 @@ func goldenCases() []goldenCase {
 			},
 		},
 		{
-			name: "extended-example",
-			sections: []string{
-				"## Status", "## Observations", "## Claims", "## Criteria", "## Forensics",
-				"## Dimensions", "## Counts", "## Improvement", "## Limitations",
-				"## Routing", "## Provenance", "## Learning",
-			},
+			name:     "extended-example",
+			sections: sectionNamesExcept(),
 			contains: []string{
 				"# v-eval report: service_change ",
 				"Overall: INCOMPLETE",
@@ -85,8 +72,9 @@ func TestMarkdownGoldens(t *testing.T) {
 			out := renderAs(t, "md", loadFixture(t, testCase.name))
 			// The structural checks run first: they name what is wrong,
 			// where a golden mismatch only says that something is.
-			assertOrder(t, out, testCase.sections)
-			for _, heading := range testCase.absent {
+			want, unwanted := sectionMarkers(t, "md", testCase.sections)
+			assertOrder(t, out, want)
+			for _, heading := range unwanted {
 				if bytes.Contains(out, []byte(heading)) {
 					t.Errorf("section %q must not appear: the fixture has no such content", heading)
 				}

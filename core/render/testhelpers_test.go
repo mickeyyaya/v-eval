@@ -5,6 +5,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/mickeyyaya/v-eval/core/render"
@@ -45,6 +46,78 @@ func assertGolden(t *testing.T, name string, got []byte) {
 	if !bytes.Equal(got, want) {
 		t.Fatalf("%s differs from golden; run go test ./core/render -update and review the diff", name)
 	}
+}
+
+// reportSection is one section of a report and how each renderer names it:
+// the heading a Markdown reader scans for, and the id the HTML section
+// carries.
+type reportSection struct {
+	name    string
+	heading string
+	anchor  string
+}
+
+// reportSections is the one section order both renderers hold to, the
+// conditional sections included. It lives here rather than beside either
+// golden test so that a template which reorders a section fails both formats,
+// and so that the order is stated once rather than kept in step by hand.
+var reportSections = []reportSection{
+	{"status", "## Status", `id="status"`},
+	{"observations", "## Observations", `id="observations"`},
+	{"claims", "## Claims", `id="claims"`},
+	{"criteria", "## Criteria", `id="criteria"`},
+	{"forensics", "## Forensics", `id="forensics"`},
+	{"dimensions", "## Dimensions", `id="dimensions"`},
+	{"counts", "## Counts", `id="counts"`},
+	{"improvement", "## Improvement", `id="improvement"`},
+	{"limitations", "## Limitations", `id="limitations"`},
+	{"routing", "## Routing", `id="routing"`},
+	{"provenance", "## Provenance", `id="provenance"`},
+	{"learning", "## Learning", `id="learning"`},
+}
+
+// sectionNamesExcept names every section but the ones given, in table order.
+// A fixture states what it lacks -- dimensions, learning -- rather than
+// restating the whole order, so adding a section to the table adds it to
+// every case that does not opt out.
+func sectionNamesExcept(absent ...string) []string {
+	names := make([]string, 0, len(reportSections))
+	for _, section := range reportSections {
+		if !slices.Contains(absent, section.name) {
+			names = append(names, section.name)
+		}
+	}
+	return names
+}
+
+// sectionMarkers splits the table, in table order, into the markers a report
+// carrying the named sections must show and the markers it must not: a
+// fixture without dimensions must be checked for their absence as strictly as
+// for the presence of the rest.
+func sectionMarkers(t *testing.T, format string, present []string) (want, unwanted []string) {
+	t.Helper()
+	for _, name := range present {
+		if !slices.ContainsFunc(reportSections, func(s reportSection) bool { return s.name == name }) {
+			t.Fatalf("section %q is not in the section table", name)
+		}
+	}
+	for _, section := range reportSections {
+		var marker string
+		switch format {
+		case "md":
+			marker = section.heading
+		case "html":
+			marker = section.anchor
+		default:
+			t.Fatalf("no section markers for format %q", format)
+		}
+		if slices.Contains(present, section.name) {
+			want = append(want, marker)
+			continue
+		}
+		unwanted = append(unwanted, marker)
+	}
+	return want, unwanted
 }
 
 // assertOrder requires every needle to appear in out, in order.

@@ -281,7 +281,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <dt>Profiles</dt><dd>{{range $i, $p := .Routing.Profiles}}{{if $i}}, {{end}}{{$p.Name}} {{$p.Version}}{{else}}none{{end}}</dd>
 <dt>Adapters run</dt><dd>{{range $i, $a := .Routing.AdaptersRun}}{{if $i}}; {{end}}{{$a.Name}} {{$a.Version}} over {{joinIDs $a.InputsUsed}}{{else}}none{{end}}</dd>
 <dt>Adapters skipped</dt><dd>{{range $i, $a := .Routing.AdaptersSkipped}}{{if $i}}; {{end}}{{$a.Name}}, missing {{$a.MissingInput}}{{else}}none{{end}}</dd>
-<dt>Ambiguity</dt><dd>{{range .Routing.Ambiguity}}{{.Question}} Resolved: {{.Resolution}}{{else}}none{{end}}</dd>
+<dt>Ambiguity</dt><dd>{{range $i, $a := .Routing.Ambiguity}}{{if $i}}; {{end}}{{$a.Question}} Resolved: {{$a.Resolution}}{{else}}none{{end}}</dd>
 </dl>
 </section>
 <section id="provenance">

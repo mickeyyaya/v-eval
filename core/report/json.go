@@ -36,6 +36,12 @@ func Encode(rep Report) ([]byte, error) {
 // two-space indent, no HTML escaping, one trailing newline. It is exported so
 // that anything written beside a report -- an export, a fixture -- goes
 // through this encoder rather than a second one that could drift from it.
+//
+// It encodes the value it is given and nothing more: a nil slice or a nil map
+// still writes as null. Turning those into the empty containers the schema
+// asks for is normalize's job, which Encode does on the way in, so a caller
+// writing something other than a report -- an export log, say -- is the one
+// answerable for the nils it hands over.
 func CanonicalJSON(v any) ([]byte, error) {
 	return canonicalJSON(v, true)
 }

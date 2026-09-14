@@ -67,18 +67,25 @@ func locator(l report.Locator) string {
 // requirement is what the contract asks of a criterion, by id. A result whose
 // id the contract does not name says so: the row is still shown, because a
 // result the contract has no criterion for is exactly what a reader must see.
-// A provisional criterion is marked, because its verdict rests on a
-// requirement nobody has confirmed yet.
+// An optional criterion is marked, because its result never blocks the
+// overall verdict and a reader weighing a failure must know that. A
+// provisional criterion is marked too, because its verdict rests on a
+// requirement nobody has confirmed yet. A criterion that is both carries both
+// markers, in that order: whether it must hold, then whether anyone has
+// confirmed what it asks.
 func requirement(contract report.Contract, id string) string {
 	criterion, ok := contract.CriterionByID(id)
-	switch {
-	case !ok:
+	if !ok {
 		return "(not in contract)"
-	case criterion.Provisional:
-		return criterion.Requirement + " (provisional)"
-	default:
-		return criterion.Requirement
 	}
+	out := criterion.Requirement
+	if !criterion.Required {
+		out += " (optional)"
+	}
+	if criterion.Provisional {
+		out += " (provisional)"
+	}
+	return out
 }
 
 // isJudgment reports whether evidence is a judgment, which is shown with the
@@ -105,17 +112,23 @@ var cellEscapes = strings.NewReplacer("|", `\|`, "\r\n", "<br>", "\n", "<br>")
 // cell makes report text safe inside a Markdown table cell.
 func cell(text string) string { return cellEscapes.Replace(text) }
 
-// provenance names what produced a piece of evidence, e.g. "via pytest 7.4".
-// A tool nobody recorded says so explicitly rather than leaving a dangling
-// "via" with nothing after it, and a tool with no recorded version is named
-// without a trailing space.
+// provenance names what produced a piece of evidence and when, e.g. "via
+// pytest 7.4 at 2026-09-14T00:00:00Z". A tool nobody recorded says so
+// explicitly rather than leaving a dangling "via" with nothing after it, and a
+// tool with no recorded version is named without a trailing space. The
+// timestamp is appended whenever one was recorded, whatever the tool is known
+// to be: when a piece of evidence was captured is a fact of its own, and a
+// reader comparing a citation against a later state of the artifact needs it.
 func provenance(p report.EvidenceProvenance) string {
-	switch {
-	case p.Tool == "":
-		return "via (not recorded)"
-	case p.Version == "":
-		return "via " + p.Tool
-	default:
-		return "via " + p.Tool + " " + p.Version
+	out := "via (not recorded)"
+	if p.Tool != "" {
+		out = "via " + p.Tool
+		if p.Version != "" {
+			out += " " + p.Version
+		}
 	}
+	if p.Timestamp != "" {
+		out += " at " + p.Timestamp
+	}
+	return out
 }

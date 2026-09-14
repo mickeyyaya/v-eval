@@ -71,7 +71,9 @@ func TestCellKeepsTableRowsIntact(t *testing.T) {
 
 func TestRequirementFallsBackWhenTheContractDoesNotNameTheID(t *testing.T) {
 	t.Parallel()
-	contract := report.Contract{Criteria: []report.Criterion{{ID: "C1", Requirement: "Addresses collapse"}}}
+	contract := report.Contract{Criteria: []report.Criterion{
+		{ID: "C1", Requirement: "Addresses collapse", Required: true},
+	}}
 	if got := requirement(contract, "C1"); got != "Addresses collapse" {
 		t.Errorf("requirement() = %q, want %q", got, "Addresses collapse")
 	}
@@ -80,13 +82,27 @@ func TestRequirementFallsBackWhenTheContractDoesNotNameTheID(t *testing.T) {
 	}
 }
 
-func TestRequirementMarksAProvisionalCriterion(t *testing.T) {
+func TestRequirementMarksWhatTheContractAsksOfACriterion(t *testing.T) {
 	t.Parallel()
 	contract := report.Contract{Criteria: []report.Criterion{
-		{ID: "C1", Requirement: "Addresses collapse", Provisional: true},
+		{ID: "C1", Requirement: "Addresses collapse", Required: true, Provisional: true},
+		{ID: "C2", Requirement: "Throughput holds"},
+		{ID: "C3", Requirement: "Latency holds", Provisional: true},
 	}}
-	if got := requirement(contract, "C1"); got != "Addresses collapse (provisional)" {
-		t.Errorf("requirement() = %q, want %q", got, "Addresses collapse (provisional)")
+	cases := map[string]string{
+		"C1": "Addresses collapse (provisional)",
+		"C2": "Throughput holds (optional)",
+		// Both markers, in the order the contract is read in: what it asks
+		// for, whether it must hold, and whether anyone has confirmed it.
+		"C3": "Latency holds (optional) (provisional)",
+	}
+	for id, want := range cases {
+		t.Run(id, func(t *testing.T) {
+			t.Parallel()
+			if got := requirement(contract, id); got != want {
+				t.Errorf("requirement(%s) = %q, want %q", id, got, want)
+			}
+		})
 	}
 }
 
@@ -100,6 +116,18 @@ func TestProvenanceNamesAnUnrecordedToolRatherThanADanglingVia(t *testing.T) {
 		{"no tool", report.EvidenceProvenance{}, "via (not recorded)"},
 		{"tool only", report.EvidenceProvenance{Tool: "pytest"}, "via pytest"},
 		{"tool and version", report.EvidenceProvenance{Tool: "pytest", Version: "7.4"}, "via pytest 7.4"},
+		{"tool, version, and timestamp",
+			report.EvidenceProvenance{Tool: "pytest", Version: "7.4", Timestamp: "2026-09-14T00:00:00Z"},
+			"via pytest 7.4 at 2026-09-14T00:00:00Z"},
+		{"tool and timestamp, no version",
+			report.EvidenceProvenance{Tool: "pytest", Timestamp: "2026-09-14T00:00:00Z"},
+			"via pytest at 2026-09-14T00:00:00Z"},
+		{"timestamp only",
+			report.EvidenceProvenance{Timestamp: "2026-09-14T00:00:00Z"},
+			"via (not recorded) at 2026-09-14T00:00:00Z"},
+		{"revision is not shown: it names a state, not an act",
+			report.EvidenceProvenance{Tool: "pytest", Version: "7.4", Revision: "abc123"},
+			"via pytest 7.4"},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {

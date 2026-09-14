@@ -10,16 +10,6 @@ import (
 	"github.com/mickeyyaya/v-eval/core/report"
 )
 
-// htmlSectionIDs are the section anchors every report carries, in the order
-// it carries them. The two conditional sections, dimensions and learning, are
-// asserted per fixture instead: each fixture must show the one it has and
-// must not invent the one it lacks.
-var htmlSectionIDs = []string{
-	`id="status"`, `id="observations"`, `id="claims"`, `id="criteria"`,
-	`id="forensics"`, `id="counts"`, `id="improvement"`, `id="limitations"`,
-	`id="routing"`, `id="provenance"`,
-}
-
 // mustHTMLRenderer returns the html renderer, or fails the test.
 func mustHTMLRenderer(t *testing.T) render.Renderer {
 	t.Helper()
@@ -49,7 +39,8 @@ func TestHTMLIsSelfContainedThemedOrderedAndEscaped(t *testing.T) {
 	if !bytes.Contains(out, []byte("&lt;script&gt;alert")) {
 		t.Fatal("observation text must be escaped")
 	}
-	assertOrder(t, out, htmlSectionIDs)
+	ordered, _ := sectionMarkers(t, "html", sectionNamesExcept("dimensions", "learning"))
+	assertOrder(t, out, ordered)
 	if !bytes.HasPrefix(out, []byte("<!doctype html>")) {
 		t.Fatal("must be a complete document")
 	}
@@ -63,8 +54,7 @@ func TestHTMLIsSelfContainedThemedOrderedAndEscaped(t *testing.T) {
 // htmlGoldenCase is one fixture and what its HTML rendering must say.
 type htmlGoldenCase struct {
 	name     string   // fixture basename, under core/report/testdata and testdata
-	sections []string // every section anchor it must carry, in order
-	absent   []string // anchors and words it must not carry
+	sections []string // every section it carries, named as the section table names them
 	contains []string // substrings that prove a rendering decision was made
 }
 
@@ -72,8 +62,7 @@ func htmlGoldenCases() []htmlGoldenCase {
 	return []htmlGoldenCase{
 		{
 			name:     "worked-example",
-			sections: htmlSectionIDs,
-			absent:   []string{`id="dimensions"`, `id="learning"`},
+			sections: sectionNamesExcept("dimensions", "learning"),
 			contains: []string{
 				"<title>v-eval report: code_change ",
 				`class="badge fail"`, `class="badge pass"`, `class="badge unknown"`,
@@ -88,12 +77,8 @@ func htmlGoldenCases() []htmlGoldenCase {
 			},
 		},
 		{
-			name: "extended-example",
-			sections: []string{
-				`id="status"`, `id="observations"`, `id="claims"`, `id="criteria"`,
-				`id="forensics"`, `id="dimensions"`, `id="counts"`, `id="improvement"`,
-				`id="limitations"`, `id="routing"`, `id="provenance"`, `id="learning"`,
-			},
+			name:     "extended-example",
+			sections: sectionNamesExcept(),
 			contains: []string{
 				"<title>v-eval report: service_change ",
 				`class="badge error"`, `class="badge not_applicable"`,
@@ -117,8 +102,9 @@ func TestHTMLGoldens(t *testing.T) {
 			out := renderAs(t, "html", loadFixture(t, testCase.name))
 			// The structural checks run first: they name what is wrong,
 			// where a golden mismatch only says that something is.
-			assertOrder(t, out, testCase.sections)
-			for _, unwanted := range testCase.absent {
+			want, absent := sectionMarkers(t, "html", testCase.sections)
+			assertOrder(t, out, want)
+			for _, unwanted := range absent {
 				if bytes.Contains(out, []byte(unwanted)) {
 					t.Errorf("%q must not appear: the fixture has no such content", unwanted)
 				}
@@ -133,6 +119,30 @@ func TestHTMLGoldens(t *testing.T) {
 	}
 }
 
+// htmlEvidenceEntry is the opening of one rendered evidence entry: every
+// entry states what it is and how isolated it ran, so counting the openings
+// counts the entries.
+var htmlEvidenceEntry = regexp.MustCompile(`<li><span class="tag">kind [a-z_]+</span> <span class="tag">isolation [a-z_]+</span>`)
+
+// TestHTMLShowsEveryEvidenceRecord is the HTML twin of the Markdown guard:
+// a renderer that silently drops a citation is the one failure a golden
+// cannot name, because a golden only knows what was rendered last time.
+func TestHTMLShowsEveryEvidenceRecord(t *testing.T) {
+	for _, testCase := range htmlGoldenCases() {
+		t.Run(testCase.name, func(t *testing.T) {
+			rep := loadFixture(t, testCase.name)
+			out := renderAs(t, "html", rep)
+			want := len(report.WalkEvidence(rep))
+			if want == 0 {
+				t.Fatal("fixture carries no evidence to render")
+			}
+			if got := len(htmlEvidenceEntry.FindAll(out, -1)); got != want {
+				t.Errorf("%d evidence entries rendered, want %d", got, want)
+			}
+		})
+	}
+}
+
 func TestHTMLOutputIsCleanMarkup(t *testing.T) {
 	t.Parallel()
 	out := renderAs(t, "html", loadFixture(t, "extended-example"))
@@ -143,6 +153,23 @@ func TestHTMLOutputIsCleanMarkup(t *testing.T) {
 		if len(line) != len(bytes.TrimRight(line, " \t")) {
 			t.Errorf("line %d ends in whitespace: %q", i+1, line)
 		}
+	}
+}
+
+// TestHTMLSeparatesEveryAmbiguity guards the one list in the routing block
+// that the fixtures cannot guard: both carry a single ambiguity, so a missing
+// separator would run two questions together only in reports no golden holds.
+func TestHTMLSeparatesEveryAmbiguity(t *testing.T) {
+	t.Parallel()
+	rep := report.Report{Routing: report.Routing{Ambiguity: []report.Ambiguity{
+		{Question: "Which suite counts?", Resolution: "the one the brief names"},
+		{Question: "Which revision?", Resolution: "the one the bundle digest pins"},
+	}}}
+	out := renderAs(t, "html", rep)
+	const want = "<dt>Ambiguity</dt><dd>Which suite counts? Resolved: the one the brief names; " +
+		"Which revision? Resolved: the one the bundle digest pins</dd>"
+	if !bytes.Contains(out, []byte(want)) {
+		t.Errorf("ambiguities run together; want %q", want)
 	}
 }
 
