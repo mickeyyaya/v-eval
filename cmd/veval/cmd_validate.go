@@ -13,7 +13,7 @@ import (
 // report.ValidateForAggregate, because the rest is what it is about to
 // recompute.
 func runValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	flags := newFlags("validate", "<report.json|->", stderr)
+	flags := newFlags("validate", stderr)
 	operands, code := parseArgs(flags, args, 1)
 	if code != exitOK {
 		return code

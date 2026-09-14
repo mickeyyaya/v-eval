@@ -33,11 +33,18 @@ type subcommand struct {
 
 // commands is the whole command line in one table: the dispatch, the usage
 // text, and the order both are read in. A new verb is one entry here.
-var commands = []subcommand{
-	{"validate", "veval validate <report.json|->", runValidate},
-	{"aggregate", "veval aggregate [-o out] <report.json|->", runAggregate},
-	{"render", "veval render [--format " + formatChoices() + "] [-o out] <report.json|->", runRender},
-	{"export", "veval export " + strings.Join(exportFormats(), "|") + " [-o out] <report.json|->", runExport},
+//
+// It is a function rather than a variable because the table names every
+// handler and every handler reads its own usage line back out of the table;
+// held in a variable, that round trip is an initialization cycle.
+func commands() []subcommand {
+	return []subcommand{
+		{"validate", "veval validate <report.json|->", runValidate},
+		{"aggregate", "veval aggregate [-o out] <report.json|->", runAggregate},
+		{"render", "veval render [--format " + formatChoices() + "] [-o out] <report.json|->", runRender},
+		{"export", "veval export " + strings.Join(exportFormats(), "|") + " [-o out] <report.json|->", runExport},
+		{"version", "veval version", runVersion},
+	}
 }
 
 // formatChoices lists the formats render writes, the default first, so that
@@ -62,7 +69,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprint(stderr, usage())
 		return exitError
 	}
-	for _, cmd := range commands {
+	for _, cmd := range commands() {
 		if cmd.Name == args[0] {
 			return cmd.Run(args[1:], stdin, stdout, stderr)
 		}
@@ -78,12 +85,25 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 func usage() string {
 	var b strings.Builder
 	b.WriteString("usage:\n")
-	for _, cmd := range commands {
+	for _, cmd := range commands() {
 		fmt.Fprintf(&b, "  %s\n", cmd.Usage)
 	}
 	fmt.Fprintf(&b, "\nan input or output of %q is the standard stream.\n", streamPath)
 	b.WriteString("exit codes: 0 the report is sound, 1 it breaks a rule, 2 the command could not run.\n")
 	return b.String()
+}
+
+// usageLine is the table's line for one command: the single spelling of how
+// that command is typed, which both "veval -h" and "veval <command> -h"
+// read. A name the table does not carry cannot be reached -- each command
+// asks for its own -- so the fallback names the command and nothing more.
+func usageLine(name string) string {
+	for _, cmd := range commands() {
+		if cmd.Name == name {
+			return cmd.Usage
+		}
+	}
+	return "veval " + name
 }
 
 // loadReport reads one report and puts it through validate. It returns the

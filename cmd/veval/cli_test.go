@@ -99,6 +99,7 @@ var wantUsageLines = []string{
 	"veval aggregate [-o out] <report.json|->",
 	"veval render [--format md|html] [-o out] <report.json|->",
 	"veval export sarif [-o out] <report.json|->",
+	"veval version",
 }
 
 func TestUsageGoesToStderrAndNamesEveryCommand(t *testing.T) {
@@ -110,7 +111,7 @@ func TestUsageGoesToStderrAndNamesEveryCommand(t *testing.T) {
 		if stdout != "" {
 			t.Errorf("%v: usage wrote %q to stdout, want stderr only", args, stdout)
 		}
-		for _, cmd := range commands {
+		for _, cmd := range commands() {
 			if !strings.Contains(stderr, cmd.Name) {
 				t.Errorf("%v: usage does not name %q", args, cmd.Name)
 			}
@@ -165,7 +166,7 @@ func TestFlagsMayFollowPositionals(t *testing.T) {
 
 // testFlags is a flag set shaped like the commands' own -- a string flag
 // whose value is a separate token, a joined form, and a boolean flag that
-// takes none -- so reorderArgs is exercised over every kind of flag a
+// takes none -- so splitArgs is exercised over every kind of flag a
 // command defines.
 func testFlags() *flag.FlagSet {
 	flags := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -175,7 +176,7 @@ func testFlags() *flag.FlagSet {
 	return flags
 }
 
-func TestReorderArgsSplitsFlagsFromOperands(t *testing.T) {
+func TestSplitArgsSplitsFlagsFromOperands(t *testing.T) {
 	cases := []struct {
 		name         string
 		in           []string
@@ -195,9 +196,9 @@ func TestReorderArgsSplitsFlagsFromOperands(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			gotFlags, gotOperands := reorderArgs(testFlags(), tc.in)
+			gotFlags, gotOperands := splitArgs(testFlags(), tc.in)
 			if !slices.Equal(gotFlags, tc.wantFlags) || !slices.Equal(gotOperands, tc.wantOperands) {
-				t.Errorf("reorderArgs(%q) = %q, %q, want %q, %q",
+				t.Errorf("splitArgs(%q) = %q, %q, want %q, %q",
 					tc.in, gotFlags, gotOperands, tc.wantFlags, tc.wantOperands)
 			}
 		})

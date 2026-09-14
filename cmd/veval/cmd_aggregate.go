@@ -14,7 +14,7 @@ import (
 // to do, so holding an input to them would reject every report that needs
 // aggregating.
 func runAggregate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	flags := newFlags("aggregate", "<report.json|->", stderr)
+	flags := newFlags("aggregate", stderr)
 	output := flags.String("o", "", "write to this file instead of standard output")
 	operands, code := parseArgs(flags, args, 1)
 	if code != exitOK {

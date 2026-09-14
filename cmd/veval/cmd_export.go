@@ -35,7 +35,7 @@ func toSARIF(rep report.Report) ([]byte, error) {
 // with render, the report is held to every rule first: an export carries the
 // report's own claims onward, so it may only carry sound ones.
 func runExport(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	flags := newFlags("export", "<format> <report.json|->", stderr)
+	flags := newFlags("export", stderr)
 	output := flags.String("o", "", "write to this file instead of standard output")
 	operands, code := parseArgs(flags, args, 2)
 	if code != exitOK {

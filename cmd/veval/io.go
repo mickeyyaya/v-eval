@@ -13,11 +13,15 @@ import (
 // newFlags returns a flag set that writes everything it has to say to the
 // stderr the caller passed in, and that decides nothing: a parse failure is
 // returned, so one place -- the subcommand -- owns the exit code.
-func newFlags(name, operands string, stderr io.Writer) *flag.FlagSet {
+//
+// Its usage line is the command table's own line for that command, so that
+// "veval render -h" and "veval -h" answer with the same spelling instead of
+// two that drift apart.
+func newFlags(name string, stderr io.Writer) *flag.FlagSet {
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	flags.Usage = func() {
-		fmt.Fprintf(stderr, "usage: veval %s [flags] %s\n", name, operands)
+		fmt.Fprintf(stderr, "usage: %s\n", usageLine(name))
 		flags.PrintDefaults()
 	}
 	return flags
@@ -31,7 +35,7 @@ func newFlags(name, operands string, stderr io.Writer) *flag.FlagSet {
 // that begins with a dash is a path, and a value-taking flag left without a
 // value is the last thing the set parses -- which is how it comes to say so.
 func parseArgs(flags *flag.FlagSet, args []string, want int) ([]string, int) {
-	flagArgs, operands := reorderArgs(flags, args)
+	flagArgs, operands := splitArgs(flags, args)
 	if err := flags.Parse(flagArgs); err != nil {
 		return nil, exitError
 	}
@@ -47,7 +51,7 @@ func parseArgs(flags *flag.FlagSet, args []string, want int) ([]string, int) {
 // it is spelled.
 const terminator = "--"
 
-// reorderArgs separates the flag tokens, each with its value, from the
+// splitArgs separates the flag tokens, each with its value, from the
 // operands, so that "veval render report.json --format html" and "veval
 // render --format html report.json" are the same command. Go's flag package
 // stops at the first operand; a person typing a path first does not.
@@ -57,7 +61,7 @@ const terminator = "--"
 // is an operand -- the standard stream, not a flag -- and a value-taking
 // flag with nothing after it stays where it is, with nothing after it, so
 // that the flag set is the one to report the missing value.
-func reorderArgs(flags *flag.FlagSet, args []string) (flagArgs, operands []string) {
+func splitArgs(flags *flag.FlagSet, args []string) (flagArgs, operands []string) {
 	flagArgs = make([]string, 0, len(args))
 	operands = make([]string, 0, len(args))
 	for i := 0; i < len(args); i++ {

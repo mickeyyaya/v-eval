@@ -17,7 +17,7 @@ const defaultFormat = "md"
 // where a report is held to the rules first, so that nobody is handed a
 // document built from a report that contradicts itself.
 func runRender(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	flags := newFlags("render", "<report.json|->", stderr)
+	flags := newFlags("render", stderr)
 	format := flags.String("format", defaultFormat, "output format: "+strings.Join(render.Formats(), ", "))
 	output := flags.String("o", "", "write to this file instead of standard output")
 	operands, code := parseArgs(flags, args, 1)

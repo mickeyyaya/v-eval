@@ -1,0 +1,31 @@
+version: 2
+project_name: veval
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: veval
+    main: ./cmd/veval
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X github.com/mickeyyaya/v-eval/internal/version.Version={{.Version}} -X github.com/mickeyyaya/v-eval/internal/version.BuildDigest={{.ShortCommit}}
+
+archives:
+  - id: veval
+    name_template: "veval_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files: [LICENSE, README.md, CHANGELOG.md]
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  disable: true
