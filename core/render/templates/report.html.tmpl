@@ -1,10 +1,10 @@
-{{- /* One evidence line: what it is, how isolated it ran, where it points,
-what it said, whether the candidate supplied it rather than the evaluator
-gathering it, and what produced it. */ -}}
+{{- /* One evidence card: what it is, how isolated it ran, and whether the
+candidate supplied it rather than the evaluator gathering it, on the tag
+line; then where it points, what it said, and what produced it. */ -}}
 {{- define "evidence" -}}
-<li><span class="tag">kind {{.Kind}}</span> <span class="tag">isolation {{.Isolation}}</span> <code>{{locator .Locator}}</code> <span class="text">{{.Observation}}{{supplied .}}</span> <span class="via">{{provenance .Provenance}}{{if isJudgment .}}, rubric {{orNotRecorded .RubricVersion}}, model {{orNotRecorded .Model}}{{else}}{{with .Model}}, model {{.}}{{end}}{{end}}</span></li>
+<li><span class="tags"><span class="tag {{.Kind}}">kind {{.Kind}}</span> <span class="tag">isolation {{.Isolation}}</span>{{if supplied .}} <span class="tag supplied">(supplied)</span>{{end}}</span> <code>{{locator .Locator}}</code> <span class="text">{{.Observation}}</span> <span class="via">{{provenance .Provenance}}{{if isJudgment .}}, rubric {{orNotRecorded .RubricVersion}}, model {{orNotRecorded .Model}}{{else}}{{with .Model}}, model {{.}}{{end}}{{end}}</span></li>
 {{end -}}
-{{- /* The same lines as a list, which says "none" rather than showing
+{{- /* The same cards as a list, which says "none" rather than showing
 nothing: a reader must be able to tell cited-nothing from rendered-nothing. */ -}}
 {{- define "evidenceList" -}}
 {{- if . -}}
@@ -36,6 +36,10 @@ nothing: a reader must be able to tell cited-nothing from rendered-nothing. */ -
   --not-applicable-bg: #dfe5ec; --not-applicable-fg: #2f4258;
   --incomplete-bg: #e9e2f3; --incomplete-fg: #43336b;
   --advisory-bg: #dfe9f1; --advisory-fg: #26445c;
+  --execution-bg: #d5eae4; --execution-fg: #0f4a3c;
+  --inspection-bg: #dbe7f6; --inspection-fg: #1f3f66;
+  --supplied-bg: #f7e8b8; --supplied-fg: #5a4200;
+  --judgment-bg: #e9e2f3; --judgment-fg: #43336b;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -52,60 +56,102 @@ nothing: a reader must be able to tell cited-nothing from rendered-nothing. */ -
     --not-applicable-bg: #1f2a36; --not-applicable-fg: #a9c1d8;
     --incomplete-bg: #2a2340; --incomplete-fg: #c3b2e8;
     --advisory-bg: #1d2c38; --advisory-fg: #a5c6dc;
+    --execution-bg: #143430; --execution-fg: #96dcc8;
+    --inspection-bg: #1c2c40; --inspection-fg: #a7c4ea;
+    --supplied-bg: #3d3310; --supplied-fg: #e6cc7a;
+    --judgment-bg: #2a2340; --judgment-fg: #c3b2e8;
   }
 }
 * { box-sizing: border-box; }
 body {
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
-  max-width: 72rem;
+  max-width: 76rem;
   background: var(--bg);
   color: var(--fg);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 16px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
-h1 { font-size: 1.6rem; margin: 0 0 0.25rem; }
+code, .revision, .chip, td.id { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+h1 { font-size: 1.75rem; line-height: 1.2; margin: 0.1rem 0 0.25rem; overflow-wrap: anywhere; }
 h2 { font-size: 1.25rem; margin: 0 0 0.75rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--rule); }
 h3 { font-size: 1rem; margin: 0 0 0.25rem; }
 p { margin: 0 0 0.5rem; }
 section { margin: 2rem 0 0; }
-header .revision { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
-dl.facts { display: grid; grid-template-columns: minmax(9rem, auto) minmax(0, 1fr); gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
-dl.facts dt { color: var(--muted); }
-dl.facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.eyebrow { margin: 0; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.revision { margin: 0; color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
+.hero { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; margin: 1.25rem 0 0; padding: 1rem 1.25rem; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; }
+.hero .badge { font-size: 1.25rem; padding: 0.25rem 0.9rem; }
+.hero dl.facts { flex: 1 1 20rem; min-width: 0; margin: 0; }
+.chip { display: inline-block; font-size: 0.8rem; padding: 0 0.5rem; border-radius: 999px; background: var(--bg); border: 1px solid var(--rule); }
+nav.toc { display: flex; gap: 0.25rem 1.25rem; overflow-x: auto; white-space: nowrap; margin: 1.5rem 0 0; padding: 0.5rem 0; background: var(--bg); border-bottom: 1px solid var(--rule); }
+nav.toc a { color: var(--muted); font-size: 0.9rem; font-weight: 500; text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus { color: var(--fg); text-decoration: underline; }
+dl.facts { display: grid; grid-template-columns: 1fr; gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
+dl.facts dt { color: var(--muted); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+dl.facts dd { margin: 0 0 0.4rem; min-width: 0; overflow-wrap: anywhere; }
+.count { display: inline-block; vertical-align: middle; margin-left: 0.35rem; padding: 0 0.55rem; border-radius: 999px; background: var(--panel); border: 1px solid var(--rule); color: var(--muted); font-size: 0.8rem; font-weight: 500; line-height: 1.4; }
 article { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.75rem 1rem; margin: 0 0 0.75rem; }
 table { width: 100%; border-collapse: collapse; margin: 0 0 0.5rem; }
-th, td { border: 1px solid var(--rule); padding: 0.5rem; text-align: left; vertical-align: top; }
-th { background: var(--panel); font-size: 0.9rem; }
+th, td { border: 1px solid var(--rule); padding: 0.5rem 0.6rem; text-align: left; vertical-align: top; }
+th { background: var(--panel); font-size: 0.85rem; }
 td { font-size: 0.95rem; }
-code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; overflow-wrap: anywhere; }
+td.id { white-space: nowrap; font-size: 0.85rem; }
+tbody tr:nth-child(even) td { background: var(--panel); }
+code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-size: 0.85em; overflow-wrap: anywhere; }
 ul.evidence { list-style: none; margin: 0 0 0.5rem; padding: 0; }
-ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; margin: 0 0 0.4rem; font-size: 0.9rem; }
-.tag { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 0 0.3rem; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+ul.evidence li { display: grid; gap: 0.2rem; background: var(--bg); border: 1px solid var(--rule); border-left-width: 3px; border-radius: 4px; padding: 0.45rem 0.7rem; margin: 0 0 0.5rem; font-size: 0.9rem; }
+ul.evidence li > * { min-width: 0; }
+ul.evidence li > code { justify-self: start; }
+.tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.tag { display: inline-block; background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 0 0.35rem; font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+.tag.execution { background: var(--execution-bg); border-color: var(--execution-bg); color: var(--execution-fg); }
+.tag.inspection { background: var(--inspection-bg); border-color: var(--inspection-bg); color: var(--inspection-fg); }
+.tag.supplied { background: var(--supplied-bg); border-color: var(--supplied-bg); color: var(--supplied-fg); }
+.tag.judgment { background: var(--judgment-bg); border-color: var(--judgment-bg); color: var(--judgment-fg); }
 .via, .note { color: var(--muted); font-size: 0.85rem; }
 .conflict { border-left: 3px solid var(--fail-bg); padding: 0 0 0 0.6rem; }
 .text { white-space: pre-wrap; }
 .scroll { overflow-x: auto; }
 .none { color: var(--muted); }
-.overall { font-size: 1.1rem; }
 .badge { display: inline-block; border-radius: 3px; padding: 0.05rem 0.5rem; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em; background: var(--unknown-bg); color: var(--unknown-fg); }
 .badge.pass { background: var(--pass-bg); color: var(--pass-fg); }
-.badge.fail { background: var(--fail-bg); color: var(--fail-fg); }
-.badge.error { background: var(--error-bg); color: var(--error-fg); }
+.badge.fail, .badge.confirmed { background: var(--fail-bg); color: var(--fail-fg); }
+.badge.error, .badge.suspicious { background: var(--error-bg); color: var(--error-fg); }
 .badge.not_applicable { background: var(--not-applicable-bg); color: var(--not-applicable-fg); }
 .badge.incomplete { background: var(--incomplete-bg); color: var(--incomplete-fg); }
 .badge.advisory { background: var(--advisory-bg); color: var(--advisory-fg); }
-@media (max-width: 40rem) {
-  dl.facts { grid-template-columns: 1fr; }
-  dl.facts dd { margin: 0 0 0.4rem; }
+footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
+@media (min-width: 40rem) {
+  body { padding: 2rem 1.25rem 4rem; }
+  nav.toc { position: sticky; top: 0; z-index: 1; }
+  section { scroll-margin-top: 3rem; }
+  dl.facts { grid-template-columns: minmax(9rem, auto) minmax(0, 1fr); }
+  dl.facts dd { margin: 0; }
+  .masthead > dl.facts { grid-template-columns: minmax(9rem, auto) minmax(0, 1fr) minmax(9rem, auto) minmax(0, 1fr); }
+}
+@media print {
+  nav.toc { display: none; }
+  body { max-width: none; }
+  .scroll { overflow: visible; }
+  tr, article, li { break-inside: avoid; }
+  .badge, .tag, .chip, .count { print-color-adjust: exact; }
 }
 </style>
 </head>
 <body>
-<header>
-<h1>v-eval report: {{.Identity.Artifact.Kind}}</h1>
+<header class="masthead">
+<p class="eyebrow">v-eval report</p>
+<h1>{{.Identity.Artifact.Kind}}</h1>
 <p class="revision">{{.Identity.Artifact.Revision}}</p>
+<div class="hero">
+<span class="{{overallClass .Status.Overall}}">{{.Status.Overall}}</span>
+<dl class="facts">
+<dt>Rule applied</dt><dd>{{.Status.RuleApplied}}</dd>
+<dt>Blocked by</dt><dd>{{range $i, $id := .Status.BlockedBy}}{{if $i}} {{end}}<span class="chip">{{$id}}</span>{{else}}none{{end}}</dd>
+</dl>
+</div>
 <dl class="facts">
 <dt>Report id</dt><dd><code>{{.Identity.ReportID}}</code></dd>
 <dt>Created</dt><dd>{{.Identity.CreatedAt}}</dd>
@@ -119,20 +165,35 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <dt>Brief</dt><dd>{{.Identity.Task.BriefRef}}</dd>
 </dl>
 </header>
+<nav class="toc" aria-label="Sections">
+<a href="#status">Status</a>
+<a href="#observations">Observations</a>
+<a href="#claims">Claims</a>
+<a href="#criteria">Criteria</a>
+<a href="#forensics">Forensics</a>
+{{- if .Dimensions}}
+<a href="#dimensions">Dimensions</a>
+{{- end}}
+<a href="#counts">Counts</a>
+<a href="#improvement">Improvement</a>
+<a href="#limitations">Limitations</a>
+<a href="#routing">Routing</a>
+<a href="#provenance">Provenance</a>
+{{- if .Learning}}
+<a href="#learning">Learning</a>
+{{- end}}
+</nav>
 <main>
 <section id="status">
 <h2>Status</h2>
-<p class="overall"><span class="{{overallClass .Status.Overall}}">{{.Status.Overall}}</span></p>
-<dl class="facts">
-<dt>Rule applied</dt><dd>{{.Status.RuleApplied}}</dd>
-<dt>Blocked by</dt><dd>{{joinIDs .Status.BlockedBy}}</dd>
-</dl>
 {{- range .Contract.Conflicts}}
 <p class="conflict">Contract conflict ({{.Resolution}}) between {{joinIDs .Between}}: {{.Description}}</p>
+{{- else}}
+<p class="none">Contract conflicts: none</p>
 {{- end}}
 </section>
 <section id="observations">
-<h2>Observations</h2>
+<h2>Observations{{with .Observations}} <span class="count">{{len .}}</span>{{end}}</h2>
 {{- range .Observations}}
 <article>
 <h3>{{.ID}} <span class="note">{{.Origin}}</span></h3>
@@ -145,7 +206,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 {{- end}}
 </section>
 <section id="claims">
-<h2>Claims</h2>
+<h2>Claims{{with .Claims}} <span class="count">{{len .}}</span>{{end}}</h2>
 {{- if .Claims}}
 <div class="scroll">
 <table>
@@ -153,7 +214,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <tbody>
 {{- range .Claims}}
 <tr>
-<td>{{.ClaimID}}</td>
+<td class="id">{{.ClaimID}}</td>
 <td>{{.Text}}</td>
 <td>{{.Status}}</td>
 <td>{{.Location}}</td>
@@ -171,7 +232,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 {{- end}}
 </section>
 <section id="criteria">
-<h2>Criteria</h2>
+<h2>Criteria{{with .Criteria}} <span class="count">{{len .}}</span>{{end}}</h2>
 {{- if .Criteria}}
 <div class="scroll">
 <table>
@@ -179,7 +240,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <tbody>
 {{- range .Criteria}}
 <tr>
-<td>{{.ID}}</td>
+<td class="id">{{.ID}}</td>
 <td>{{requirement $.Contract .ID}}</td>
 <td><span class="{{resultClass .Result}}">{{badge .Result}}</span></td>
 <td>{{.MethodUsed}}</td>
@@ -204,11 +265,11 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 {{- end}}
 </section>
 <section id="forensics">
-<h2>Forensics</h2>
+<h2>Forensics{{with .Forensics}} <span class="count">{{len .}}</span>{{end}}</h2>
 {{- range .Forensics}}
 <article>
 <h3>{{.FindingID}} <span class="note">{{.Detector}} {{.DetectorVersion}}</span></h3>
-<p>On {{.CriterionID}}: severity {{.Severity}}, disposition {{.Disposition}}.</p>
+<p>On {{.CriterionID}}: severity <span class="badge {{.Severity}}">{{.Severity}}</span>, disposition {{.Disposition}}.</p>
 <p>Benign alternative: {{.BenignAlternative}}</p>
 {{template "evidenceList" .Evidence}}
 </article>
@@ -248,7 +309,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <p>Coverage: {{if .Counts.Coverage.Undefined}}undefined (0 applicable){{else}}{{.Counts.Coverage.Numerator}}/{{.Counts.Coverage.Denominator}} applicable criteria assessed{{end}}. Coverage is not a correctness score.</p>
 </section>
 <section id="improvement">
-<h2>Improvement</h2>
+<h2>Improvement{{with .Improvement}} <span class="count">{{len .}}</span>{{end}}</h2>
 {{- range .Improvement}}
 <article>
 <h3>{{.Issue}}</h3>
@@ -318,5 +379,8 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 </section>
 {{- end}}
 </main>
+<footer>
+<p>Report {{.Identity.ReportID}} · schema {{.Identity.SchemaVersion}} · v-eval {{.Identity.VevalVersion}}</p>
+</footer>
 </body>
 </html>

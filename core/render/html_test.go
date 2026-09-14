@@ -2,7 +2,9 @@ package render_test
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -119,10 +121,11 @@ func TestHTMLGoldens(t *testing.T) {
 	}
 }
 
-// htmlEvidenceEntry is the opening of one rendered evidence entry: every
-// entry states what it is and how isolated it ran, so counting the openings
-// counts the entries.
-var htmlEvidenceEntry = regexp.MustCompile(`<li><span class="tag">kind [a-z_]+</span> <span class="tag">isolation [a-z_]+</span>`)
+// htmlEvidenceEntry is the opening of one rendered evidence card: every
+// card opens with a tag line that states what it is -- the kind tag carries
+// its kind as a class, so the stylesheet can tint it -- and how isolated it
+// ran, so counting the openings counts the entries.
+var htmlEvidenceEntry = regexp.MustCompile(`<li><span class="tags"><span class="tag [a-z_]+">kind [a-z_]+</span> <span class="tag">isolation [a-z_]+</span>`)
 
 // TestHTMLShowsEveryEvidenceRecord is the HTML twin of the Markdown guard:
 // a renderer that silently drops a citation is the one failure a golden
@@ -289,5 +292,174 @@ func TestHTMLByFormat(t *testing.T) {
 	t.Parallel()
 	if got := mustHTMLRenderer(t).Format(); got != "html" {
 		t.Errorf("Format() = %q, want %q", got, "html")
+	}
+}
+
+// navLinkRE matches one link in the section nav: the id it points at and the
+// label a reader sees.
+var navLinkRE = regexp.MustCompile(`<a href="#([a-z]+)">([^<]+)</a>`)
+
+// renderedSectionRE matches the opening of one rendered section, by id.
+var renderedSectionRE = regexp.MustCompile(`<section id="([a-z]+)">`)
+
+// sectionLinks are the nav entries the section table predicts for a report
+// carrying the named sections: the id is the anchor stripped of its
+// attribute syntax, the label the Markdown heading stripped of its marks, so
+// the nav is held to the same table the section order is.
+func sectionLinks(present []string) [][2]string {
+	var links [][2]string
+	for _, section := range reportSections {
+		if slices.Contains(present, section.name) {
+			id := strings.TrimSuffix(strings.TrimPrefix(section.anchor, `id="`), `"`)
+			links = append(links, [2]string{id, strings.TrimPrefix(section.heading, "## ")})
+		}
+	}
+	return links
+}
+
+// between returns the text of out from the first open marker to the next
+// close marker, or fails the test when either is missing.
+func between(t *testing.T, out []byte, open, close string) string {
+	t.Helper()
+	i := bytes.Index(out, []byte(open))
+	if i < 0 {
+		t.Fatalf("rendering does not contain %q", open)
+	}
+	j := bytes.Index(out[i:], []byte(close))
+	if j < 0 {
+		t.Fatalf("%q is never closed by %q", open, close)
+	}
+	return string(out[i : i+j])
+}
+
+func TestHTMLNavLinksEveryRenderedSectionInOrder(t *testing.T) {
+	t.Parallel()
+	for _, testCase := range htmlGoldenCases() {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			out := renderAs(t, "html", loadFixture(t, testCase.name))
+			nav := between(t, out, `<nav class="toc" aria-label="Sections">`, "</nav>")
+			var got [][2]string
+			for _, m := range navLinkRE.FindAllStringSubmatch(nav, -1) {
+				got = append(got, [2]string{m[1], m[2]})
+			}
+			if want := sectionLinks(testCase.sections); !slices.Equal(got, want) {
+				t.Errorf("nav links = %v, want %v", got, want)
+			}
+			var rendered []string
+			for _, m := range renderedSectionRE.FindAllSubmatch(out, -1) {
+				rendered = append(rendered, string(m[1]))
+			}
+			var linked []string
+			for _, link := range got {
+				linked = append(linked, link[0])
+			}
+			if !slices.Equal(linked, rendered) {
+				t.Errorf("nav links %v do not match the rendered sections %v", linked, rendered)
+			}
+		})
+	}
+}
+
+func TestHTMLHeroShowsTheOverallVerdictBeforeTheFirstSection(t *testing.T) {
+	t.Parallel()
+	out := renderAs(t, "html", loadFixture(t, "worked-example"))
+	hero := between(t, out, `class="hero"`, "</div>")
+	if !strings.Contains(hero, `<span class="badge fail">FAIL</span>`) {
+		t.Errorf("the hero does not carry the overall badge: %q", hero)
+	}
+	if !strings.Contains(hero, "Rule applied") {
+		t.Errorf("the hero does not name the rule applied: %q", hero)
+	}
+	if i, j := bytes.Index(out, []byte(`class="hero"`)), bytes.Index(out, []byte("<section")); j < 0 || i > j {
+		t.Errorf("the hero (at %d) must come before the first section (at %d)", i, j)
+	}
+}
+
+func TestHTMLBlockedByRendersAsChipsOrNone(t *testing.T) {
+	t.Parallel()
+	cases := map[string]string{
+		"worked-example":   `<dt>Blocked by</dt><dd><span class="chip">C1</span> <span class="chip">C2</span> <span class="chip">C3</span></dd>`,
+		"extended-example": `<dt>Blocked by</dt><dd>none</dd>`,
+	}
+	for name, want := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			out := renderAs(t, "html", loadFixture(t, name))
+			hero := between(t, out, `class="hero"`, "</div>")
+			if !strings.Contains(hero, want) {
+				t.Errorf("hero does not carry %q:\n%s", want, hero)
+			}
+		})
+	}
+}
+
+func TestHTMLPrintStylesheetHidesTheNav(t *testing.T) {
+	t.Parallel()
+	out := renderAs(t, "html", report.Report{})
+	print := between(t, out, "@media print {", "\n}")
+	if !strings.Contains(print, "nav.toc { display: none; }") {
+		t.Errorf("the print stylesheet does not hide the nav:\n%s", print)
+	}
+	for _, want := range []string{"overflow: visible", "break-inside: avoid", "print-color-adjust: exact", "max-width: none"} {
+		if !strings.Contains(print, want) {
+			t.Errorf("the print stylesheet does not carry %q", want)
+		}
+	}
+}
+
+func TestHTMLFooterNamesTheReport(t *testing.T) {
+	t.Parallel()
+	rep := loadFixture(t, "worked-example")
+	out := renderAs(t, "html", rep)
+	footer := between(t, out, "<footer>", "</footer>")
+	for _, want := range []string{
+		"Report " + rep.Identity.ReportID,
+		"schema " + rep.Identity.SchemaVersion,
+		"v-eval " + rep.Identity.VevalVersion,
+	} {
+		if !strings.Contains(footer, want) {
+			t.Errorf("footer does not carry %q:\n%s", want, footer)
+		}
+	}
+}
+
+// TestHTMLHeadingsCarryTheCountOfWhatTheyList checks that a heading's count
+// chip is the length of the list it heads -- a presentation of report data,
+// not a number the renderer computes on its own -- and that an empty list
+// carries none, because "None recorded." already says so.
+func TestHTMLHeadingsCarryTheCountOfWhatTheyList(t *testing.T) {
+	t.Parallel()
+	for _, name := range evidenceFixtures {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			rep := loadFixture(t, name)
+			out := renderAs(t, "html", rep)
+			counts := map[string]int{
+				"Observations": len(rep.Observations),
+				"Claims":       len(rep.Claims),
+				"Criteria":     len(rep.Criteria),
+				"Forensics":    len(rep.Forensics),
+				"Improvement":  len(rep.Improvement),
+			}
+			for heading, n := range counts {
+				want := fmt.Sprintf("<h2>%s <span class=\"count\">%d</span></h2>", heading, n)
+				if n == 0 {
+					want = "<h2>" + heading + "</h2>"
+				}
+				if !bytes.Contains(out, []byte(want)) {
+					t.Errorf("rendering does not contain %q", want)
+				}
+			}
+		})
+	}
+}
+
+func TestHTMLForensicsCarryTheSeverityAsABadge(t *testing.T) {
+	t.Parallel()
+	out := renderAs(t, "html", loadFixture(t, "extended-example"))
+	const want = `On E6: severity <span class="badge suspicious">suspicious</span>, disposition open.`
+	if !bytes.Contains(out, []byte(want)) {
+		t.Errorf("rendering does not contain %q", want)
 	}
 }

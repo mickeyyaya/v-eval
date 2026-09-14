@@ -20,6 +20,10 @@
   --not-applicable-bg: #dfe5ec; --not-applicable-fg: #2f4258;
   --incomplete-bg: #e9e2f3; --incomplete-fg: #43336b;
   --advisory-bg: #dfe9f1; --advisory-fg: #26445c;
+  --execution-bg: #d5eae4; --execution-fg: #0f4a3c;
+  --inspection-bg: #dbe7f6; --inspection-fg: #1f3f66;
+  --supplied-bg: #f7e8b8; --supplied-fg: #5a4200;
+  --judgment-bg: #e9e2f3; --judgment-fg: #43336b;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -36,60 +40,102 @@
     --not-applicable-bg: #1f2a36; --not-applicable-fg: #a9c1d8;
     --incomplete-bg: #2a2340; --incomplete-fg: #c3b2e8;
     --advisory-bg: #1d2c38; --advisory-fg: #a5c6dc;
+    --execution-bg: #143430; --execution-fg: #96dcc8;
+    --inspection-bg: #1c2c40; --inspection-fg: #a7c4ea;
+    --supplied-bg: #3d3310; --supplied-fg: #e6cc7a;
+    --judgment-bg: #2a2340; --judgment-fg: #c3b2e8;
   }
 }
 * { box-sizing: border-box; }
 body {
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
-  max-width: 72rem;
+  max-width: 76rem;
   background: var(--bg);
   color: var(--fg);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 16px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
-h1 { font-size: 1.6rem; margin: 0 0 0.25rem; }
+code, .revision, .chip, td.id { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+h1 { font-size: 1.75rem; line-height: 1.2; margin: 0.1rem 0 0.25rem; overflow-wrap: anywhere; }
 h2 { font-size: 1.25rem; margin: 0 0 0.75rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--rule); }
 h3 { font-size: 1rem; margin: 0 0 0.25rem; }
 p { margin: 0 0 0.5rem; }
 section { margin: 2rem 0 0; }
-header .revision { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
-dl.facts { display: grid; grid-template-columns: minmax(9rem, auto) minmax(0, 1fr); gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
-dl.facts dt { color: var(--muted); }
-dl.facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.eyebrow { margin: 0; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.revision { margin: 0; color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
+.hero { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; margin: 1.25rem 0 0; padding: 1rem 1.25rem; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; }
+.hero .badge { font-size: 1.25rem; padding: 0.25rem 0.9rem; }
+.hero dl.facts { flex: 1 1 20rem; min-width: 0; margin: 0; }
+.chip { display: inline-block; font-size: 0.8rem; padding: 0 0.5rem; border-radius: 999px; background: var(--bg); border: 1px solid var(--rule); }
+nav.toc { display: flex; gap: 0.25rem 1.25rem; overflow-x: auto; white-space: nowrap; margin: 1.5rem 0 0; padding: 0.5rem 0; background: var(--bg); border-bottom: 1px solid var(--rule); }
+nav.toc a { color: var(--muted); font-size: 0.9rem; font-weight: 500; text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus { color: var(--fg); text-decoration: underline; }
+dl.facts { display: grid; grid-template-columns: 1fr; gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
+dl.facts dt { color: var(--muted); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+dl.facts dd { margin: 0 0 0.4rem; min-width: 0; overflow-wrap: anywhere; }
+.count { display: inline-block; vertical-align: middle; margin-left: 0.35rem; padding: 0 0.55rem; border-radius: 999px; background: var(--panel); border: 1px solid var(--rule); color: var(--muted); font-size: 0.8rem; font-weight: 500; line-height: 1.4; }
 article { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.75rem 1rem; margin: 0 0 0.75rem; }
 table { width: 100%; border-collapse: collapse; margin: 0 0 0.5rem; }
-th, td { border: 1px solid var(--rule); padding: 0.5rem; text-align: left; vertical-align: top; }
-th { background: var(--panel); font-size: 0.9rem; }
+th, td { border: 1px solid var(--rule); padding: 0.5rem 0.6rem; text-align: left; vertical-align: top; }
+th { background: var(--panel); font-size: 0.85rem; }
 td { font-size: 0.95rem; }
-code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; overflow-wrap: anywhere; }
+td.id { white-space: nowrap; font-size: 0.85rem; }
+tbody tr:nth-child(even) td { background: var(--panel); }
+code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-size: 0.85em; overflow-wrap: anywhere; }
 ul.evidence { list-style: none; margin: 0 0 0.5rem; padding: 0; }
-ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; margin: 0 0 0.4rem; font-size: 0.9rem; }
-.tag { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 0 0.3rem; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+ul.evidence li { display: grid; gap: 0.2rem; background: var(--bg); border: 1px solid var(--rule); border-left-width: 3px; border-radius: 4px; padding: 0.45rem 0.7rem; margin: 0 0 0.5rem; font-size: 0.9rem; }
+ul.evidence li > * { min-width: 0; }
+ul.evidence li > code { justify-self: start; }
+.tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.tag { display: inline-block; background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 0 0.35rem; font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+.tag.execution { background: var(--execution-bg); border-color: var(--execution-bg); color: var(--execution-fg); }
+.tag.inspection { background: var(--inspection-bg); border-color: var(--inspection-bg); color: var(--inspection-fg); }
+.tag.supplied { background: var(--supplied-bg); border-color: var(--supplied-bg); color: var(--supplied-fg); }
+.tag.judgment { background: var(--judgment-bg); border-color: var(--judgment-bg); color: var(--judgment-fg); }
 .via, .note { color: var(--muted); font-size: 0.85rem; }
 .conflict { border-left: 3px solid var(--fail-bg); padding: 0 0 0 0.6rem; }
 .text { white-space: pre-wrap; }
 .scroll { overflow-x: auto; }
 .none { color: var(--muted); }
-.overall { font-size: 1.1rem; }
 .badge { display: inline-block; border-radius: 3px; padding: 0.05rem 0.5rem; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em; background: var(--unknown-bg); color: var(--unknown-fg); }
 .badge.pass { background: var(--pass-bg); color: var(--pass-fg); }
-.badge.fail { background: var(--fail-bg); color: var(--fail-fg); }
-.badge.error { background: var(--error-bg); color: var(--error-fg); }
+.badge.fail, .badge.confirmed { background: var(--fail-bg); color: var(--fail-fg); }
+.badge.error, .badge.suspicious { background: var(--error-bg); color: var(--error-fg); }
 .badge.not_applicable { background: var(--not-applicable-bg); color: var(--not-applicable-fg); }
 .badge.incomplete { background: var(--incomplete-bg); color: var(--incomplete-fg); }
 .badge.advisory { background: var(--advisory-bg); color: var(--advisory-fg); }
-@media (max-width: 40rem) {
-  dl.facts { grid-template-columns: 1fr; }
-  dl.facts dd { margin: 0 0 0.4rem; }
+footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
+@media (min-width: 40rem) {
+  body { padding: 2rem 1.25rem 4rem; }
+  nav.toc { position: sticky; top: 0; z-index: 1; }
+  section { scroll-margin-top: 3rem; }
+  dl.facts { grid-template-columns: minmax(9rem, auto) minmax(0, 1fr); }
+  dl.facts dd { margin: 0; }
+  .masthead > dl.facts { grid-template-columns: minmax(9rem, auto) minmax(0, 1fr) minmax(9rem, auto) minmax(0, 1fr); }
+}
+@media print {
+  nav.toc { display: none; }
+  body { max-width: none; }
+  .scroll { overflow: visible; }
+  tr, article, li { break-inside: avoid; }
+  .badge, .tag, .chip, .count { print-color-adjust: exact; }
 }
 </style>
 </head>
 <body>
-<header>
-<h1>v-eval report: code_change</h1>
+<header class="masthead">
+<p class="eyebrow">v-eval report</p>
+<h1>code_change</h1>
 <p class="revision">content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8</p>
+<div class="hero">
+<span class="badge fail">FAIL</span>
+<dl class="facts">
+<dt>Rule applied</dt><dd>required applicable criterion failed</dd>
+<dt>Blocked by</dt><dd><span class="chip">C1</span> <span class="chip">C2</span> <span class="chip">C3</span></dd>
+</dl>
+</div>
 <dl class="facts">
 <dt>Report id</dt><dd><code>sha256:980127c94f0d4d54d823d69e78f1108cb50c2212e7e82cde283f4a3e99ae487a</code></dd>
 <dt>Created</dt><dd>2026-09-14T00:00:00Z</dd>
@@ -103,34 +149,42 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <dt>Brief</dt><dd>examples/code-review/input.md#intent</dd>
 </dl>
 </header>
+<nav class="toc" aria-label="Sections">
+<a href="#status">Status</a>
+<a href="#observations">Observations</a>
+<a href="#claims">Claims</a>
+<a href="#criteria">Criteria</a>
+<a href="#forensics">Forensics</a>
+<a href="#counts">Counts</a>
+<a href="#improvement">Improvement</a>
+<a href="#limitations">Limitations</a>
+<a href="#routing">Routing</a>
+<a href="#provenance">Provenance</a>
+</nav>
 <main>
 <section id="status">
 <h2>Status</h2>
-<p class="overall"><span class="badge fail">FAIL</span></p>
-<dl class="facts">
-<dt>Rule applied</dt><dd>required applicable criterion failed</dd>
-<dt>Blocked by</dt><dd>C1, C2, C3</dd>
-</dl>
+<p class="none">Contract conflicts: none</p>
 </section>
 <section id="observations">
-<h2>Observations</h2>
+<h2>Observations <span class="count">1</span></h2>
 <article>
 <h3>O1 <span class="note">assistant</span></h3>
 <p class="text">The function sorts its output with sorted(), so first-seen order cannot be preserved.</p>
 <p class="note">Criteria: C2</p>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
+<li><span class="tags"><span class="tag inspection">kind inspection</span> <span class="tag">isolation none</span></span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 </article>
 </section>
 <section id="claims">
-<h2>Claims</h2>
+<h2>Claims <span class="count">1</span></h2>
 <div class="scroll">
 <table>
 <thead><tr><th scope="col">ID</th><th scope="col">Claim</th><th scope="col">Status</th><th scope="col">Location</th><th scope="col">Verification</th><th scope="col">Notes</th></tr></thead>
 <tbody>
 <tr>
-<td>CL1</td>
+<td class="id">CL1</td>
 <td>The code is production-ready and all tests passed.</td>
 <td>unverified</td>
 <td>input.md, Candidate author&#39;s statement</td>
@@ -144,71 +198,71 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 </div>
 </section>
 <section id="criteria">
-<h2>Criteria</h2>
+<h2>Criteria <span class="count">5</span></h2>
 <div class="scroll">
 <table>
 <thead><tr><th scope="col">ID</th><th scope="col">Requirement</th><th scope="col">Result</th><th scope="col">Method</th><th scope="col">Evidence and reasoning</th><th scope="col">Next action</th></tr></thead>
 <tbody>
 <tr>
-<td>C1</td>
+<td class="id">C1</td>
 <td>Whitespace and case variants collapse into one address</td>
 <td><span class="badge fail">FAIL</span></td>
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
+<li><span class="tags"><span class="tag inspection">kind inspection</span> <span class="tag">isolation none</span></span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 <p class="text">The candidate strips whitespace but puts original-case strings in a set. For [&#39; A@x.test &#39;, &#39;a@x.test&#39;], the two stripped strings remain distinct by Python string comparison. This is a reasoned counterexample, not an executed result.</p>
 </td>
 <td>Deduplicate using a normalized comparison key.</td>
 </tr>
 <tr>
-<td>C2</td>
+<td class="id">C2</td>
 <td>Output preserves first-seen order</td>
 <td><span class="badge fail">FAIL</span></td>
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
+<li><span class="tags"><span class="tag inspection">kind inspection</span> <span class="tag">isolation none</span></span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 <p class="text">sorted(...) replaces input order with sorting order. [&#39;z@x.test&#39;, &#39;a@x.test&#39;] therefore cannot preserve first-seen order.</p>
 </td>
 <td>Append first occurrences to an output list while tracking seen keys.</td>
 </tr>
 <tr>
-<td>C3</td>
+<td class="id">C3</td>
 <td>Each kept address retains the first occurrence&#39;s spelling after trimming</td>
 <td><span class="badge fail">FAIL</span></td>
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
+<li><span class="tags"><span class="tag inspection">kind inspection</span> <span class="tag">isolation none</span></span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 <p class="text">[&#39;A@x.test&#39;, &#39;a@x.test&#39;] retains both spellings, including the second occurrence. This violates the rule to keep only the first occurrence&#39;s spelling for an equivalent address.</p>
 </td>
 <td>Store the first trimmed value for each normalized key.</td>
 </tr>
 <tr>
-<td>C4</td>
+<td class="id">C4</td>
 <td>Complete supplied implementation uses no third-party dependency</td>
 <td><span class="badge pass">PASS</span></td>
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:26-27</code> <span class="text">The complete supplied function uses built-ins and a string method only.</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
+<li><span class="tags"><span class="tag inspection">kind inspection</span> <span class="tag">isolation none</span></span> <code>examples/code-review/input.md:26-27</code> <span class="text">The complete supplied function uses built-ins and a string method only.</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 <p class="text">The complete supplied function uses built-ins and a string method; it imports or calls no third-party dependency. The conclusion covers only this snippet.</p>
 </td>
 <td>None.</td>
 </tr>
 <tr>
-<td>C5</td>
+<td class="id">C5</td>
 <td>Regression tests pass for this exact artifact</td>
 <td><span class="badge unknown">UNKNOWN</span></td>
 <td>execution</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Candidate author&#39;s statement in input.md</code> <span class="text">Claims tests passed; no tests, command, logs, or verified artifact binding supplied. (supplied)</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
+<li><span class="tags"><span class="tag supplied">kind supplied</span> <span class="tag">isolation none</span> <span class="tag supplied">(supplied)</span></span> <code>Candidate author&#39;s statement in input.md</code> <span class="text">Claims tests passed; no tests, command, logs, or verified artifact binding supplied.</span> <span class="via">via assistant fixture at 2026-09-14T00:00:00Z</span></li>
 </ul>
 <p class="text">The candidate author&#39;s statement supplies no tests, command, environment, logs, or verified artifact binding.</p>
 </td>
@@ -236,7 +290,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <p>Coverage: 4/5 applicable criteria assessed. Coverage is not a correctness score.</p>
 </section>
 <section id="improvement">
-<h2>Improvement</h2>
+<h2>Improvement <span class="count">3</span></h2>
 <article>
 <h3>Whitespace and case variants are not collapsed into one address.</h3>
 <dl class="facts">
@@ -300,5 +354,8 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <p class="none">Commands: none</p>
 </section>
 </main>
+<footer>
+<p>Report sha256:980127c94f0d4d54d823d69e78f1108cb50c2212e7e82cde283f4a3e99ae487a · schema 0.1.0 · v-eval 0.0.0-dev</p>
+</footer>
 </body>
 </html>
