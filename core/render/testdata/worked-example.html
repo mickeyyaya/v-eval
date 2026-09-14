@@ -23,7 +23,6 @@
   --execution-bg: #d5eae4; --execution-fg: #0f4a3c;
   --inspection-bg: #dbe7f6; --inspection-fg: #1f3f66;
   --supplied-bg: #f7e8b8; --supplied-fg: #5a4200;
-  --judgment-bg: #e9e2f3; --judgment-fg: #43336b;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -43,13 +42,12 @@
     --execution-bg: #143430; --execution-fg: #96dcc8;
     --inspection-bg: #1c2c40; --inspection-fg: #a7c4ea;
     --supplied-bg: #3d3310; --supplied-fg: #e6cc7a;
-    --judgment-bg: #2a2340; --judgment-fg: #c3b2e8;
   }
 }
 * { box-sizing: border-box; }
 body {
   margin: 0 auto;
-  padding: 2rem 1rem 4rem;
+  padding: 2rem 1.25rem 4rem;
   max-width: 76rem;
   background: var(--bg);
   color: var(--fg);
@@ -72,9 +70,10 @@ section { margin: 2rem 0 0; }
 nav.toc { display: flex; gap: 0.25rem 1.25rem; overflow-x: auto; white-space: nowrap; margin: 1.5rem 0 0; padding: 0.5rem 0; background: var(--bg); border-bottom: 1px solid var(--rule); }
 nav.toc a { color: var(--muted); font-size: 0.9rem; font-weight: 500; text-decoration: none; }
 nav.toc a:hover, nav.toc a:focus { color: var(--fg); text-decoration: underline; }
-dl.facts { display: grid; grid-template-columns: 1fr; gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
+dl.facts { margin: 0.75rem 0 0; }
 dl.facts dt { color: var(--muted); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
-dl.facts dd { margin: 0 0 0.4rem; min-width: 0; overflow-wrap: anywhere; }
+dl.facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.fact { break-inside: avoid; margin: 0 0 0.5rem; }
 .count { display: inline-block; vertical-align: middle; margin-left: 0.35rem; padding: 0 0.55rem; border-radius: 999px; background: var(--panel); border: 1px solid var(--rule); color: var(--muted); font-size: 0.8rem; font-weight: 500; line-height: 1.4; }
 article { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.75rem 1rem; margin: 0 0 0.75rem; }
 table { width: 100%; border-collapse: collapse; margin: 0 0 0.5rem; }
@@ -93,7 +92,7 @@ ul.evidence li > code { justify-self: start; }
 .tag.execution { background: var(--execution-bg); border-color: var(--execution-bg); color: var(--execution-fg); }
 .tag.inspection { background: var(--inspection-bg); border-color: var(--inspection-bg); color: var(--inspection-fg); }
 .tag.supplied { background: var(--supplied-bg); border-color: var(--supplied-bg); color: var(--supplied-fg); }
-.tag.judgment { background: var(--judgment-bg); border-color: var(--judgment-bg); color: var(--judgment-fg); }
+.tag.judgment { background: var(--incomplete-bg); border-color: var(--incomplete-bg); color: var(--incomplete-fg); }
 .via, .note { color: var(--muted); font-size: 0.85rem; }
 .conflict { border-left: 3px solid var(--fail-bg); padding: 0 0 0 0.6rem; }
 .text { white-space: pre-wrap; }
@@ -108,19 +107,16 @@ ul.evidence li > code { justify-self: start; }
 .badge.advisory { background: var(--advisory-bg); color: var(--advisory-fg); }
 footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
 @media (min-width: 40rem) {
-  body { padding: 2rem 1.25rem 4rem; }
   nav.toc { position: sticky; top: 0; z-index: 1; }
   section { scroll-margin-top: 3rem; }
-  dl.facts { grid-template-columns: minmax(9rem, auto) minmax(0, 1fr); }
-  dl.facts dd { margin: 0; }
-  .masthead > dl.facts { grid-template-columns: minmax(9rem, auto) minmax(0, 1fr) minmax(9rem, auto) minmax(0, 1fr); }
+  dl.facts { columns: 2; column-gap: 2rem; }
 }
 @media print {
   nav.toc { display: none; }
   body { max-width: none; }
   .scroll { overflow: visible; }
   tr, article, li { break-inside: avoid; }
-  .badge, .tag, .chip, .count { print-color-adjust: exact; }
+  .badge, .tag, .chip, .count { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 </style>
 </head>
@@ -132,21 +128,21 @@ footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule);
 <div class="hero">
 <span class="badge fail">FAIL</span>
 <dl class="facts">
-<dt>Rule applied</dt><dd>required applicable criterion failed</dd>
-<dt>Blocked by</dt><dd><span class="chip">C1</span> <span class="chip">C2</span> <span class="chip">C3</span></dd>
+<div class="fact"><dt>Rule applied</dt><dd>required applicable criterion failed</dd></div>
+<div class="fact"><dt>Blocked by</dt><dd><span class="chip">C1</span> <span class="chip">C2</span> <span class="chip">C3</span></dd></div>
 </dl>
 </div>
 <dl class="facts">
-<dt>Report id</dt><dd><code>sha256:980127c94f0d4d54d823d69e78f1108cb50c2212e7e82cde283f4a3e99ae487a</code></dd>
-<dt>Created</dt><dd>2026-09-14T00:00:00Z</dd>
-<dt>Host</dt><dd>fixture on any/any</dd>
-<dt>Versions</dt><dd>schema 0.1.0, v-eval 0.0.0-dev, skill revision draft-2</dd>
-<dt>Contract</dt><dd>code-review-example version 1 (user_specified)</dd>
-<dt>Artifact paths</dt><dd>examples/code-review/input.md</dd>
-<dt>Bundle digest</dt><dd>(none)</dd>
-<dt>Requested outcome</dt><dd>Deduplicate email-address strings for a contact import. Compare addresses ignoring surrounding whitespace and case. Keep the first occurrence&#39;s spelling after trimming. Preserve first-seen order. Do not add dependencies.</dd>
-<dt>Intended user</dt><dd>developer reviewing an AI-generated change</dd>
-<dt>Brief</dt><dd>examples/code-review/input.md#intent</dd>
+<div class="fact"><dt>Report id</dt><dd><code>sha256:980127c94f0d4d54d823d69e78f1108cb50c2212e7e82cde283f4a3e99ae487a</code></dd></div>
+<div class="fact"><dt>Created</dt><dd>2026-09-14T00:00:00Z</dd></div>
+<div class="fact"><dt>Host</dt><dd>fixture on any/any</dd></div>
+<div class="fact"><dt>Versions</dt><dd>schema 0.1.0, v-eval 0.0.0-dev, skill revision draft-2</dd></div>
+<div class="fact"><dt>Contract</dt><dd>code-review-example version 1 (user_specified)</dd></div>
+<div class="fact"><dt>Artifact paths</dt><dd>examples/code-review/input.md</dd></div>
+<div class="fact"><dt>Bundle digest</dt><dd>(none)</dd></div>
+<div class="fact"><dt>Requested outcome</dt><dd>Deduplicate email-address strings for a contact import. Compare addresses ignoring surrounding whitespace and case. Keep the first occurrence&#39;s spelling after trimming. Preserve first-seen order. Do not add dependencies.</dd></div>
+<div class="fact"><dt>Intended user</dt><dd>developer reviewing an AI-generated change</dd></div>
+<div class="fact"><dt>Brief</dt><dd>examples/code-review/input.md#intent</dd></div>
 </dl>
 </header>
 <nav class="toc" aria-label="Sections">
@@ -164,6 +160,11 @@ footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule);
 <main>
 <section id="status">
 <h2>Status</h2>
+<dl class="facts">
+<div class="fact"><dt>Overall</dt><dd><span class="badge fail">FAIL</span></dd></div>
+<div class="fact"><dt>Rule applied</dt><dd>required applicable criterion failed</dd></div>
+<div class="fact"><dt>Blocked by</dt><dd><span class="chip">C1</span> <span class="chip">C2</span> <span class="chip">C3</span></dd></div>
+</dl>
 <p class="none">Contract conflicts: none</p>
 </section>
 <section id="observations">
@@ -294,62 +295,62 @@ footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule);
 <article>
 <h3>Whitespace and case variants are not collapsed into one address.</h3>
 <dl class="facts">
-<dt>Locations</dt><dd>examples/code-review/input.md:27</dd>
-<dt>Change</dt><dd>Deduplicate using a normalized comparison key.</dd>
-<dt>Preserve</dt><dd>Do not add dependencies.</dd>
-<dt>Verify by</dt><dd>Inspect the comparison key, or run a test over whitespace and case variants.</dd>
-<dt>Criteria</dt><dd>C1</dd>
+<div class="fact"><dt>Locations</dt><dd>examples/code-review/input.md:27</dd></div>
+<div class="fact"><dt>Change</dt><dd>Deduplicate using a normalized comparison key.</dd></div>
+<div class="fact"><dt>Preserve</dt><dd>Do not add dependencies.</dd></div>
+<div class="fact"><dt>Verify by</dt><dd>Inspect the comparison key, or run a test over whitespace and case variants.</dd></div>
+<div class="fact"><dt>Criteria</dt><dd>C1</dd></div>
 </dl>
 </article>
 <article>
 <h3>Output order follows sorting order, not first-seen order.</h3>
 <dl class="facts">
-<dt>Locations</dt><dd>examples/code-review/input.md:27</dd>
-<dt>Change</dt><dd>Append first occurrences to an output list while tracking seen keys.</dd>
-<dt>Preserve</dt><dd>Do not add dependencies.</dd>
-<dt>Verify by</dt><dd>Inspect how the output list is built, or run a test over unsorted input.</dd>
-<dt>Criteria</dt><dd>C2</dd>
+<div class="fact"><dt>Locations</dt><dd>examples/code-review/input.md:27</dd></div>
+<div class="fact"><dt>Change</dt><dd>Append first occurrences to an output list while tracking seen keys.</dd></div>
+<div class="fact"><dt>Preserve</dt><dd>Do not add dependencies.</dd></div>
+<div class="fact"><dt>Verify by</dt><dd>Inspect how the output list is built, or run a test over unsorted input.</dd></div>
+<div class="fact"><dt>Criteria</dt><dd>C2</dd></div>
 </dl>
 </article>
 <article>
 <h3>Both spellings of an equivalent address are kept.</h3>
 <dl class="facts">
-<dt>Locations</dt><dd>examples/code-review/input.md:27</dd>
-<dt>Change</dt><dd>Store the first trimmed value for each normalized key.</dd>
-<dt>Preserve</dt><dd>Do not add dependencies.</dd>
-<dt>Verify by</dt><dd>Inspect which value is stored per key, or run a test over mixed-case duplicates.</dd>
-<dt>Criteria</dt><dd>C3</dd>
+<div class="fact"><dt>Locations</dt><dd>examples/code-review/input.md:27</dd></div>
+<div class="fact"><dt>Change</dt><dd>Store the first trimmed value for each normalized key.</dd></div>
+<div class="fact"><dt>Preserve</dt><dd>Do not add dependencies.</dd></div>
+<div class="fact"><dt>Verify by</dt><dd>Inspect which value is stored per key, or run a test over mixed-case duplicates.</dd></div>
+<div class="fact"><dt>Criteria</dt><dd>C3</dd></div>
 </dl>
 </article>
 </section>
 <section id="limitations">
 <h2>Limitations</h2>
 <dl class="facts">
-<dt>Not inspected</dt><dd>none</dd>
-<dt>Not executed</dt><dd>regression suite</dd>
-<dt>Unknown metadata</dt><dd>test environment</dd>
-<dt>Assumptions</dt><dd>none</dd>
+<div class="fact"><dt>Not inspected</dt><dd>none</dd></div>
+<div class="fact"><dt>Not executed</dt><dd>regression suite</dd></div>
+<div class="fact"><dt>Unknown metadata</dt><dd>test environment</dd></div>
+<div class="fact"><dt>Assumptions</dt><dd>none</dd></div>
 </dl>
 </section>
 <section id="routing">
 <h2>Routing</h2>
 <p>Code change with explicit criteria; no tests or execution record supplied, so execution criteria stay UNKNOWN.</p>
 <dl class="facts">
-<dt>Supplied</dt><dd>brief x1 from user, artifact x1 from candidate, candidate_claim x1 from candidate</dd>
-<dt>Profiles</dt><dd>requirements-and-tests 0.1</dd>
-<dt>Adapters run</dt><dd>none</dd>
-<dt>Adapters skipped</dt><dd>test-evidence, missing test definitions and execution record</dd>
-<dt>Ambiguity</dt><dd>none</dd>
+<div class="fact"><dt>Supplied</dt><dd>brief x1 from user, artifact x1 from candidate, candidate_claim x1 from candidate</dd></div>
+<div class="fact"><dt>Profiles</dt><dd>requirements-and-tests 0.1</dd></div>
+<div class="fact"><dt>Adapters run</dt><dd>none</dd></div>
+<div class="fact"><dt>Adapters skipped</dt><dd>test-evidence, missing test definitions and execution record</dd></div>
+<div class="fact"><dt>Ambiguity</dt><dd>none</dd></div>
 </dl>
 </section>
 <section id="provenance">
 <h2>Provenance</h2>
 <dl class="facts">
-<dt>Tools</dt><dd>veval 0.0.0-dev</dd>
-<dt>Environment</dt><dd>any/any</dd>
-<dt>Isolation levels used</dt><dd>none</dd>
-<dt>Bundle digest</dt><dd>(none)</dd>
-<dt>Evidence digest</dt><dd><code>sha256:97ad849882cb469710b6936e039815324d3c8f1e226732e37f3c36b50712db34</code></dd>
+<div class="fact"><dt>Tools</dt><dd>veval 0.0.0-dev</dd></div>
+<div class="fact"><dt>Environment</dt><dd>any/any</dd></div>
+<div class="fact"><dt>Isolation levels used</dt><dd>none</dd></div>
+<div class="fact"><dt>Bundle digest</dt><dd>(none)</dd></div>
+<div class="fact"><dt>Evidence digest</dt><dd><code>sha256:97ad849882cb469710b6936e039815324d3c8f1e226732e37f3c36b50712db34</code></dd></div>
 </dl>
 <p class="none">Commands: none</p>
 </section>

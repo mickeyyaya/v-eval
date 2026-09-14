@@ -28,7 +28,7 @@ func htmlFuncMap() template.FuncMap {
 		"resultClass":   resultClass,
 		"overallClass":  overallClass,
 		"joinIDs":       joinIDs,
-		"supplied":      supplied,
+		"isSupplied":    isSupplied,
 		"locator":       locator,
 		"requirement":   requirement,
 		"isJudgment":    isJudgment,

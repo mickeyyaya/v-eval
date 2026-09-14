@@ -45,6 +45,21 @@ func TestSuppliedMarksOnlyCandidateSuppliedEvidence(t *testing.T) {
 	}
 }
 
+func TestIsSuppliedIsTrueOnlyForCandidateSuppliedEvidence(t *testing.T) {
+	t.Parallel()
+	cases := map[report.Origin]bool{
+		report.OriginObserved:          false,
+		report.OriginRetrieved:         false,
+		report.OriginCandidateSupplied: true,
+		"":                             false,
+	}
+	for origin, want := range cases {
+		if got := isSupplied(report.Evidence{Origin: origin}); got != want {
+			t.Errorf("isSupplied(origin %q) = %v, want %v", origin, got, want)
+		}
+	}
+}
+
 func TestJoinIDsNamesTheEmptyList(t *testing.T) {
 	t.Parallel()
 	if got := joinIDs(nil); got != "none" {

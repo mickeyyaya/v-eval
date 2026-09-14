@@ -220,7 +220,7 @@ func TestHTMLTablesScrollSidewaysSoTheBodyDoesNot(t *testing.T) {
 			t.Errorf("table %d is not directly inside %s", i+1, wrapper)
 		}
 	}
-	for _, want := range []string{"overflow-x: auto", "overflow-wrap: anywhere", "padding: 2rem 1rem 4rem"} {
+	for _, want := range []string{"overflow-x: auto", "overflow-wrap: anywhere", "padding: 2rem 1.25rem 4rem"} {
 		if !bytes.Contains(out, []byte(want)) {
 			t.Errorf("the stylesheet does not carry %q, so the body can scroll sideways", want)
 		}
@@ -360,10 +360,18 @@ func TestHTMLNavLinksEveryRenderedSectionInOrder(t *testing.T) {
 	}
 }
 
+// heroBlock is the text of the status hero. Its fact wrappers close on the
+// line they open on, so the first closing div on a line of its own is the
+// hero's.
+func heroBlock(t *testing.T, out []byte) string {
+	t.Helper()
+	return between(t, out, `<div class="hero">`, "\n</div>")
+}
+
 func TestHTMLHeroShowsTheOverallVerdictBeforeTheFirstSection(t *testing.T) {
 	t.Parallel()
 	out := renderAs(t, "html", loadFixture(t, "worked-example"))
-	hero := between(t, out, `class="hero"`, "</div>")
+	hero := heroBlock(t, out)
 	if !strings.Contains(hero, `<span class="badge fail">FAIL</span>`) {
 		t.Errorf("the hero does not carry the overall badge: %q", hero)
 	}
@@ -385,7 +393,7 @@ func TestHTMLBlockedByRendersAsChipsOrNone(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			out := renderAs(t, "html", loadFixture(t, name))
-			hero := between(t, out, `class="hero"`, "</div>")
+			hero := heroBlock(t, out)
 			if !strings.Contains(hero, want) {
 				t.Errorf("hero does not carry %q:\n%s", want, hero)
 			}
@@ -396,12 +404,15 @@ func TestHTMLBlockedByRendersAsChipsOrNone(t *testing.T) {
 func TestHTMLPrintStylesheetHidesTheNav(t *testing.T) {
 	t.Parallel()
 	out := renderAs(t, "html", report.Report{})
-	print := between(t, out, "@media print {", "\n}")
-	if !strings.Contains(print, "nav.toc { display: none; }") {
-		t.Errorf("the print stylesheet does not hide the nav:\n%s", print)
+	sheet := between(t, out, "@media print {", "\n}")
+	if !strings.Contains(sheet, "nav.toc { display: none; }") {
+		t.Errorf("the print stylesheet does not hide the nav:\n%s", sheet)
 	}
-	for _, want := range []string{"overflow: visible", "break-inside: avoid", "print-color-adjust: exact", "max-width: none"} {
-		if !strings.Contains(print, want) {
+	for _, want := range []string{
+		"overflow: visible", "break-inside: avoid", "max-width: none",
+		"-webkit-print-color-adjust: exact; print-color-adjust: exact",
+	} {
+		if !strings.Contains(sheet, want) {
 			t.Errorf("the print stylesheet does not carry %q", want)
 		}
 	}
@@ -423,31 +434,39 @@ func TestHTMLFooterNamesTheReport(t *testing.T) {
 	}
 }
 
+// countedSection is one section whose heading carries a count chip, and the
+// marker of one rendered item in it: an article for card sections, a body
+// row for table sections.
+type countedSection struct{ id, heading, item string }
+
+var countedSections = []countedSection{
+	{"observations", "Observations", "<article>"},
+	{"claims", "Claims", "\n<tr>"},
+	{"criteria", "Criteria", "\n<tr>"},
+	{"forensics", "Forensics", "<article>"},
+	{"improvement", "Improvement", "<article>"},
+}
+
 // TestHTMLHeadingsCarryTheCountOfWhatTheyList checks that a heading's count
-// chip is the length of the list it heads -- a presentation of report data,
-// not a number the renderer computes on its own -- and that an empty list
-// carries none, because "None recorded." already says so.
+// chip is the number of items the section actually renders -- a presentation
+// of the rendering, not a number computed elsewhere -- and that a section
+// with nothing rendered carries no chip, because "None recorded." already
+// says so. Body rows start on a line of their own; the header row shares
+// the thead's line, so it is not counted.
 func TestHTMLHeadingsCarryTheCountOfWhatTheyList(t *testing.T) {
 	t.Parallel()
 	for _, name := range evidenceFixtures {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			rep := loadFixture(t, name)
-			out := renderAs(t, "html", rep)
-			counts := map[string]int{
-				"Observations": len(rep.Observations),
-				"Claims":       len(rep.Claims),
-				"Criteria":     len(rep.Criteria),
-				"Forensics":    len(rep.Forensics),
-				"Improvement":  len(rep.Improvement),
-			}
-			for heading, n := range counts {
-				want := fmt.Sprintf("<h2>%s <span class=\"count\">%d</span></h2>", heading, n)
-				if n == 0 {
-					want = "<h2>" + heading + "</h2>"
+			out := renderAs(t, "html", loadFixture(t, name))
+			for _, section := range countedSections {
+				body := between(t, out, `<section id="`+section.id+`">`, "</section>")
+				want := "<h2>" + section.heading + "</h2>"
+				if n := strings.Count(body, section.item); n > 0 {
+					want = fmt.Sprintf(`<h2>%s <span class="count">%d</span></h2>`, section.heading, n)
 				}
-				if !bytes.Contains(out, []byte(want)) {
-					t.Errorf("rendering does not contain %q", want)
+				if !strings.HasPrefix(body, `<section id="`+section.id+`">`+"\n"+want) {
+					t.Errorf("section %s does not open with %q", section.id, want)
 				}
 			}
 		})
@@ -460,5 +479,51 @@ func TestHTMLForensicsCarryTheSeverityAsABadge(t *testing.T) {
 	const want = `On E6: severity <span class="badge suspicious">suspicious</span>, disposition open.`
 	if !bytes.Contains(out, []byte(want)) {
 		t.Errorf("rendering does not contain %q", want)
+	}
+}
+
+func TestHTMLStatusSectionStandsAloneWithTheVerdict(t *testing.T) {
+	t.Parallel()
+	out := renderAs(t, "html", loadFixture(t, "worked-example"))
+	status := between(t, out, `<section id="status">`, "</section>")
+	for _, want := range []string{
+		`<dt>Overall</dt><dd><span class="badge fail">FAIL</span></dd>`,
+		"<dt>Rule applied</dt><dd>required applicable criterion failed</dd>",
+		`<dt>Blocked by</dt><dd><span class="chip">C1</span>`,
+	} {
+		if !strings.Contains(status, want) {
+			t.Errorf("the status section does not carry %q:\n%s", want, status)
+		}
+	}
+	if i, j := strings.Index(status, "<dt>Overall</dt>"), strings.Index(status, "Contract conflicts"); j < 0 || i > j {
+		t.Errorf("the verdict (at %d) must come before the conflicts line (at %d)", i, j)
+	}
+}
+
+// factRE matches one fact: a label and its value, wrapped together so the
+// pair can never be split across the columns the facts flow into.
+var factRE = regexp.MustCompile(`<div class="fact"><dt>[^<]+</dt><dd>(?s:.*?)</dd></div>`)
+
+func TestHTMLEveryFactWrapsItsLabelWithItsValue(t *testing.T) {
+	t.Parallel()
+	out := renderAs(t, "html", loadFixture(t, "extended-example"))
+	labels := bytes.Count(out, []byte("<dt>"))
+	if labels == 0 {
+		t.Fatal("the fixture renders no facts")
+	}
+	if got := len(factRE.FindAll(out, -1)); got != labels {
+		t.Errorf("%d facts wrap a label with its value, want %d (one per <dt>)", got, labels)
+	}
+	if got := bytes.Count(out, []byte(`<div class="fact">`)); got != labels {
+		t.Errorf("%d fact wrappers for %d labels", got, labels)
+	}
+}
+
+func TestHTMLNavComesBeforeMain(t *testing.T) {
+	t.Parallel()
+	out := renderAs(t, "html", report.Report{})
+	i, j := bytes.Index(out, []byte(`<nav class="toc"`)), bytes.Index(out, []byte("<main>"))
+	if i < 0 || j < 0 || i > j {
+		t.Errorf("nav (at %d) must come before main (at %d)", i, j)
 	}
 }

@@ -48,10 +48,17 @@ func joinIDs(ids []string) string {
 // would read as the renderer's own words.
 func joinIDsCell(ids []string) string { return cell(joinIDs(ids)) }
 
-// supplied marks evidence the candidate handed over rather than evidence the
-// evaluator gathered, wherever that evidence is shown.
+// isSupplied reports whether the candidate handed a piece of evidence over
+// rather than the evaluator gathering it: the one origin a reader must be
+// able to discount, wherever that evidence is shown.
+func isSupplied(evidence report.Evidence) bool {
+	return evidence.Origin == report.OriginCandidateSupplied
+}
+
+// supplied is the marker Markdown appends to supplied evidence, and nothing
+// for the rest.
 func supplied(evidence report.Evidence) string {
-	if evidence.Origin == report.OriginCandidateSupplied {
+	if isSupplied(evidence) {
 		return " (supplied)"
 	}
 	return ""

@@ -23,7 +23,6 @@
   --execution-bg: #d5eae4; --execution-fg: #0f4a3c;
   --inspection-bg: #dbe7f6; --inspection-fg: #1f3f66;
   --supplied-bg: #f7e8b8; --supplied-fg: #5a4200;
-  --judgment-bg: #e9e2f3; --judgment-fg: #43336b;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -43,13 +42,12 @@
     --execution-bg: #143430; --execution-fg: #96dcc8;
     --inspection-bg: #1c2c40; --inspection-fg: #a7c4ea;
     --supplied-bg: #3d3310; --supplied-fg: #e6cc7a;
-    --judgment-bg: #2a2340; --judgment-fg: #c3b2e8;
   }
 }
 * { box-sizing: border-box; }
 body {
   margin: 0 auto;
-  padding: 2rem 1rem 4rem;
+  padding: 2rem 1.25rem 4rem;
   max-width: 76rem;
   background: var(--bg);
   color: var(--fg);
@@ -72,9 +70,10 @@ section { margin: 2rem 0 0; }
 nav.toc { display: flex; gap: 0.25rem 1.25rem; overflow-x: auto; white-space: nowrap; margin: 1.5rem 0 0; padding: 0.5rem 0; background: var(--bg); border-bottom: 1px solid var(--rule); }
 nav.toc a { color: var(--muted); font-size: 0.9rem; font-weight: 500; text-decoration: none; }
 nav.toc a:hover, nav.toc a:focus { color: var(--fg); text-decoration: underline; }
-dl.facts { display: grid; grid-template-columns: 1fr; gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
+dl.facts { margin: 0.75rem 0 0; }
 dl.facts dt { color: var(--muted); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
-dl.facts dd { margin: 0 0 0.4rem; min-width: 0; overflow-wrap: anywhere; }
+dl.facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.fact { break-inside: avoid; margin: 0 0 0.5rem; }
 .count { display: inline-block; vertical-align: middle; margin-left: 0.35rem; padding: 0 0.55rem; border-radius: 999px; background: var(--panel); border: 1px solid var(--rule); color: var(--muted); font-size: 0.8rem; font-weight: 500; line-height: 1.4; }
 article { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.75rem 1rem; margin: 0 0 0.75rem; }
 table { width: 100%; border-collapse: collapse; margin: 0 0 0.5rem; }
@@ -93,7 +92,7 @@ ul.evidence li > code { justify-self: start; }
 .tag.execution { background: var(--execution-bg); border-color: var(--execution-bg); color: var(--execution-fg); }
 .tag.inspection { background: var(--inspection-bg); border-color: var(--inspection-bg); color: var(--inspection-fg); }
 .tag.supplied { background: var(--supplied-bg); border-color: var(--supplied-bg); color: var(--supplied-fg); }
-.tag.judgment { background: var(--judgment-bg); border-color: var(--judgment-bg); color: var(--judgment-fg); }
+.tag.judgment { background: var(--incomplete-bg); border-color: var(--incomplete-bg); color: var(--incomplete-fg); }
 .via, .note { color: var(--muted); font-size: 0.85rem; }
 .conflict { border-left: 3px solid var(--fail-bg); padding: 0 0 0 0.6rem; }
 .text { white-space: pre-wrap; }
@@ -108,19 +107,16 @@ ul.evidence li > code { justify-self: start; }
 .badge.advisory { background: var(--advisory-bg); color: var(--advisory-fg); }
 footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
 @media (min-width: 40rem) {
-  body { padding: 2rem 1.25rem 4rem; }
   nav.toc { position: sticky; top: 0; z-index: 1; }
   section { scroll-margin-top: 3rem; }
-  dl.facts { grid-template-columns: minmax(9rem, auto) minmax(0, 1fr); }
-  dl.facts dd { margin: 0; }
-  .masthead > dl.facts { grid-template-columns: minmax(9rem, auto) minmax(0, 1fr) minmax(9rem, auto) minmax(0, 1fr); }
+  dl.facts { columns: 2; column-gap: 2rem; }
 }
 @media print {
   nav.toc { display: none; }
   body { max-width: none; }
   .scroll { overflow: visible; }
   tr, article, li { break-inside: avoid; }
-  .badge, .tag, .chip, .count { print-color-adjust: exact; }
+  .badge, .tag, .chip, .count { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 </style>
 </head>
@@ -132,21 +128,21 @@ footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule);
 <div class="hero">
 <span class="badge incomplete">INCOMPLETE</span>
 <dl class="facts">
-<dt>Rule applied</dt><dd>unresolved contract conflict</dd>
-<dt>Blocked by</dt><dd>none</dd>
+<div class="fact"><dt>Rule applied</dt><dd>unresolved contract conflict</dd></div>
+<div class="fact"><dt>Blocked by</dt><dd>none</dd></div>
 </dl>
 </div>
 <dl class="facts">
-<dt>Report id</dt><dd><code>sha256:72760dea420ab21ef325ba034cc44081769cc290b495a524b53efd3c0f895ac4</code></dd>
-<dt>Created</dt><dd>2026-09-14T00:03:00Z</dd>
-<dt>Host</dt><dd>fixture on any/any, model unknown</dd>
-<dt>Versions</dt><dd>schema 0.1.0, v-eval 0.0.0-dev, skill revision draft-2</dd>
-<dt>Contract</dt><dd>extended-example version 1 (provisional)</dd>
-<dt>Artifact paths</dt><dd>examples/extended/service.go, examples/extended/service_test.go</dd>
-<dt>Bundle digest</dt><dd><code>sha256:1f0a5c7f2b3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7</code></dd>
-<dt>Requested outcome</dt><dd>Enforce the vendor&#39;s published per-key rate limit in the request path, keep the regression suite passing, and ship a reproducible container image.</dd>
-<dt>Intended user</dt><dd>release engineer deciding whether to deploy the change</dd>
-<dt>Brief</dt><dd>examples/extended/brief.md#intent</dd>
+<div class="fact"><dt>Report id</dt><dd><code>sha256:72760dea420ab21ef325ba034cc44081769cc290b495a524b53efd3c0f895ac4</code></dd></div>
+<div class="fact"><dt>Created</dt><dd>2026-09-14T00:03:00Z</dd></div>
+<div class="fact"><dt>Host</dt><dd>fixture on any/any, model unknown</dd></div>
+<div class="fact"><dt>Versions</dt><dd>schema 0.1.0, v-eval 0.0.0-dev, skill revision draft-2</dd></div>
+<div class="fact"><dt>Contract</dt><dd>extended-example version 1 (provisional)</dd></div>
+<div class="fact"><dt>Artifact paths</dt><dd>examples/extended/service.go, examples/extended/service_test.go</dd></div>
+<div class="fact"><dt>Bundle digest</dt><dd><code>sha256:1f0a5c7f2b3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7</code></dd></div>
+<div class="fact"><dt>Requested outcome</dt><dd>Enforce the vendor&#39;s published per-key rate limit in the request path, keep the regression suite passing, and ship a reproducible container image.</dd></div>
+<div class="fact"><dt>Intended user</dt><dd>release engineer deciding whether to deploy the change</dd></div>
+<div class="fact"><dt>Brief</dt><dd>examples/extended/brief.md#intent</dd></div>
 </dl>
 </header>
 <nav class="toc" aria-label="Sections">
@@ -166,6 +162,11 @@ footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule);
 <main>
 <section id="status">
 <h2>Status</h2>
+<dl class="facts">
+<div class="fact"><dt>Overall</dt><dd><span class="badge incomplete">INCOMPLETE</span></dd></div>
+<div class="fact"><dt>Rule applied</dt><dd>unresolved contract conflict</dd></div>
+<div class="fact"><dt>Blocked by</dt><dd>none</dd></div>
+</dl>
 <p class="conflict">Contract conflict (unresolved) between E1, E4: The suite is run against the worktree toolchain while the image is built from a pinned one; the brief does not say which toolchain the release is accepted on.</p>
 </section>
 <section id="observations">
@@ -328,10 +329,10 @@ footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule);
 <article>
 <h3>throughput <span class="note">requests_per_second version 1</span></h3>
 <dl class="facts">
-<dt>Value</dt><dd>not measured</dd>
-<dt>Threshold</dt><dd>at or above 500 from examples/extended/brief.md#throughput</dd>
-<dt>Authority</dt><dd>established_measure, defined at examples/extended/brief.md#throughput</dd>
-<dt>Measurement</dt><dd>bench unknown on workload steady 60s at 8 concurrent workers, direction higher_is_better, range 0 and above</dd>
+<div class="fact"><dt>Value</dt><dd>not measured</dd></div>
+<div class="fact"><dt>Threshold</dt><dd>at or above 500 from examples/extended/brief.md#throughput</dd></div>
+<div class="fact"><dt>Authority</dt><dd>established_measure, defined at examples/extended/brief.md#throughput</dd></div>
+<div class="fact"><dt>Measurement</dt><dd>bench unknown on workload steady 60s at 8 concurrent workers, direction higher_is_better, range 0 and above</dd></div>
 </dl>
 <p>Not measured on this host: the quoted number has no workload or tool behind it, so no comparison to the target is possible.</p>
 <ul class="evidence">
@@ -357,62 +358,62 @@ footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule);
 <article>
 <h3>Reproducibility of the container image is untested: the toolchain is absent from the evaluation host.</h3>
 <dl class="facts">
-<dt>Locations</dt><dd>examples/extended/Dockerfile</dd>
-<dt>Change</dt><dd>Run the evaluation on a host with the container toolchain, or pin a builder image the evaluator can fetch itself.</dd>
-<dt>Preserve</dt><dd>Do not change the published rate limit.</dd>
-<dt>Verify by</dt><dd>Two builds of this revision print the same image digest.</dd>
-<dt>Criteria</dt><dd>E4</dd>
+<div class="fact"><dt>Locations</dt><dd>examples/extended/Dockerfile</dd></div>
+<div class="fact"><dt>Change</dt><dd>Run the evaluation on a host with the container toolchain, or pin a builder image the evaluator can fetch itself.</dd></div>
+<div class="fact"><dt>Preserve</dt><dd>Do not change the published rate limit.</dd></div>
+<div class="fact"><dt>Verify by</dt><dd>Two builds of this revision print the same image digest.</dd></div>
+<div class="fact"><dt>Criteria</dt><dd>E4</dd></div>
 </dl>
 </article>
 <article>
 <h3>Throughput is quoted in prose but never measured.</h3>
 <dl class="facts">
-<dt>Locations</dt><dd>pull request description, paragraph 2</dd>
-<dt>Change</dt><dd>Run the stated workload and record the measurement with the tool and version that produced it.</dd>
-<dt>Preserve</dt><dd>none</dd>
-<dt>Verify by</dt><dd>The throughput dimension carries a value, a unit, and a named tool.</dd>
-<dt>Criteria</dt><dd>E3</dd>
+<div class="fact"><dt>Locations</dt><dd>pull request description, paragraph 2</dd></div>
+<div class="fact"><dt>Change</dt><dd>Run the stated workload and record the measurement with the tool and version that produced it.</dd></div>
+<div class="fact"><dt>Preserve</dt><dd>none</dd></div>
+<div class="fact"><dt>Verify by</dt><dd>The throughput dimension carries a value, a unit, and a named tool.</dd></div>
+<div class="fact"><dt>Criteria</dt><dd>E3</dd></div>
 </dl>
 </article>
 <article>
 <h3>The evaluation cannot tell a benign touch from a modification of the artifact.</h3>
 <dl class="facts">
-<dt>Locations</dt><dd>examples/extended/service.go</dd>
-<dt>Change</dt><dd>Record a tree digest and file timestamps before evaluation begins.</dd>
-<dt>Preserve</dt><dd>Do not write into the artifact tree during evaluation.</dd>
-<dt>Verify by</dt><dd>The integrity detector compares pre- and post-evaluation tree digests.</dd>
-<dt>Criteria</dt><dd>E6</dd>
+<div class="fact"><dt>Locations</dt><dd>examples/extended/service.go</dd></div>
+<div class="fact"><dt>Change</dt><dd>Record a tree digest and file timestamps before evaluation begins.</dd></div>
+<div class="fact"><dt>Preserve</dt><dd>Do not write into the artifact tree during evaluation.</dd></div>
+<div class="fact"><dt>Verify by</dt><dd>The integrity detector compares pre- and post-evaluation tree digests.</dd></div>
+<div class="fact"><dt>Criteria</dt><dd>E6</dd></div>
 </dl>
 </article>
 </section>
 <section id="limitations">
 <h2>Limitations</h2>
 <dl class="facts">
-<dt>Not inspected</dt><dd>deployment manifests, which this contract does not cover</dd>
-<dt>Not executed</dt><dd>container image build, benchmark workload</dd>
-<dt>Unknown metadata</dt><dd>pre-evaluation file timestamps, the toolchain the release is accepted on</dd>
-<dt>Assumptions</dt><dd>The vendor documentation read at version 2026-08-30 is the version the change targets.</dd>
+<div class="fact"><dt>Not inspected</dt><dd>deployment manifests, which this contract does not cover</dd></div>
+<div class="fact"><dt>Not executed</dt><dd>container image build, benchmark workload</dd></div>
+<div class="fact"><dt>Unknown metadata</dt><dd>pre-evaluation file timestamps, the toolchain the release is accepted on</dd></div>
+<div class="fact"><dt>Assumptions</dt><dd>The vendor documentation read at version 2026-08-30 is the version the change targets.</dd></div>
 </dl>
 </section>
 <section id="routing">
 <h2>Routing</h2>
 <p>Service change with a supplied test suite and a cited external limit, so execution and source verification both ran; the container and benchmark adapters had no toolchain to run on.</p>
 <dl class="facts">
-<dt>Supplied</dt><dd>brief x1 from user, artifact x2 from candidate, candidate_claim x1 from candidate</dd>
-<dt>Profiles</dt><dd>requirements-and-tests 0.1, release-readiness 0.2</dd>
-<dt>Adapters run</dt><dd>go-test 0.1 over examples/extended/service_test.go; mtime-drift 0.3 over examples/extended/service.go</dd>
-<dt>Adapters skipped</dt><dd>container-build, missing container toolchain on the evaluation host</dd>
-<dt>Ambiguity</dt><dd>Does the rate limit apply per API key or per client address? Resolved: Read as per API key: the brief and the vendor documentation both state the limit per key.</dd>
+<div class="fact"><dt>Supplied</dt><dd>brief x1 from user, artifact x2 from candidate, candidate_claim x1 from candidate</dd></div>
+<div class="fact"><dt>Profiles</dt><dd>requirements-and-tests 0.1, release-readiness 0.2</dd></div>
+<div class="fact"><dt>Adapters run</dt><dd>go-test 0.1 over examples/extended/service_test.go; mtime-drift 0.3 over examples/extended/service.go</dd></div>
+<div class="fact"><dt>Adapters skipped</dt><dd>container-build, missing container toolchain on the evaluation host</dd></div>
+<div class="fact"><dt>Ambiguity</dt><dd>Does the rate limit apply per API key or per client address? Resolved: Read as per API key: the brief and the vendor documentation both state the limit per key.</dd></div>
 </dl>
 </section>
 <section id="provenance">
 <h2>Provenance</h2>
 <dl class="facts">
-<dt>Tools</dt><dd>veval 0.0.0-dev, go 1.23.1, mtime-drift 0.3</dd>
-<dt>Environment</dt><dd>any/any, runtime go 1.23.1</dd>
-<dt>Isolation levels used</dt><dd>none, worktree</dd>
-<dt>Bundle digest</dt><dd><code>sha256:1f0a5c7f2b3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7</code></dd>
-<dt>Evidence digest</dt><dd><code>sha256:16b12842a5d5420296a18d9d03ee5be6461b32ea7a165a8742b8c95e03eb3bd7</code></dd>
+<div class="fact"><dt>Tools</dt><dd>veval 0.0.0-dev, go 1.23.1, mtime-drift 0.3</dd></div>
+<div class="fact"><dt>Environment</dt><dd>any/any, runtime go 1.23.1</dd></div>
+<div class="fact"><dt>Isolation levels used</dt><dd>none, worktree</dd></div>
+<div class="fact"><dt>Bundle digest</dt><dd><code>sha256:1f0a5c7f2b3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7</code></dd></div>
+<div class="fact"><dt>Evidence digest</dt><dd><code>sha256:16b12842a5d5420296a18d9d03ee5be6461b32ea7a165a8742b8c95e03eb3bd7</code></dd></div>
 </dl>
 <div class="scroll">
 <table>
@@ -428,8 +429,8 @@ footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule);
 <section id="learning">
 <h2>Learning</h2>
 <dl class="facts">
-<dt>Precedents retrieved</dt><dd>sha256:4b2f8d1c6e0a9735bd4c1e8f206a3b5c7d9e0f1a2b3c4d5e6f708192a3b4c5d6 for E6, similarity 0.82</dd>
-<dt>Reward records created</dt><dd>rr-2026-09-14-e6-integrity-unknown</dd>
+<div class="fact"><dt>Precedents retrieved</dt><dd>sha256:4b2f8d1c6e0a9735bd4c1e8f206a3b5c7d9e0f1a2b3c4d5e6f708192a3b4c5d6 for E6, similarity 0.82</dd></div>
+<div class="fact"><dt>Reward records created</dt><dd>rr-2026-09-14-e6-integrity-unknown</dd></div>
 </dl>
 </section>
 </main>
