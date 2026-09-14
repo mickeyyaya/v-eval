@@ -20,3 +20,18 @@ func TestEmbeddedSchemaParsesAndDeclaresVersion(t *testing.T) {
 		t.Fatalf("Version = %q", schema.Version)
 	}
 }
+
+func TestReportReturnsIndependentCopy(t *testing.T) {
+	t.Parallel()
+	first := schema.Report()
+	if len(first) == 0 {
+		t.Fatalf("Report() returned no bytes")
+	}
+	original := first[0]
+	first[0] = original + 1 // mutate the caller's copy
+
+	second := schema.Report()
+	if second[0] != original {
+		t.Fatalf("Report() byte 0 = %v after caller mutation, want unchanged %v (Report must return a copy)", second[0], original)
+	}
+}
