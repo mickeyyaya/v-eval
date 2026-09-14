@@ -14,12 +14,11 @@ type Log struct {
 
 // Run is a single invocation of an analysis tool over an artifact.
 type Run struct {
-	Tool                     Tool         `json:"tool"`
-	Invocations              []Invocation `json:"invocations,omitempty"`
-	VersionControlProvenance []VCS        `json:"versionControlProvenance,omitempty"`
-	Artifacts                []Artifact   `json:"artifacts,omitempty"`
-	Results                  []Result     `json:"results"`
-	Properties               Properties   `json:"properties,omitempty"`
+	Tool        Tool         `json:"tool"`
+	Invocations []Invocation `json:"invocations,omitempty"`
+	Artifacts   []Artifact   `json:"artifacts,omitempty"`
+	Results     []Result     `json:"results"`
+	Properties  Properties   `json:"properties,omitempty"`
 }
 
 // Properties is a SARIF property bag: the place for what SARIF has no field
@@ -104,11 +103,6 @@ type Invocation struct {
 type Notification struct {
 	Level   string `json:"level,omitempty"`
 	Message Text   `json:"message"`
-}
-
-// VCS is a versionControlDetails entry: which revision was analyzed.
-type VCS struct {
-	RevisionID string `json:"revisionId"`
 }
 
 // Artifact is a file the run analyzed, with the hashes that pin its content.

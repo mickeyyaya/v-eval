@@ -116,8 +116,11 @@
           "properties": {
             "evidence": [
               {
+                "file": "examples/code-review/input.md",
                 "isolation": "none",
                 "kind": "inspection",
+                "line_end": 27,
+                "line_start": 27,
                 "observation": "    return sorted(set(email.strip() for email in emails))",
                 "origin": "observed"
               }
@@ -148,8 +151,11 @@
           "properties": {
             "evidence": [
               {
+                "file": "examples/code-review/input.md",
                 "isolation": "none",
                 "kind": "inspection",
+                "line_end": 27,
+                "line_start": 27,
                 "observation": "    return sorted(set(email.strip() for email in emails))",
                 "origin": "observed"
               }
@@ -180,8 +186,11 @@
           "properties": {
             "evidence": [
               {
+                "file": "examples/code-review/input.md",
                 "isolation": "none",
                 "kind": "inspection",
+                "line_end": 27,
+                "line_start": 27,
                 "observation": "    return sorted(set(email.strip() for email in emails))",
                 "origin": "observed"
               }
@@ -211,8 +220,11 @@
           "properties": {
             "evidence": [
               {
+                "file": "examples/code-review/input.md",
                 "isolation": "none",
                 "kind": "inspection",
+                "line_end": 27,
+                "line_start": 26,
                 "observation": "The complete supplied function uses built-ins and a string method only.",
                 "origin": "observed"
               }

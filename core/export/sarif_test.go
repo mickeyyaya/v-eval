@@ -251,8 +251,9 @@ func TestSARIFNonFileLocatorsBecomeEvidenceProperties(t *testing.T) {
 
 func TestSARIFEveryEvidenceRecordIsListed(t *testing.T) {
 	t.Parallel()
-	// E2 cites a passage and a file; the file one is a location, and both are
-	// listed in properties.evidence so the record of what was seen is complete.
+	// E2 cites a passage and a file; the file one is also a location, and both
+	// are listed in properties.evidence so the record of what was seen is
+	// complete.
 	got := resultsFor(t, mustSARIF(t, loadReport(t, "extended-example")), "E2")[0]
 	evidence := evidenceOf(t, got)
 	if len(evidence) != 2 || len(got.Locations) != 1 {
@@ -265,8 +266,19 @@ func TestSARIFEveryEvidenceRecordIsListed(t *testing.T) {
 			}
 		}
 	}
-	if _, ok := evidence[1]["file"]; ok {
-		t.Fatalf("file locator repeated in properties.evidence: %v", evidence[1])
+}
+
+func TestSARIFFileEvidenceObjectIsSelfContained(t *testing.T) {
+	t.Parallel()
+	// A reader holding one evidence object must learn where it points from that
+	// object alone, without counting positions in locations[].
+	got := resultsFor(t, mustSARIF(t, loadReport(t, "extended-example")), "E2")[0]
+	file := evidenceOf(t, got)[1]
+	if file["file"] != "examples/extended/service.go" || file["line_start"] != 48 || file["line_end"] != 52 {
+		t.Fatalf("file evidence = %v, want its own file and line range", file)
+	}
+	if len(got.Locations) != 1 {
+		t.Fatalf("locations = %+v, want the file locator kept as a physicalLocation too", got.Locations)
 	}
 }
 
@@ -340,14 +352,28 @@ func TestSARIFNoInvocationsWhenNothingRan(t *testing.T) {
 	}
 }
 
-func TestSARIFGitRevisionBecomesVersionControlProvenance(t *testing.T) {
+func TestSARIFGitRevisionStaysInProperties(t *testing.T) {
 	t.Parallel()
-	run := mustSARIF(t, loadReport(t, "extended-example")).Runs[0]
-	if len(run.VersionControlProvenance) != 1 || run.VersionControlProvenance[0].RevisionID != "9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f" {
-		t.Fatalf("versionControlProvenance = %+v", run.VersionControlProvenance)
+	// SARIF requires a repositoryUri on every versionControlProvenance entry
+	// and a report carries none, so a git revision is stated in the property
+	// bag rather than in an entry no validator would accept.
+	log := mustSARIF(t, loadReport(t, "extended-example"))
+	veval := log.Runs[0].Properties["veval"].(map[string]any)
+	if veval["vcs_revision_id"] != "9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f" {
+		t.Fatalf("vcs_revision_id = %v", veval["vcs_revision_id"])
 	}
-	if len(run.Artifacts) != 0 {
-		t.Fatalf("a git revision carries no artifact hash: %+v", run.Artifacts)
+	if veval["revision"] != "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f" {
+		t.Fatalf("revision = %v, want the revision as the report states it", veval["revision"])
+	}
+	if len(log.Runs[0].Artifacts) != 0 {
+		t.Fatalf("a git revision carries no artifact hash: %+v", log.Runs[0].Artifacts)
+	}
+	out, err := export.Marshal(log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(out, []byte("versionControlProvenance")) {
+		t.Fatal("versionControlProvenance cannot be completed from a report and must not be written")
 	}
 }
 
@@ -364,8 +390,8 @@ func TestSARIFContentRevisionBecomesArtifactHashes(t *testing.T) {
 	if got.Hashes["sha-256"] != "befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8" {
 		t.Fatalf("artifact hashes = %v", got.Hashes)
 	}
-	if len(run.VersionControlProvenance) != 0 {
-		t.Fatalf("a content revision is not version control provenance: %+v", run.VersionControlProvenance)
+	if _, ok := mustSARIF(t, loadFixture(t)).Runs[0].Properties["veval"].(map[string]any)["vcs_revision_id"]; ok {
+		t.Fatal("a content revision is not a version control revision id")
 	}
 }
 
@@ -384,11 +410,15 @@ func TestSARIFUnrecognizedRevisionStaysInProperties(t *testing.T) {
 	rep := loadFixture(t)
 	rep.Identity.Artifact.Revision = "svn:r1234"
 	run := mustSARIF(t, rep).Runs[0]
-	if len(run.Artifacts) != 0 || len(run.VersionControlProvenance) != 0 {
-		t.Fatalf("an unrecognized revision must not be reshaped: %+v %+v", run.Artifacts, run.VersionControlProvenance)
+	if len(run.Artifacts) != 0 {
+		t.Fatalf("an unrecognized revision must not be reshaped: %+v", run.Artifacts)
 	}
-	if run.Properties["veval"].(map[string]any)["revision"] != "svn:r1234" {
-		t.Fatalf("veval properties = %v", run.Properties["veval"])
+	veval := run.Properties["veval"].(map[string]any)
+	if veval["revision"] != "svn:r1234" {
+		t.Fatalf("veval properties = %v", veval)
+	}
+	if _, ok := veval["vcs_revision_id"]; ok {
+		t.Fatalf("an unrecognized revision is not a git revision id: %v", veval["vcs_revision_id"])
 	}
 }
 
@@ -456,6 +486,40 @@ func TestSARIFRejectsCriterionMissingFromContract(t *testing.T) {
 	rep.Criteria[0].ID = "C9"
 	if _, err := export.ToSARIF(rep); err == nil {
 		t.Fatal("a result with no contract criterion has no rule and must be an error")
+	}
+}
+
+// blockedByOf returns the blocked_by list a run states.
+func blockedByOf(t *testing.T, log export.Log) []string {
+	t.Helper()
+	veval, ok := log.Runs[0].Properties["veval"].(map[string]any)
+	if !ok {
+		t.Fatalf("run properties = %v", log.Runs[0].Properties)
+	}
+	blocked, ok := veval["blocked_by"].([]string)
+	if !ok {
+		t.Fatalf("blocked_by = %#v, want a list", veval["blocked_by"])
+	}
+	return blocked
+}
+
+func TestSARIFBlockedByIsNeverNull(t *testing.T) {
+	t.Parallel()
+	// A report built in Go, not decoded from JSON, can leave the list nil.
+	rep := report.Report{Status: report.Status{Overall: report.OverallPass}}
+	if rep.Status.BlockedBy != nil {
+		t.Fatal("this test is only meaningful while a zero Status leaves BlockedBy nil")
+	}
+	log := mustSARIF(t, rep)
+	if blocked := blockedByOf(t, log); blocked == nil || len(blocked) != 0 {
+		t.Fatalf("blocked_by = %#v, want an empty list", blocked)
+	}
+	out, err := export.Marshal(log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(out, []byte(`"blocked_by": []`)) {
+		t.Fatalf("blocked_by must serialize as an empty array:\n%s", out)
 	}
 }
 

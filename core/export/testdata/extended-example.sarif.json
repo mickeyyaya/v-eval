@@ -148,11 +148,6 @@
           }
         }
       ],
-      "versionControlProvenance": [
-        {
-          "revisionId": "9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f"
-        }
-      ],
       "results": [
         {
           "ruleId": "E1",
@@ -208,8 +203,11 @@
                 "source_ref": "https://api.example.test/docs/rate-limits"
               },
               {
+                "file": "examples/extended/service.go",
                 "isolation": "none",
                 "kind": "inspection",
+                "line_end": 52,
+                "line_start": 48,
                 "observation": "const rateLimitPerMinute = 100 // per API key",
                 "origin": "observed"
               }
@@ -280,8 +278,11 @@
           "properties": {
             "evidence": [
               {
+                "file": "examples/extended/vendor.txt",
                 "isolation": "none",
                 "kind": "inspection",
+                "line_end": 1,
+                "line_start": 1,
                 "observation": "# no vendored third-party sources at this revision",
                 "origin": "observed"
               }
@@ -311,8 +312,11 @@
           "properties": {
             "evidence": [
               {
+                "file": "examples/extended/service.go",
                 "isolation": "none",
                 "kind": "inspection",
+                "line_end": 1,
+                "line_start": 1,
                 "observation": "Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.",
                 "origin": "observed"
               },
@@ -349,8 +353,11 @@
           "properties": {
             "evidence": [
               {
+                "file": "examples/extended/service.go",
                 "isolation": "none",
                 "kind": "inspection",
+                "line_end": 1,
+                "line_start": 1,
                 "observation": "Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.",
                 "origin": "observed"
               }
@@ -395,7 +402,8 @@
           "report_id": "sha256:72760dea420ab21ef325ba034cc44081769cc290b495a524b53efd3c0f895ac4",
           "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
           "rule_applied": "unresolved contract conflict",
-          "schema_version": "0.1.0"
+          "schema_version": "0.1.0",
+          "vcs_revision_id": "9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f"
         }
       }
     }

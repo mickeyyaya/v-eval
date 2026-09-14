@@ -37,14 +37,12 @@ func ToSARIF(rep report.Report) (Log, error) {
 	if err != nil {
 		return Log{}, err
 	}
-	provenance, artifacts := revisionProvenance(rep.Identity.Artifact)
 	run := Run{
-		Tool:                     Tool{Driver: driver(rep)},
-		Invocations:              invocations(rep),
-		VersionControlProvenance: provenance,
-		Artifacts:                artifacts,
-		Results:                  append(results, forensicResults(rep.Forensics)...),
-		Properties:               Properties{"veval": vevalProperties(rep)},
+		Tool:        Tool{Driver: driver(rep)},
+		Invocations: invocations(rep),
+		Artifacts:   artifactHashes(rep.Identity.Artifact),
+		Results:     append(results, forensicResults(rep.Forensics)...),
+		Properties:  Properties{"veval": vevalProperties(rep)},
 	}
 	return Log{Schema: schemaURI, Version: sarifVersion, Runs: []Run{run}}, nil
 }
@@ -202,14 +200,21 @@ func evidenceProperties(evidence []report.Evidence) []map[string]any {
 	return out
 }
 
-// locatorFields spells out the locators SARIF cannot hold: a command, a
-// passage, or a note. A file locator is already a physicalLocation and is not
-// repeated here, so a reader follows locations and properties.evidence in the
-// same order; a locator of no complete shape points nowhere and adds nothing.
-// Shape reports a group only when it is complete, so a command shape always
-// carries an exit status.
+// locatorFields spells out where a piece of evidence came from, in the report's
+// own field names. Every evidence object stands on its own, a file locator
+// included: a file locator is also a physicalLocation, but a reader who has one
+// object in hand should not have to count positions in locations[] to learn
+// which file it names. Shape reports a group only when it is complete, so a
+// command shape always carries an exit status and a file shape always carries
+// a line range; a locator of no complete shape points nowhere and adds nothing.
 func locatorFields(locator report.Locator) map[string]any {
 	switch locator.Shape() {
+	case report.ShapeFile:
+		return map[string]any{
+			"file":       locator.File,
+			"line_start": locator.LineStart,
+			"line_end":   locator.LineEnd,
+		}
 	case report.ShapeCommand:
 		return map[string]any{
 			"command":     locator.Command,
@@ -233,9 +238,13 @@ func locatorFields(locator report.Locator) map[string]any {
 
 // invocations records what the evaluator ran. An ERROR criterion means the
 // evaluation itself did not complete, so no invocation of the run counts as
-// successful and each errored criterion is named in a notification. A report
-// that errored without running anything still gets an invocation to carry
-// them, because a failure SARIF does not show is a failure a reader misses.
+// successful and each errored criterion is named in a notification. The
+// notifications are written once, on the first invocation, because there is one
+// per errored criterion and not one per command: repeating them on every
+// invocation would say each command failed for a reason that was not its own. A
+// report that errored without running anything still gets an invocation to
+// carry them, because a failure SARIF does not show is a failure a reader
+// misses.
 func invocations(rep report.Report) []Invocation {
 	notifications := errorNotifications(rep.Criteria)
 	completed := len(notifications) == 0
@@ -281,22 +290,20 @@ func errorNotifications(criteria []report.CriterionResult) []Notification {
 	return out
 }
 
-// revisionProvenance places the artifact revision where SARIF keeps that kind
-// of identity: a git revision is version control provenance, a content digest
-// is an artifact hash. Neither branch nor repository URI is written, because
-// a report does not carry them. Any other revision form is left alone, in
-// run.properties.veval.revision, rather than reshaped into a claim the report
-// never made.
-func revisionProvenance(artifact report.Artifact) ([]VCS, []Artifact) {
-	if revision, ok := strings.CutPrefix(artifact.Revision, gitRevisionPrefix); ok {
-		return []VCS{{RevisionID: revision}}, nil
-	}
+// artifactHashes places a content digest where SARIF keeps that kind of
+// identity: an artifacts entry per path the report names, or a single entry
+// when it names none. Any other revision form, a git revision included, is
+// left alone in run.properties.veval rather than reshaped into a claim the
+// report never made. A git revision in particular is not written as
+// versionControlProvenance: SARIF requires a repositoryUri on every entry and
+// a report carries none, so such an entry could only ever be invalid.
+func artifactHashes(artifact report.Artifact) []Artifact {
 	hash, ok := strings.CutPrefix(artifact.Revision, contentRevisionPrefix)
 	if !ok {
-		return nil, nil
+		return nil
 	}
 	if len(artifact.Paths) == 0 {
-		return nil, []Artifact{{Hashes: map[string]string{sha256HashName: hash}}}
+		return []Artifact{{Hashes: map[string]string{sha256HashName: hash}}}
 	}
 	out := make([]Artifact, 0, len(artifact.Paths))
 	for _, path := range artifact.Paths {
@@ -305,17 +312,18 @@ func revisionProvenance(artifact report.Artifact) ([]VCS, []Artifact) {
 			Hashes:   map[string]string{sha256HashName: hash},
 		})
 	}
-	return nil, out
+	return out
 }
 
 // vevalProperties carries the report-level facts SARIF has no field for: the
-// verdict and the rule that produced it, the counts behind it, and the
-// identity a reader needs to find the report this log came from.
+// verdict and the rule that produced it, the counts behind it, the identity a
+// reader needs to find the report this log came from, and the revision it
+// judged, including a git revision id that has no valid SARIF home of its own.
 func vevalProperties(rep report.Report) map[string]any {
-	return map[string]any{
+	properties := map[string]any{
 		"overall":         string(rep.Status.Overall),
 		"rule_applied":    rep.Status.RuleApplied,
-		"blocked_by":      rep.Status.BlockedBy,
+		"blocked_by":      orEmpty(rep.Status.BlockedBy),
 		"advisory":        rep.Status.Advisory,
 		"counts":          rep.Counts,
 		"report_id":       rep.Identity.ReportID,
@@ -323,4 +331,18 @@ func vevalProperties(rep report.Report) map[string]any {
 		"schema_version":  rep.Identity.SchemaVersion,
 		"revision":        rep.Identity.Artifact.Revision,
 	}
+	if revision, ok := strings.CutPrefix(rep.Identity.Artifact.Revision, gitRevisionPrefix); ok {
+		properties["vcs_revision_id"] = revision
+	}
+	return properties
+}
+
+// orEmpty returns a list JSON writes as an array, never as null. A report that
+// blocks on nothing states an empty list, and a reader of the export should
+// find the same empty list rather than an absence to interpret.
+func orEmpty(list []string) []string {
+	if list == nil {
+		return []string{}
+	}
+	return list
 }
