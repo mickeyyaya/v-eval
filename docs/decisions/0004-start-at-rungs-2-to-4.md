@@ -4,7 +4,7 @@
 * Deciders: maintainer (mickeyyaya)
 * Date: 2026-09-14
 
-Nothing described here is implemented. This record fixes the starting form and the repository layout.
+Implemented in part on 2026-09-15: rungs 1 and 2 stand as `schema/`, `core/`, `cmd/veval/`, `internal/version/`, and `skills/evaluate-output/`. Rungs 3 and 4 -- `agents/`, `profiles/`, and the plugin manifests -- do not exist. This record fixes the starting form and the repository layout.
 
 ## Context and Problem Statement
 
@@ -58,7 +58,7 @@ v-eval/
 
 ## Confirmation
 
-The repository contains the listed folders; the skill's draft-2 text references `veval` commands for validation, aggregation, and rendering; `claude plugin eval` can resolve the plugin. None exists yet.
+The repository contains the listed folders; the skill's text references `veval` commands for validation, aggregation, and rendering; `claude plugin eval` can resolve the plugin. Implemented in part on 2026-09-15: the schema, core, command line, and skill folders exist, and `skills/evaluate-output/SKILL.md` names every `veval` subcommand, which `cmd/veval/skill_contract_test.go` fails on when it stops. No plugin manifest exists, so `claude plugin eval` has nothing to resolve.
 
 ## Pros and Cons of the Options
 

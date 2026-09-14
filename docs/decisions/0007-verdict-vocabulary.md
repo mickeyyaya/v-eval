@@ -4,7 +4,7 @@
 * Deciders: maintainer (mickeyyaya)
 * Date: 2026-09-14
 
-Nothing described here is implemented.
+Implemented 2026-09-15: `core/report/enums.go` fixes the five per-criterion and four overall values, and `core/report/aggregate.go` derives the overall status and records the rule that produced it.
 
 ## Context and Problem Statement
 
@@ -36,7 +36,7 @@ Chosen option: "Keep five per-criterion states plus PASS / FAIL / INCOMPLETE ove
 
 ## Confirmation
 
-The JSON Schema enumerates the five per-criterion values and three overall values; a core test covers the overall-status policy on fixtures including provisional criteria and contract conflicts; mapping tables have round-trip tests. None exists yet.
+The JSON Schema enumerates the five per-criterion values and three overall values; a core test covers the overall-status policy on fixtures including provisional criteria and contract conflicts; mapping tables have round-trip tests. Implemented in part on 2026-09-15: `schema/report.schema.json` enumerates the values and `core/report/schema_drift_test.go` holds the Go enums equal to it; `core/report/derive_test.go` and `core/report/aggregate_test.go` cover the status policy on fixtures including provisional criteria and an unresolved contract conflict. The mapping tables in [report-schema.md](../architecture/report-schema.md) have no round-trip test, because nothing consumes them yet.
 
 ## Pros and Cons of the Options
 

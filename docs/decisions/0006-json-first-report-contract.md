@@ -4,7 +4,7 @@
 * Deciders: maintainer (mickeyyaya)
 * Date: 2026-09-14
 
-Nothing described here is implemented. The current [contract template](../../templates/evaluation-contract.md) is Markdown and will be regenerated from the schema.
+Implemented 2026-09-15: `schema/report.schema.json` v0.1.0, `core/report` for decoding, validation, and aggregation, `core/render` for the two renders, `core/export/sarif.go` for the export, and `cmd/veval` for the command line. The [contract template](../../templates/evaluation-contract.md) is still Markdown and has not been regenerated from the schema. Three points of the outcome below were settled differently in the building; see the amendments.
 
 ## Context and Problem Statement
 
@@ -36,7 +36,15 @@ Chosen option: "JSON-first versioned schema; Markdown and HTML rendered; SARIF e
 
 ## Confirmation
 
-A JSON Schema file in `schema/` with a version; a core test that renders Markdown and HTML from a fixture and never parses them; a SARIF export validated by a SARIF schema validator. None exists yet.
+A JSON Schema file in `schema/` with a version; a core test that renders Markdown and HTML from a fixture and never parses them; a SARIF export validated by a SARIF schema validator. Implemented in part on 2026-09-15: `schema/report.schema.json` with `schema.Version`, `core/render/renderers_test.go` and the goldens under `core/render/testdata/` rendering both formats from the two fixtures without parsing either back, and `core/export/sarif_test.go` over the golden logs. The export has not been run through an external SARIF schema validator; the tests assert the shape the specification calls for, not the specification itself.
+
+## Amendments (2026-09-15)
+
+Three points of the Decision Outcome were settled differently when the export was built.
+
+* `versionControlProvenance[]` is not emitted. SARIF requires `repositoryUri` on every entry and a report carries no repository URI, so such an entry could only ever be invalid. A git revision travels in `run.properties.veval.vcs_revision_id` instead; the `artifacts[].hashes` half for a `content:sha256:` revision is unchanged (`core/export/sarif.go`).
+* Each invocation's `executionSuccessful` is that command's own exit status and nothing else: a command that exited zero did exit zero however the rest of the evaluation went. An `ERROR` criterion is a fact about the run rather than about any one command, so it is attached to none: every errored criterion is named in a `toolExecutionNotifications` entry on a single synthesized invocation, appended last, which names no command line (`core/export/sarif.go`).
+* The canonical JSON form this record rests on -- the encoding, the two digests taken over it, and the requirement that a second implementation reproduce the bytes -- is defined in [report-schema.md](../architecture/report-schema.md#canonical-form-and-digests), not here.
 
 ## Pros and Cons of the Options
 

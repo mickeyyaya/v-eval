@@ -4,7 +4,7 @@
 * Deciders: maintainer (mickeyyaya)
 * Date: 2026-09-14
 
-Nothing described here is implemented.
+Implemented in part on 2026-09-15: the core is Go with the standard library only (`go.mod`, `core/`, `cmd/veval/`) and the release matrix is `.goreleaser.yaml`. The SessionStart download hook, the framework adapters, and the MCP server do not exist.
 
 ## Context and Problem Statement
 
@@ -42,7 +42,7 @@ Chosen option: "Go core binary + thin adapters", because it is the only option t
 
 ## Confirmation
 
-GoReleaser config produces darwin, linux, and windows artifacts with a checksums file; a Windows CI job runs the core's tests and a hook smoke test; the plugin repository contains no committed binary. None exists yet.
+GoReleaser config produces darwin, linux, and windows artifacts with a checksums file; a Windows CI job runs the core's tests and a hook smoke test; the plugin repository contains no committed binary. Implemented in part on 2026-09-15: `.goreleaser.yaml` declares the six targets with a checksums file, `.github/workflows/go.yml` runs the suite on windows-latest, and no binary is committed. Neither a GoReleaser dry run nor a hook smoke test is in CI, the second because there is no hook yet.
 
 ## Pros and Cons of the Options
 

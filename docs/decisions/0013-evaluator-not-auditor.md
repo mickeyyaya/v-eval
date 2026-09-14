@@ -4,7 +4,7 @@
 * Deciders: maintainer (mickeyyaya)
 * Date: 2026-09-14
 
-Nothing described here is implemented. This record fixes report ordering, completeness of collection, and tone.
+Implemented in part on 2026-09-15: the section order stands in `schema/report.schema.json` and `core/report/types.go`, and the renderers in `core/render` emit it. Inspection scope shipped in a narrower form; see the amendment below. This record fixes report ordering, completeness of collection, and tone.
 
 ## Context and Problem Statement
 
@@ -36,7 +36,11 @@ Chosen option: "Evidence-first report with derived verdicts, completeness as a f
 
 ## Confirmation
 
-The report schema has an `observations` array independent of criteria and an `inspection_scope` object with inspected and not-inspected paths; the renderers emit sections in the fixed order above; a review checklist for reports asks whether any observation was dropped because it did not change a verdict. None exists yet.
+The report schema has an `observations` array independent of criteria and an `inspection_scope` object with inspected and not-inspected paths; the renderers emit sections in the fixed order above; a review checklist for reports asks whether any observation was dropped because it did not change a verdict. Implemented in part on 2026-09-15: `core/report/types.go` carries an `observations` array independent of criteria, and `core/render/html_test.go` and `core/render/renderers_test.go` pin the section order. The `inspection_scope` object shipped as `limitations.not_inspected[]` alone, per the amendment; the review checklist does not exist.
+
+## Amendments (2026-09-15)
+
+The Confirmation above asks for an `inspection_scope` object carrying both the inspected and the not-inspected paths. What shipped is `limitations.not_inspected[]`: the half that states what was left out. There is no inspected list yet. Nothing in the core enumerates what was opened, so the list could only be written by hand, and a hand-written inspected list is a coverage claim with nothing behind it -- exactly the kind of summary this project refuses elsewhere. The inspected half waits for the adapters in Roadmap Stage 3, which will know what they read.
 
 ## Pros and Cons of the Options
 

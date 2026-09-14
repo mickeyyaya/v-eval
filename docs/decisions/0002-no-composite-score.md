@@ -4,7 +4,7 @@
 * Deciders: maintainer (mickeyyaya)
 * Date: 2026-09-14
 
-Nothing described here is implemented.
+Implemented 2026-09-15: `schema/report.schema.json` defines no composite field, `core/report/validate.go` rejects a dimension whose metric blends measurements (`dimensions.no_composite`), and `core/render` prints each dimension in its own unit.
 
 ## Context and Problem Statement
 
@@ -37,7 +37,7 @@ Chosen option: "No composite; per-criterion verdicts plus native dimension score
 
 ## Confirmation
 
-The schema forbids a top-level numeric summary; a schema test rejects any report that adds one. The HTML and Markdown renderers keep units visible in the dimension table. Neither exists yet.
+The schema forbids a top-level numeric summary; a schema test rejects any report that adds one. The HTML and Markdown renderers keep units visible in the dimension table. Implemented 2026-09-15: `core/report/validate.go` and `core/report/validate_test.go` for the rule, `core/report/json.go` for the rejection of any undefined field, `core/render/markdown.go` and `core/render/html.go` for the dimension table.
 
 ## Pros and Cons of the Options
 

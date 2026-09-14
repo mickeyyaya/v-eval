@@ -97,7 +97,7 @@ CITATION.cff         how to cite the project
 schema/              report JSON Schema v0.1.0, embedded in the core
 core/                Go library: report types, validation, aggregation, renderers, SARIF export
 cmd/veval/           the veval command line: version, validate, aggregate, render, export
-internal/            build metadata shared by the core and the command line
+internal/            build metadata used by the command line
 docs/
   README.md          handbook index and reading paths
   requirements.md    consolidated requirements with IDs

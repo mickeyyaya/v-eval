@@ -52,6 +52,8 @@ The plugin stays source-only; binaries are never committed, and claude.ai reject
 4. Every other hook, script, and command invokes the binary directly in exec form with arguments, never through a shell, so it works on Windows without Git Bash.
 5. A field-observed failure mode is avoided: gitignored binaries broke marketplace installs for at least one plugin, fixed by exactly this download-on-first-run pattern.
 
+Release binaries are unsigned and un-notarized. On macOS that means Gatekeeper blocks a binary downloaded through a browser until the quarantine attribute is removed (`xattr -d com.apple.quarantine veval`); the `curl` and `tar` path in step 2 sets no quarantine attribute, so the download-on-first-run hook is unaffected.
+
 **Proposal**: the binary location and version are also discoverable through `veval --print-self`, so a harness that already has the binary on PATH can skip the download.
 
 ## Windows rules
@@ -76,7 +78,7 @@ evolve-loop's Go bridge already drives `claude`, `claude-p`, `claude-tmux`, `cod
 
 ## CI matrix
 
-From the first commit: macOS, Linux, and Windows runners; Go build and tests with the race detector on all three; GoReleaser dry run producing every target; markdownlint and a link checker for the docs; the deterministic report-grading regression cases on all three OSs; the plugin-eval suite on Linux and, for shell-granting cases, WSL2. A release is blocked if any OS fails.
+From the first commit, [`go.yml`](../../.github/workflows/go.yml) runs on macOS, Linux, and Windows: `gofmt`, `go vet`, the whole test suite, and a build of `cmd/veval` on all three, with the race detector added on ubuntu and macOS only, because on Windows it needs a C toolchain the runner does not carry. [`docs.yml`](../../.github/workflows/docs.yml) runs markdownlint and lychee on Linux and the documentation tooling's own unit tests on all three. Two jobs named in this design are still pending: a GoReleaser dry run producing every target, and the plugin-eval suite on Linux with WSL2 for the shell-granting cases. A release is blocked if any operating system fails.
 
 ## Proposals awaiting maintainer confirmation
 

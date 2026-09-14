@@ -4,7 +4,7 @@
 * Deciders: maintainer (mickeyyaya)
 * Date: 2026-09-14
 
-Nothing described here is implemented. This record promotes two maintainer statements to requirements.
+Implemented in part on 2026-09-15: `.github/workflows/go.yml` builds and tests on macOS, Linux, and Windows; `skills/evaluate-output/references/hosts/` carries one mapping file per target harness; the core is a single dependency-free Go binary with no shell on any path. The MCP server and the hooks do not exist. This record promotes two maintainer statements to requirements.
 
 ## Context and Problem Statement
 
@@ -41,7 +41,7 @@ Chosen option: "Promote both statements to requirements with concrete rules". Ru
 
 ## Confirmation
 
-CI matrix includes windows-latest, macos-latest, ubuntu-latest; a lint rejects `#!/bin/bash` or `.sh` on the required path; `references/` contains one mapping file per target harness; the skill passes the Agent Skills `skills-ref validate`. None exists yet.
+CI matrix includes windows-latest, macos-latest, ubuntu-latest; a lint rejects `#!/bin/bash` or `.sh` on the required path; `references/` contains one mapping file per target harness; the skill passes the Agent Skills `skills-ref validate`. Implemented in part on 2026-09-15: `.github/workflows/go.yml` runs on windows-latest, macos-latest, and ubuntu-latest, and `cmd/veval/skill_contract_test.go` fails when a host mapping under `skills/evaluate-output/references/hosts/` goes missing. No shell-script lint runs, because no script exists on the required path to lint; the skill has not been put through `skills-ref validate`.
 
 ## Pros and Cons of the Options
 

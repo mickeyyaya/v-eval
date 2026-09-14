@@ -42,6 +42,22 @@ This plan is Roadmap Stage 1. It produces working, testable software on its own.
 5. Race-detector tests run on ubuntu and macos; Windows runs the plain suite (race needs a C toolchain there).
 6. `ERROR` on a criterion requires an attempted check: at least one `execution` evidence or a `provenance.commands[]` entry; otherwise the assistant must use `UNKNOWN`.
 
+## Amended during execution
+
+The plan below stands as written except on these points, each settled while the task it belongs to was built. Further amendments sit inline beside the step they change.
+
+- `status.overall` and `status.rule_applied` are excluded from `required.nonempty` and `enum.valid`: `status.match` compares the whole derived status against a fresh derivation, which is stricter, so it owns those fields alone.
+- The forensics rule ids are `forensics.criterion_link`, `forensics.confirmed_severity`, and `forensics.confirmed_implies_fail`.
+- The status-derivation rule strings are named constants: `StatusRuleAdvisory`, `StatusRuleFailed`, `StatusRuleProvisional`, `StatusRuleConflict`, `StatusRuleUnknownOrError`, `StatusRuleNoGating`, `StatusRuleAllPass`.
+- A second fixture, `core/report/testdata/extended-example.json`, carries what the worked example has no room for: commands that ran, a cited passage, an optional criterion, a dismissed one, an operational error, an unmeasured dimension, an open forensic finding, an unresolved contract conflict, and a learning record. Every renderer and the export have goldens for it.
+- The subcommand table is `subcommand{Name, Usage, Run}` behind `commands()`, a function rather than a variable because each handler reads its own usage line back out of the table.
+- Each invocation's `executionSuccessful` is that command's own exit status and nothing else; `ERROR` criteria are named in notifications on one synthesized invocation, appended last, which names no command line.
+- `veval -h` and `veval --help` print the usage on standard output and exit 0; typing no subcommand at all prints the same usage on standard error and exits 2.
+- `Decode` rejects trailing data as well as unknown fields: a second JSON value after the report means the bytes do not say what they appear to say.
+- `criteria.error_is_operational` is checked per criterion and against that criterion's own evidence -- an `execution` record, or a command locator with a non-zero exit status -- not against `provenance.commands[]` anywhere in the report.
+- Two rules were added: `criteria.nonempty`, which requires a contract to state at least one criterion and a report to reach at least one result, and `range.valid`, which holds `routing.supplied[].count` at zero or more and `learning.precedents_retrieved[].similarity` between 0 and 1 inclusive.
+- Every report read tolerates a leading UTF-8 byte order mark, which some editors and shell redirections write and which JSON gives no meaning; it is stripped at the input boundary rather than reported as a syntax error.
+
 ---
 
 ## File Structure

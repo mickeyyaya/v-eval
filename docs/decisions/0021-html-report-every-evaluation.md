@@ -4,7 +4,7 @@
 * Deciders: maintainer (mickeyyaya)
 * Date: 2026-09-14
 
-Nothing described here is implemented.
+Implemented 2026-09-15: `core/render/html.go` and its template render the single self-contained file, reached as `veval render --format html`.
 
 ## Context and Problem Statement
 
@@ -36,7 +36,7 @@ Chosen option: "Self-contained single-file HTML rendered by the Go core from the
 
 ## Confirmation
 
-The core's render command emits `report.html` for every fixture; a test asserts no external URL is referenced for assets; a test asserts the section order; a manual readability check on the pilot reports in light and dark themes. None exists yet.
+The core's render command emits `report.html` for every fixture; a test asserts no external URL is referenced for assets; a test asserts the section order; a manual readability check on the pilot reports in light and dark themes. Implemented in part on 2026-09-15: `core/render/html_test.go` renders both fixtures, asserts that no script, stylesheet link, `@import`, or remote asset URL appears, pins the section order, and holds the dark theme to exactly the custom properties the light theme defines. The manual readability check waits on the pilot reports.
 
 ## Pros and Cons of the Options
 

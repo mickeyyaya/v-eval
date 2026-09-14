@@ -3,13 +3,13 @@ name: evaluate-output
 description: Evaluate a supplied code change, document, or generated context against explicit intent, design, sources, and acceptance criteria. Collects all available evidence, verifies every claim from the underlying context, runs a forensic pass for gaming traces, and produces a per-criterion report with evidence, unknowns, and next actions. Use for artifact acceptance or advisory review of AI-generated work, not for ranking models.
 license: MIT
 metadata:
-  version: draft-2
+  version: draft-3
   compatibility: Any agent CLI that can read files and run commands. Host-specific tool names are in references/hosts/. The v-eval core binary is optional until it exists; without it, write the report by hand in the documented shape and say so.
 ---
 
 # Evaluate output against its requirements
 
-You are an evaluator, not a verdict auditor. Your job is to collect all the information available and reflect what is actually there beneath the data. Verdicts are derived summaries of the evidence; they are not the point. This is a draft workflow (draft-2, 2026-09-14). The host supplies tools and execution controls. Do not imply that an automated runner, a validated quality model, or a proven anti-gaming capability exists.
+You are an evaluator, not a verdict auditor. Your job is to collect all the information available and reflect what is actually there beneath the data. Verdicts are derived summaries of the evidence; they are not the point. This is a draft workflow (draft-3, 2026-09-15). The host supplies tools and execution controls. Do not imply that an automated runner, a validated quality model, or a proven anti-gaming capability exists.
 
 Record this skill version and the checkout commit or content hash of the artifact in every report.
 
@@ -66,24 +66,25 @@ Report each trace as an observation with its evidence, then map it to an explici
 
 ### 6. Decide
 
-Each criterion receives exactly one result: PASS, FAIL, UNKNOWN, ERROR, or NOT_APPLICABLE (with the contract's applicability reason; difficulty and missing evidence are not reasons to exclude). For required applicable criteria: any FAIL makes overall FAIL; otherwise any UNKNOWN or ERROR makes it INCOMPLETE; otherwise all PASS makes it PASS only when at least one such criterion exists. Provisional criteria and unresolved contract conflicts prevent overall PASS. Advisory-only reviews are labeled advisory. When the core is available, let it compute the rollup; when it is not, compute it by these rules and state that no core validation was performed.
+Each criterion receives exactly one result: PASS, FAIL, UNKNOWN, ERROR, or NOT_APPLICABLE (with the contract's applicability reason; difficulty and missing evidence are not reasons to exclude). ERROR is reserved for a check that was attempted and did not come back clean: record it only when that criterion's own evidence shows the attempt, either a record of kind `execution` or one whose command locator reports a non-zero exit status. A criterion you could not decide for any other reason -- nothing to inspect, no way to run the check, an ambiguous requirement -- is UNKNOWN, not ERROR. For required applicable criteria: any FAIL makes overall FAIL; otherwise any UNKNOWN or ERROR makes it INCOMPLETE; otherwise all PASS makes it PASS only when at least one such criterion exists. Provisional criteria and unresolved contract conflicts prevent overall PASS. Advisory-only reviews are labeled advisory. When the core is available, let it compute the rollup; when it is not, compute it by these rules and state that no core validation was performed.
 
 ### 7. Report
 
 Write the JSON report in the shape specified by [the report schema](../../docs/architecture/report-schema.md), then render it. Section order: task and artifact identity; contract status; routing rationale; observations; claim-to-verification table; per-criterion results with method, evidence, isolation level, and next action; forensic findings; dimension metrics where requested; counts for required and optional criteria separately and coverage as `(PASS + FAIL) / applicable`; overall status; improvement brief (issue, location, suggested change or missing investigation, constraints to preserve, how to verify); limitations and material not inspected; provenance; learned material referenced.
 
-Write it as `report.json` with the derived fields left empty (`counts`, `status`, `report_id`, and `provenance.evidence_digest`); the core computes them from the criteria, and a hand-written value there is a claim about arithmetic nobody checked. When the v-eval core is present, run, in this order:
+Write it as `report.json` with the derived fields left empty (`counts`, `status`, `report_id`, and `provenance.evidence_digest`); the core computes them from the criteria, and a hand-written value there is a claim about arithmetic nobody checked. The one field inside `status` you do write is `status.advisory`: it is an input to the derivation, not a product of it. Set it to `true` when the task asked for review rather than acceptance, and the core derives the ADVISORY overall status from it; left `false` on an advisory review, the report claims a gate it was never asked to apply. When the v-eval core is present, run, in this order:
 
-1. `veval aggregate report.json -o report.json`, which fills those derived fields.
-2. `veval validate report.json`, and fix every violation it prints before reporting anything.
-3. `veval render --format html report.json -o report.html` and `veval render --format md report.json -o report.md` for the readable renders.
-4. Optionally `veval export sarif report.json -o report.sarif.json` when the reader wants the findings in a code-scanning surface.
+1. `veval version`, and record the line it prints in `provenance.tools`, so the report names the build that judged it.
+2. `veval aggregate report.json -o report.json`, which fills those derived fields.
+3. `veval validate report.json`, and fix every violation it prints before reporting anything.
+4. `veval render --format html report.json -o report.html` and `veval render --format md report.json -o report.md` for the readable renders.
+5. Optionally `veval export sarif report.json -o report.sarif.json` when the reader wants the findings in a code-scanning surface.
 
 When `veval` is absent, say so in `limitations.unknown_metadata`, compute the counts and the overall status by the rules in step 6, leave `report_id` and `provenance.evidence_digest` empty rather than inventing a digest, write the Markdown rendering by hand, and label the report core-unvalidated wherever its status is stated.
 
 ### 8. Record reactions
 
-If the user accepts, rejects, corrects, overrides, or questions a result, and the v-eval core is present, record the reaction with its rationale through the core so it enters the local feedback log. Never change a verdict in the current report because of pushback alone; a correction is re-evaluated cold, from the evidence, and the report notes the disagreement.
+If the user accepts, rejects, corrects, overrides, or questions a result, append the reaction with its rationale to a reactions file beside the report, `reactions.jsonl` next to `report.json`, in the shape [the learning loop](../../docs/architecture/learning-loop.md) describes: one JSON object per line with `report_id`, `criterion`, `reaction`, and `note`. The core gains a command that writes this file in Stage 4; until then it is written by hand and nothing reads it automatically, so say in the report that the reaction was recorded and not yet admitted anywhere. Never change a verdict in the current report because of pushback alone; a correction is re-evaluated cold, from the evidence, and the report notes the disagreement.
 
 ## Host adaptation
 

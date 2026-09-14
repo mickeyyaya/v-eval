@@ -45,6 +45,10 @@ Chosen option: **B**.
 * CI runs the tooling's unit tests on macOS, Linux, and Windows and runs the generator in `--check` mode.
 * The local link checker's docstring states that lychee in CI is the authority.
 
+## Amendments (2026-09-15)
+
+`core/` now exists, so the last bullet of the Decision Outcome -- port the source-register generator to an internal Go tool run with `go run ./tools/...` and delete the Python -- has become due. It has not been done. The Python tooling under `tools/docs/` stays as it is until the port is scheduled, and the port is now a Roadmap Stage 3 item. Doing it inside the walking skeleton would have put a second unrelated thing at risk in one branch, and the register is verified in CI by `vdocs.py register . --check` either way.
+
 ## Pros and Cons of the Options
 
 ### A. `scripts/docs/`

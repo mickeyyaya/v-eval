@@ -36,11 +36,13 @@ The order below is also the render order. Observations and evidence come before 
 | `report_id` | string | yes | Content hash of the canonical JSON minus this field |
 | `schema_version` | string | yes | Semver of the report schema |
 | `veval_version` | string | yes | Core version and build digest |
-| `skill_revision` | string | yes | SKILL.md digest |
+| `skill_revision` | string | yes | The label in SKILL.md's front matter (`draft-3` after the walking skeleton) until a digest scheme exists |
 | `artifact` | object | yes | `kind`, `revision` (commit plus dirty flag, or content hash), `paths[]`, `bundle_digest` |
 | `task` | object | yes | `requested_outcome`, `intended_user`, `brief_ref` |
 | `created_at` | RFC 3339 | yes | |
 | `host` | object | yes | `cli`, `model` if exposed, `os`, `arch` |
+
+`artifact.revision` takes one of two forms the SARIF export has a home for. `git:<revision>` travels in `run.properties.veval.vcs_revision_id`. `content:sha256:<hex>` is the SHA-256 of the bytes of the artifact exactly as supplied, with no trailing newline added and nothing normalized, written as exactly 64 lowercase hexadecimal characters; it becomes `artifacts[].hashes`. Any other form stays in the property bag, and a `content:sha256:` revision whose digest is empty or malformed yields no `artifacts[]` entry at all, because half a digest states nothing a reader could check.
 
 ### contract
 
@@ -99,13 +101,37 @@ Each entry: `dimension`, `metric`, `metric_version`, `authority_type` enum `form
 
 `learning`: `precedents_retrieved[]` (precedent IDs, criterion, similarity), `reward_records_created[]`.
 
+## Canonical form and digests
+
+A report has one written form, and every digest is taken over that form. Canonical JSON is UTF-8 with a two-space indent, HTML escaping off, and one trailing newline. Escaping is off because a report quotes source: `<`, `>`, and `&` belong in a report as themselves, not as escapes a reader has to decode. Struct fields are written in declaration order, which is the section order of the table above; map keys are written sorted. On the way in, every nil array and nil object becomes an empty one, so an absent list writes as `[]` and an absent object as `{}`, never as `null`; a nil pointer stays nil, because an absent dimension value and an absent `learning` section are states of their own rather than empty containers. Reading is strict in both directions: a field the schema does not define is rejected, and so is anything at all after the report, because one JSON value followed by a second means the bytes do not say what they appear to say.
+
+`identity.report_id` is `sha256:` followed by the hex digest of the report's own canonical encoding with `identity.report_id` blanked, so that naming a report does not change what is named. Every other field is covered, which is why it is computed last, after the counts, the status, and the evidence digest are already final.
+
+`provenance.evidence_digest` is `sha256:` followed by the hex digest of the compact canonical JSON -- the same encoder with the indent off -- of the report's evidence groups. One group is `{"section", "path", "evidence"}`: the section name, the path the array lives at, and the array itself. The groups are taken in document order: `criteria`, `observations`, `claims`, `forensics`, `dimensions`. Tagging is what makes it a digest of where the evidence sits and not merely of what it says, so moving a record from a criterion to an observation changes it, while changing a verdict does not.
+
+A second implementation must reproduce these bytes, not merely an equivalent JSON document: the digests are defined over the encoding, so an equivalent document with different bytes has a different name. RFC 8785 canonicalization is a later minor change if a second implementation needs it.
+
 ## Evidence shape
 
-Every evidence record has `kind`, `locator`, `observation`, `provenance`, `isolation`, `origin`. The core enforces the following rule when computing results ([decision 0008](../decisions/0008-evidence-policy-verify-over-summary.md)):
+Every evidence record has `kind`, `locator`, `observation`, `provenance`, `isolation`, `origin`. A `locator` has four shapes, and a record populates exactly one of them completely. Fields drawn from two groups, or one group half filled, name no place and are rejected by the `locator.shape` rule.
 
-- A criterion result of `PASS` requires at least one evidence record whose `origin` is `observed` and whose `locator` is one of: `{file, line_start, line_end}`, `{command, cwd, exit_status, log_ref}`, or `{passage, source_ref, source_date_or_version, access_date}`.
+| Shape | Fields, all of them required | Qualifies for `PASS` |
+| --- | --- | --- |
+| `file` | `file`, `line_start`, `line_end` | yes |
+| `command` | `command`, `cwd`, `exit_status`, `log_ref` | yes |
+| `passage` | `passage`, `source_ref`, `source_date_or_version`, `access_date` | yes |
+| `note` | `note` | no |
+
+`note` is the shape for evidence that is not an opened file, a run command, or a cited passage: a candidate-supplied summary, a retrieved hint, a pointer into a pull request description. It is writable and it is reported, and it never qualifies for `PASS` ([decision 0023](../decisions/0023-note-locator-shape.md)).
+
+The core enforces the following rules when computing results ([decision 0008](../decisions/0008-evidence-policy-verify-over-summary.md)):
+
+- A criterion result of `PASS` requires at least one evidence record whose `origin` is `observed` and whose `locator` is a complete `file`, `command`, or `passage` group (`evidence.pass_requires_observed_locator`).
 - Evidence with `origin` `candidate_supplied` may appear on any criterion but is never sufficient for `PASS` and is labeled as supplied in every render.
 - Evidence with `kind` `judgment` must carry `rubric_version` and, when exposed, `model`; unknown metadata is recorded as unknown, not omitted.
+- A criterion result of `ERROR` rests on that criterion's own evidence: at least one record of `kind` `execution`, or at least one whose `command` locator reports a non-zero `exit_status`. A criterion with neither is `UNKNOWN`, not `ERROR` (`criteria.error_is_operational`, checked per criterion).
+
+Two further rules guard against a report that tallies without judging anything and against numbers whose range is part of what they mean: `criteria.nonempty` requires a contract to state at least one criterion and a report to reach a result for at least one, and `range.valid` holds `routing.supplied[].count` at zero or more and `learning.precedents_retrieved[].similarity` between 0 and 1 inclusive.
 
 The evidence hierarchy, strongest first, is: observed execution, direct inspection, supplied logs, candidate summary. Renders show the kind beside every evidence line.
 
@@ -127,7 +153,7 @@ The evidence hierarchy, strongest first, is: observed execution, direct inspecti
 
 ## Overall status derivation
 
-For required, applicable, non-provisional criteria: any `FAIL` gives `FAIL`; otherwise any `UNKNOWN` or `ERROR` gives `INCOMPLETE`; otherwise `PASS` when at least one such criterion exists. Zero required applicable criteria, any provisional required criterion, or any unresolved contract conflict gives `INCOMPLETE`. A confirmed forensic finding on a required integrity criterion is a `FAIL` on that criterion and follows the same rule. The rule applied is written into `status.rule_applied` so the derivation is auditable.
+For required, applicable, non-provisional criteria: any `FAIL` gives `FAIL`; otherwise any `UNKNOWN` or `ERROR` gives `INCOMPLETE`; otherwise `PASS` when at least one such criterion exists. Zero required applicable criteria, any provisional required criterion, or any unresolved contract conflict gives `INCOMPLETE`. A confirmed forensic finding on a required integrity criterion must already be `FAIL` on that criterion; the core rejects a report where it is not. The rule applied is written into `status.rule_applied` so the derivation is auditable.
 
 ## Mapping to SARIF 2.1.0
 
@@ -140,9 +166,9 @@ The export targets the OASIS SARIF 2.1.0 errata01 specification (<https://docs.o
 | `FAIL` | `result.kind: fail`, `level` from `required` |
 | `NOT_APPLICABLE` | `result.kind: notApplicable` |
 | `UNKNOWN` | `result.kind: review`, `properties.veval_result: UNKNOWN` |
-| `ERROR` | `invocation.executionSuccessful: false` plus a `toolExecutionNotifications` entry, `properties.veval_result: ERROR` |
+| `ERROR` | `result.kind: review`, `properties.veval_result: ERROR`, plus one `toolExecutionNotifications` entry naming the criterion. The notifications sit on a single synthesized invocation of their own, appended last, which names no command line: an errored criterion is a fact about the run, not about any one command. |
 | Evidence locator | `result.locations[].physicalLocation` (file, region) or `result.properties.evidence` |
-| Commands | `invocations[]` with `commandLine`, `workingDirectory`, `exitCode`, `startTimeUtc`, `endTimeUtc`, `environmentVariables` |
+| Commands | `invocations[]` with `commandLine`, `workingDirectory`, `exitCode`, `startTimeUtc`, `endTimeUtc`. Each invocation's `executionSuccessful` is that command's own exit status and nothing else: a command that exited zero did exit zero however the rest of the evaluation went. |
 | Artifact revision | `run.properties.veval.vcs_revision_id`. `versionControlProvenance[]` is not emitted: SARIF requires `repositoryUri` on every entry and the report carries no repository URI, so the git revision goes into the run properties until it does. |
 | Artifact hashes | `artifacts[].hashes` |
 | Forensic finding | A result on the integrity rule with `properties.veval_severity` |
@@ -185,4 +211,4 @@ The status block sits near the top for orientation but is deliberately brief; th
 
 ## Versioning
 
-The schema is semver versioned. A report records the schema version it was written against. Renderers and the SARIF exporter declare the schema versions they accept. Breaking changes require a migration note under `schema/` and a new decision record.
+The schema is semver versioned. A report records the schema version it was written against. One validation rule, `schema_version.supported`, requires `identity.schema_version` to equal the schema version embedded in this build exactly; there is no compatibility range and no migration path yet, so a report written against any other version is rejected outright. A compatibility range and a migration policy arrive with the first schema bump. Breaking changes require a migration note under `schema/` and a new decision record.

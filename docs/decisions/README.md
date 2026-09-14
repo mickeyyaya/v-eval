@@ -2,7 +2,7 @@
 
 This directory holds v-eval's architecture decision records in the [MADR](https://adr.github.io/madr/) format. Each record states the context, the options considered with their tradeoffs, the maintainer's decision, its consequences, how compliance will be confirmed, and the evidence behind it. New records start from [adr-template.md](adr-template.md) and take the next number.
 
-All records below were decided on 2026-09-14 in a maintainer session and describe intended design. Nothing they describe is implemented unless a record's Confirmation section says otherwise.
+Records 0001 to 0022 were decided on 2026-09-14 in a maintainer session; 0023 and 0024 were decided on 2026-09-15 while the core walking skeleton was built. Each record states what of it is built in a dated line under its title and again in its Confirmation section, and amends its own text in a dated Amendments section where the building settled something differently. Where a record says neither, nothing it describes is implemented.
 
 | ID | Title | Status | Date | Related requirements |
 | --- | --- | --- | --- | --- |
@@ -28,5 +28,7 @@ All records below were decided on 2026-09-14 in a maintainer session and describ
 | [0020](0020-portability-constraints.md) | Portability constraints: every major agent CLI, and macOS, Linux, and Windows | accepted | 2026-09-14 | REQ-01, REQ-04; REQ-35, REQ-36 |
 | [0021](0021-html-report-every-evaluation.md) | Every evaluation renders a clean, self-contained HTML report | accepted | 2026-09-14 | REQ-09, REQ-19; REQ-34 |
 | [0022](0022-repository-maintenance-tooling.md) | Repository maintenance tooling lives under tools/ and is exempt from the product's no-interpreter rule; lychee is the CI link authority | accepted | 2026-09-14 | REQ-21, REQ-36, REQ-39 |
+| [0023](0023-note-locator-shape.md) | A fourth locator shape, `note`, for evidence that was neither opened nor run | accepted | 2026-09-15 | REQ-05, REQ-13; REQ-28 |
+| [0024](0024-contract-inside-report-schema.md) | The evaluation contract is a section of the report schema, not a schema of its own | accepted | 2026-09-15 | REQ-09, REQ-13, REQ-21 |
 
 Requirements stated by the maintainer on 2026-09-14 carry identifiers REQ-28 to REQ-39 in [requirements.md](../requirements.md). Research memos referenced by the records live in [../research/](../research/) with the `2026-09-14-` prefix.

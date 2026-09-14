@@ -3,30 +3,18 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 )
 
-// skillSilentCommands are the subcommands SKILL.md deliberately does not name.
-// version answers about this build rather than about a report, so no step of
-// the skill's workflow runs it. The test below requires every name here to
-// still be a command, so an exemption cannot outlive the command it exempts.
-var skillSilentCommands = []string{"version"}
-
 func TestSkillNamesTheRealSubcommandsAndHosts(t *testing.T) {
 	text := mustRead(t, filepath.Join("..", "..", "skills", "evaluate-output", "SKILL.md"))
+	// Every name comes from the table, so a command added to the build is a
+	// command the skill has to name. There is no exemption list: a verb the
+	// workflow never reaches is a verb the workflow has not accounted for.
 	for _, cmd := range commands() {
-		if slices.Contains(skillSilentCommands, cmd.Name) {
-			continue
-		}
 		if !strings.Contains(text, "veval "+cmd.Name) {
 			t.Fatalf("SKILL.md does not mention %q", "veval "+cmd.Name)
-		}
-	}
-	for _, name := range skillSilentCommands {
-		if !slices.ContainsFunc(commands(), func(cmd subcommand) bool { return cmd.Name == name }) {
-			t.Fatalf("%q is exempted from SKILL.md but is no longer a subcommand", name)
 		}
 	}
 	// The full invocations pin the flags as well as the names, which the

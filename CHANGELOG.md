@@ -23,10 +23,26 @@ All notable changes to this project are documented in this file. The format foll
 - Continuous integration for Go on macOS, Linux, and Windows (`.github/workflows/go.yml`) and a GoReleaser configuration covering six operating-system and architecture targets (`.goreleaser.yaml`).
 - Skill wiring: `skills/evaluate-output/` calls the `veval` core when it is present, with per-host reference files for Claude Code, Codex, Gemini CLI, Antigravity, Hermes, and ollama-backed agents (`skills/evaluate-output/references/hosts/`), and a contract test that fails when a command name in SKILL.md drifts from the CLI.
 - Documentation tooling: `tools/docs/gen_sources.py` and `tools/docs/check_links.py` also skip `.superpowers`, so git-ignored scratch is never counted in the source register or link-checked.
+- Decision record 0023: a fourth locator shape, `note`, for evidence that was neither opened nor run; it never qualifies for `PASS` (`docs/decisions/0023-note-locator-shape.md`).
+- Decision record 0024: the evaluation contract is the report schema's `contract` section rather than a schema file of its own, so there is one canonical record and one drift test (`docs/decisions/0024-contract-inside-report-schema.md`).
+- The canonical form is documented (`docs/architecture/report-schema.md`): the encoding, the normalization of nil arrays and objects to empty ones, how `identity.report_id` and `provenance.evidence_digest` are built, and the requirement that a second implementation reproduce the bytes rather than an equivalent document.
 
 ### Changed
 
 - `.markdownlint-cli2.yaml` ignores `**/testdata/**`: renderer goldens are generated output, not prose.
+- Skill revision `draft-3` (`skills/evaluate-output/SKILL.md`): the `ERROR` rule is stated per criterion; `status.advisory` is named as the one status field the author writes, because acceptance not being requested is an input to the derivation rather than a product of it; `veval version` runs first and its output is recorded in `provenance.tools`; and reactions are appended to a reactions file beside the report, one JSON object per line, until the core gains the command in Stage 4.
+- Decision records 0002, 0004 to 0008, 0013, 0020, and 0021 replace "Nothing described here is implemented" with a dated line naming the implementing paths, and 0006, 0008, 0013, and 0022 carry dated amendments where the building settled something differently: SARIF provenance and invocation success, the shipped locator field names, inspection scope as `limitations.not_inspected[]`, and the Python tooling staying until its Go port is scheduled.
+- Documentation reconciled with the shipped code: the four locator shapes and the exactly-one-complete-group rule, the SARIF mapping rows (no `environmentVariables`, per-invocation `executionSuccessful`, `ERROR` notifications on a synthesized invocation), schema versioning as exact equality with no compatibility range yet, a confirmed forensic finding as something the core requires to be `FAIL` already, `skill_revision` as the SKILL.md front-matter label, the byte convention for a `content:sha256:` revision (`docs/architecture/report-schema.md`); the CI description and the unsigned, un-notarized release binaries (`docs/architecture/packaging-and-portability.md`); and `internal/` as build metadata used by the command line (`README.md`).
+
+### Fixed
+
+- Decoding is strict in both directions (`core/report/json.go`): a report followed by a second JSON value, or by any text that is not JSON, is rejected rather than read up to the first value.
+- `criteria.error_is_operational` is checked per criterion and against that criterion's own evidence -- an `execution` record, or a command locator reporting a non-zero exit status -- with no report-global fallback, so one failed command elsewhere can no longer justify every `ERROR`.
+- Two rules close gaps against `schema/report.schema.json`: `criteria.nonempty`, which refuses a contract that states no criterion and a report that reaches no result, and `range.valid`, which holds `routing.supplied[].count` at zero or more and a retrieved precedent's similarity between 0 and 1; `required.nonempty` now also covers `dimensions[].definition_ref`.
+- SARIF: each command invocation's `executionSuccessful` is that command's own exit status, and every `ERROR`-criterion notification moves to one synthesized invocation appended last that names no command line; a `content:sha256:` revision whose digest is empty or not 64 lowercase hexadecimal characters yields no `artifacts[]` entry.
+- `veval -h` and `veval --help` print the usage on standard output and exit 0; typing no subcommand still prints it on standard error and exits 2.
+- A leading UTF-8 byte order mark is stripped from a report read from a file or from standard input, so a report an editor saved with one is no longer reported as malformed JSON.
+- The advisory authoring path is covered end to end through the command line: a report whose `status.advisory` is true aggregates to the `ADVISORY` overall status and renders as advisory.
 
 ### Not yet implemented
 

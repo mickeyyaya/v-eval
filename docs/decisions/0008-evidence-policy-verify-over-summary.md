@@ -4,7 +4,7 @@
 * Deciders: maintainer (mickeyyaya)
 * Date: 2026-09-14
 
-Nothing described here is implemented. This record turns a maintainer axis into a core-enforced rule.
+Implemented 2026-09-15: `core/report/locator.go` and `core/report/validate.go` enforce the citation rule as `evidence.pass_requires_observed_locator`, under the field names recorded in the amendment below. This record turns a maintainer axis into a core-enforced rule.
 
 ## Context and Problem Statement
 
@@ -41,7 +41,20 @@ Chosen option: "Hierarchy plus claim table plus PASS requires an opened-or-ran c
 
 ## Confirmation
 
-Schema: the evidence object for a PASS has a required `citation` with one of `{file, lines}`, `{command, exit_status, log}`, or `{source, passage}`; validation fails otherwise. A core test feeds a report whose only evidence is a summary and expects rejection. The skill's draft-2 text carries the four rules verbatim. None exists yet.
+Schema: the evidence object for a PASS has a required `citation` with one of `{file, lines}`, `{command, exit_status, log}`, or `{source, passage}`; validation fails otherwise. A core test feeds a report whose only evidence is a summary and expects rejection. The skill's text carries the four rules verbatim. Implemented 2026-09-15: `core/report/locator.go` for the shapes, `core/report/validate.go` for the rule, `core/report/validate_test.go` (`TestValidateRejectsPassWithoutObservedLocator`) for the rejection, and `skills/evaluate-output/SKILL.md` draft-3 for the four rules.
+
+## Amendments (2026-09-15)
+
+The Confirmation above proposes a `citation` object with the groups `{file, lines}`, `{command, exit_status, log}`, and `{source, passage}`. The shipped names differ; the rule they carry is the same one.
+
+| Proposed here | Shipped as (`core/report/locator.go`) |
+| --- | --- |
+| `citation` | `locator`, one field of every evidence record |
+| `{file, lines}` | `file`, `line_start`, `line_end` |
+| `{command, exit_status, log}` | `command`, `cwd`, `exit_status`, `log_ref` |
+| `{source, passage}` | `passage`, `source_ref`, `source_date_or_version`, `access_date` |
+
+A locator populates exactly one of those groups completely; fields from two groups, or one group half filled, name no place and are rejected. A fourth shape, `note`, was added for evidence that is none of the three, and never qualifies for `PASS` ([decision 0023](0023-note-locator-shape.md)).
 
 ## Pros and Cons of the Options
 

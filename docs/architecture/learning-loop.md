@@ -40,6 +40,8 @@ Every human reaction is a first-class record. Nothing is inferred from silence.
 | Added criterion | text, source, applicability | Becomes a candidate project rule in the later rule ladder | The trusted contract |
 | Promote or discard a candidate change | candidate ID, decision, rationale | The active version of the learned material | The anchor set |
 
+Until the core can write these records, the skill appends each reaction to a reactions file beside the report: one JSON object per line with `report_id`, `criterion`, `reaction`, and `note`. That file is the hand-written precursor of the reward record, not a substitute for it; nothing reads it automatically until the core gains the command in Stage 4.
+
 Every record carries provenance: report ID, artifact revision, criterion ID, v-eval version, skill revision, host CLI and model if exposed, timestamp, and a content hash of the case. Records are append-only. The pattern of binary labels plus rationale follows every shipped judge-alignment product examined: LangSmith Align Evals (2025-07-29, <https://www.langchain.com/blog/introducing-align-evals>), Braintrust human review (2026-05-21, <https://www.braintrust.dev/blog/human-review-golden-datasets>), AlignEval (2024-10, <https://eugeneyan.com/writing/aligneval/>), and the Husain and Shankar FAQ (updated 2026-09-01, <https://hamel.dev/blog/posts/evals-faq/>).
 
 ## Storage
