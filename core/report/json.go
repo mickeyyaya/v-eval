@@ -72,6 +72,9 @@ func normalizeInto(dst, src reflect.Value) {
 		normalizeInto(dst.Elem(), src.Elem())
 	case reflect.Struct:
 		for i := 0; i < src.NumField(); i++ {
+			if !src.Type().Field(i).IsExported() {
+				continue
+			}
 			normalizeInto(dst.Field(i), src.Field(i))
 		}
 	default:
