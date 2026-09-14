@@ -303,15 +303,14 @@ var navLinkRE = regexp.MustCompile(`<a href="#([a-z]+)">([^<]+)</a>`)
 var renderedSectionRE = regexp.MustCompile(`<section id="([a-z]+)">`)
 
 // sectionLinks are the nav entries the section table predicts for a report
-// carrying the named sections: the id is the anchor stripped of its
-// attribute syntax, the label the Markdown heading stripped of its marks, so
-// the nav is held to the same table the section order is.
+// carrying the named sections: the id is the section name -- every anchor in
+// the table is `id="`+name+`"` -- the label the Markdown heading stripped of
+// its marks, so the nav is held to the same table the section order is.
 func sectionLinks(present []string) [][2]string {
 	var links [][2]string
 	for _, section := range reportSections {
 		if slices.Contains(present, section.name) {
-			id := strings.TrimSuffix(strings.TrimPrefix(section.anchor, `id="`), `"`)
-			links = append(links, [2]string{id, strings.TrimPrefix(section.heading, "## ")})
+			links = append(links, [2]string{section.name, strings.TrimPrefix(section.heading, "## ")})
 		}
 	}
 	return links
