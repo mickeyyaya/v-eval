@@ -11,7 +11,7 @@ func TestTallyWorkedExample(t *testing.T) {
 		Coverage: Coverage{Numerator: 4, Denominator: 5},
 	}
 	if got != want {
-		t.Fatalf("Tally = %+v, want %+v", got, want)
+		t.Fatalf("TallyCounts = %+v, want %+v", got, want)
 	}
 }
 
@@ -33,6 +33,19 @@ func TestCoverageUndefinedWithZeroApplicable(t *testing.T) {
 	contract := Contract{Criteria: []Criterion{{ID: "C1", Required: true}}}
 	got := TallyCounts(contract, []CriterionResult{{ID: "C1", Result: ResultNotApplicable}})
 	if !got.Coverage.Undefined || got.Coverage.Denominator != 0 || got.Required.NotApplicable != 1 {
+		t.Fatalf("coverage = %+v", got.Coverage)
+	}
+}
+
+func TestTallyCountsUnknownIDAsOptionalWithoutPanic(t *testing.T) {
+	t.Parallel()
+	contract := Contract{Criteria: []Criterion{{ID: "R1", Required: true}}}
+	results := []CriterionResult{{ID: "R1", Result: ResultPass}, {ID: "ZZ", Result: ResultFail}}
+	got := TallyCounts(contract, results)
+	if got.Required != (Tally{Applicable: 1, Pass: 1}) || got.Optional != (Tally{Applicable: 1, Fail: 1}) {
+		t.Fatalf("got %+v", got)
+	}
+	if got.Coverage != (Coverage{Numerator: 2, Denominator: 2}) {
 		t.Fatalf("coverage = %+v", got.Coverage)
 	}
 }
