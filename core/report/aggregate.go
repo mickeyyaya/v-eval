@@ -65,16 +65,22 @@ func gatingSet(contract Contract, results []CriterionResult) []CriterionResult {
 	return g
 }
 
-// failedIDs returns the sorted ids of FAIL results in the gating set.
-func failedIDs(g []CriterionResult) []string {
+// idsMatching returns the sorted ids of gating-set results whose Result
+// satisfies match.
+func idsMatching(g []CriterionResult, match func(Result) bool) []string {
 	var ids []string
 	for _, result := range g {
-		if result.Result == ResultFail {
+		if match(result.Result) {
 			ids = append(ids, result.ID)
 		}
 	}
 	sort.Strings(ids)
 	return ids
+}
+
+// failedIDs returns the sorted ids of FAIL results in the gating set.
+func failedIDs(g []CriterionResult) []string {
+	return idsMatching(g, func(r Result) bool { return r == ResultFail })
 }
 
 // ruleAdvisory hits whenever advisory is requested, regardless of results.
@@ -117,12 +123,7 @@ func ruleConflict(contract Contract) (ids []string, hit bool) {
 
 // ruleUnknownOrError hits when any gating result is UNKNOWN or ERROR.
 func ruleUnknownOrError(g []CriterionResult) (ids []string, hit bool) {
-	for _, result := range g {
-		if result.Result == ResultUnknown || result.Result == ResultError {
-			ids = append(ids, result.ID)
-		}
-	}
-	sort.Strings(ids)
+	ids = idsMatching(g, func(r Result) bool { return r == ResultUnknown || r == ResultError })
 	return ids, len(ids) > 0
 }
 
