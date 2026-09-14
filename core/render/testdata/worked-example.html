@@ -55,9 +55,9 @@ h3 { font-size: 1rem; margin: 0 0 0.25rem; }
 p { margin: 0 0 0.5rem; }
 section { margin: 2rem 0 0; }
 header .revision { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
-dl.facts { display: grid; grid-template-columns: minmax(9rem, auto) 1fr; gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
+dl.facts { display: grid; grid-template-columns: minmax(9rem, auto) minmax(0, 1fr); gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
 dl.facts dt { color: var(--muted); }
-dl.facts dd { margin: 0; }
+dl.facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 article { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.75rem 1rem; margin: 0 0 0.75rem; }
 table { width: 100%; border-collapse: collapse; margin: 0 0 0.5rem; }
 th, td { border: 1px solid var(--rule); padding: 0.5rem; text-align: left; vertical-align: top; }
