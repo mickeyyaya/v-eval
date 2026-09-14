@@ -157,6 +157,11 @@ class FindBrokenTest(unittest.TestCase):
         write(self.root, "a.md", "# A\n")
         self.assertEqual(check_links.find_broken(str(self.root)), [])
 
+    def test_build_output_is_not_scanned(self) -> None:
+        write(self.root, "build/release-notes.md", "[bad](nope.md)")
+        write(self.root, "a.md", "# A\n")
+        self.assertEqual(check_links.find_broken(str(self.root)), [])
+
     def test_missing_root_raises_instead_of_returning_nothing(self) -> None:
         with self.assertRaises(NotADirectoryError):
             check_links.find_broken(str(self.root / "missing"))

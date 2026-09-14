@@ -6,4 +6,5 @@ authors:
   - name: "v-eval contributors"
 repository-code: "https://github.com/mickeyyaya/v-eval"
 license: MIT
-date-released: "2026-09-14"
+version: "0.1.0"
+date-released: "2026-09-15"

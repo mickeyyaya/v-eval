@@ -64,6 +64,12 @@ class CollectLinksTest(unittest.TestCase):
         links = gen_sources.collect_links(str(self.root))
         self.assertEqual(set(links), {"https://example.org/keep"})
 
+    def test_build_output_is_not_collected(self) -> None:
+        write(self.root, "build/release-notes.md", "[Notes](https://example.org/notes)")
+        write(self.root, "a.md", "[Keep](https://example.org/keep)")
+        links = gen_sources.collect_links(str(self.root))
+        self.assertEqual(set(links), {"https://example.org/keep"})
+
     def test_a_file_merely_named_sources_md_elsewhere_is_not_ignored(self) -> None:
         write(self.root, "notes/sources.md", "[Elsewhere](https://example.org/elsewhere)")
         links = gen_sources.collect_links(str(self.root))

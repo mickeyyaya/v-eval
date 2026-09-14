@@ -56,6 +56,10 @@ Release binaries are unsigned and un-notarized. On macOS that means Gatekeeper b
 
 **Proposal**: the binary location and version are also discoverable through `veval --print-self`, so a harness that already has the binary on PATH can skip the download.
 
+## Releases
+
+A release is a tag ([decision 0025](../decisions/0025-tag-driven-release.md)). Pushing `vX.Y.Z` runs `release.yml` on ubuntu-latest: the test suite, `tools/release/release_notes.py` extracting that version's section from `CHANGELOG.md` (the workflow fails when the section is missing), `go run ./cmd/veval render --format html` over the two fixtures into `build/examples/`, and `goreleaser release --clean` with those notes. GoReleaser cross-compiles the six targets with `CGO_ENABLED=0` and `-trimpath`, stamps `internal/version` through ldflags so `veval version` prints the tag and short commit, writes `checksums.txt`, and attaches the rendered example reports through `release.extra_files`. Nothing is built on a maintainer's machine, and the checksums describe CI's build. The first release is v0.1.0 (2026-09-15).
+
 ## Windows rules
 
 - No bash on the required path. Shell scripts may exist as conveniences on Unix only.
@@ -78,7 +82,7 @@ evolve-loop's Go bridge already drives `claude`, `claude-p`, `claude-tmux`, `cod
 
 ## CI matrix
 
-From the first commit, [`go.yml`](../../.github/workflows/go.yml) runs on macOS, Linux, and Windows: `gofmt`, `go vet`, the whole test suite, and a build of `cmd/veval` on all three, with the race detector added on ubuntu and macOS only, because on Windows it needs a C toolchain the runner does not carry. [`docs.yml`](../../.github/workflows/docs.yml) runs markdownlint and lychee on Linux and the documentation tooling's own unit tests on all three. Two jobs named in this design are still pending: a GoReleaser dry run producing every target, and the plugin-eval suite on Linux with WSL2 for the shell-granting cases. A release is blocked if any operating system fails.
+From the first commit, [`go.yml`](../../.github/workflows/go.yml) runs on macOS, Linux, and Windows: `gofmt`, `go vet`, the whole test suite, and a build of `cmd/veval` on all three, with the race detector added on ubuntu and macOS only, because on Windows it needs a C toolchain the runner does not carry. [`docs.yml`](../../.github/workflows/docs.yml) runs markdownlint and lychee on Linux and the documentation tooling's own unit tests on all three. [`release.yml`](../../.github/workflows/release.yml) runs on a `v*` tag (see [Releases](#releases)). One job named in this design is still pending: the plugin-eval suite on Linux with WSL2 for the shell-granting cases. A release is blocked if any operating system fails.
 
 ## Proposals awaiting maintainer confirmation
 

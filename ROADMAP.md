@@ -22,6 +22,7 @@ Done:
 - SARIF 2.1.0 export. The two golden logs were validated by the maintainer on 2026-09-15 with an external JSON Schema validator against the OASIS errata01 schema; no SARIF validator runs in CI yet.
 - `skills/evaluate-output/`: skill draft-3 writes the JSON report and calls the core when present; per-harness reference files for Claude Code, Codex, Gemini CLI, Antigravity, Hermes, and ollama-backed agents, under `skills/evaluate-output/references/hosts/`.
 - Continuous integration on macOS, Linux, and Windows; GoReleaser configuration for the six operating-system and architecture targets.
+- First official release, v0.1.0 (2026-09-15), cut by tag through `release.yml` with binaries for six targets, checksums, notes from the changelog, and the two example reports rendered by the released binary ([decision 0025](docs/decisions/0025-tag-driven-release.md)); the HTML report received a design pass first.
 
 Remaining:
 

@@ -40,6 +40,20 @@ This is an illustrative report, not an executed test result. See the [worked exa
 
 A result applies to its stated criteria and inspected artifact. It is not a universal quality score. Required failures cannot be averaged away; missing evidence remains visible.
 
+## Install the core
+
+Every tagged release publishes a static binary for macOS, Linux, and Windows on amd64 and arm64, a `checksums.txt`, and the two example reports rendered by that build ([decision 0025](docs/decisions/0025-tag-driven-release.md)). Download the archive for your platform from <https://github.com/mickeyyaya/v-eval/releases>, verify it, and put `veval` (or `veval.exe`) on your `PATH`:
+
+```sh
+curl -sSLO https://github.com/mickeyyaya/v-eval/releases/download/v0.1.0/veval_darwin_arm64.tar.gz
+curl -sSLO https://github.com/mickeyyaya/v-eval/releases/download/v0.1.0/checksums.txt
+shasum -a 256 --check --ignore-missing checksums.txt
+tar -xzf veval_darwin_arm64.tar.gz veval
+./veval version
+```
+
+On Windows the archive is a `.zip` containing `veval.exe`; `Get-FileHash` prints the checksum to compare. Binaries are unsigned, so a browser download on macOS needs `xattr -d com.apple.quarantine veval` before it runs; the `curl` path above does not. With a Go toolchain, `go install github.com/mickeyyaya/v-eval/cmd/veval@v0.1.0` builds the same program, reporting the module version instead of the release tag.
+
 ## Try the draft skill
 
 Give a tool-capable assistant access to this checkout and a request such as:

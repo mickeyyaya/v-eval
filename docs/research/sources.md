@@ -2,7 +2,7 @@
 
 Generated from every Markdown file in the repository. Each external link cited anywhere in the documentation appears once, with the documents that cite it. All links were accessed on the research dates stated in the citing documents; this register does not re-verify them. Regenerate with `python tools/docs/vdocs.py register .` from the repository root; `--check` verifies the committed file is current.
 
-Unique external links: 294. Citing documents: 82.
+Unique external links: 301. Citing documents: 84.
 
 ## aclanthology.org
 
@@ -203,6 +203,7 @@ Unique external links: 294. Citing documents: 82.
 ## docs.github.com
 
 - [https://docs.github.com/en/actions/concepts/security/artifact-attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations) — cited in `docs/architecture/forensics.md`, `docs/decisions/0010-first-adapters.md`
+- [https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication](https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication) — cited in `docs/decisions/0025-tag-driven-release.md`
 
 ## docs.oasis-open.org
 
@@ -305,6 +306,9 @@ Unique external links: 294. Citing documents: 82.
 - [https://github.com/mem0ai/mem0](https://github.com/mem0ai/mem0) — cited in `docs/research/2026-09-14-adaptive-skills.md`
 - [https://github.com/mickeyyaya/evolve-loop](https://github.com/mickeyyaya/evolve-loop) — cited in `docs/decisions/0001-independent-of-evolve-loop.md`
 - [https://github.com/mickeyyaya/v-eval](https://github.com/mickeyyaya/v-eval) — cited in `README.md`, `docs/decisions/0019-delivery-public-repo-mit.md`
+- [https://github.com/mickeyyaya/v-eval/compare/v0.1.0...HEAD](https://github.com/mickeyyaya/v-eval/compare/v0.1.0...HEAD) — cited in `CHANGELOG.md`
+- [https://github.com/mickeyyaya/v-eval/releases](https://github.com/mickeyyaya/v-eval/releases) — cited in `README.md`
+- [https://github.com/mickeyyaya/v-eval/releases/tag/v0.1.0](https://github.com/mickeyyaya/v-eval/releases/tag/v0.1.0) — cited in `CHANGELOG.md`
 - [https://github.com/microsoft/PromptWizard](https://github.com/microsoft/PromptWizard) — cited in `docs/research/2026-09-14-adaptive-skills.md`
 - [Official Pyright project](https://github.com/microsoft/pyright) — cited in `docs/deterministic-tools-2026.md`
 - [https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-events.md](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-events.md) — cited in `docs/decisions/0006-json-first-report-contract.md`
@@ -344,7 +348,10 @@ Unique external links: 294. Citing documents: 82.
 
 ## goreleaser.com
 
-- [https://goreleaser.com/customization/checksum](https://goreleaser.com/customization/checksum) — cited in `docs/architecture/packaging-and-portability.md`, `docs/decisions/0005-go-core-binary.md`
+- [https://goreleaser.com/ci/actions/](https://goreleaser.com/ci/actions/) — cited in `docs/decisions/0025-tag-driven-release.md`
+- [https://goreleaser.com/customization/checksum](https://goreleaser.com/customization/checksum) — cited in `docs/architecture/packaging-and-portability.md`, `docs/decisions/0005-go-core-binary.md`, `docs/decisions/0025-tag-driven-release.md`
+- [https://goreleaser.com/customization/release/](https://goreleaser.com/customization/release/) — cited in `docs/decisions/0025-tag-driven-release.md`
+- [https://goreleaser.com/quick-start/](https://goreleaser.com/quick-start/) — cited in `docs/decisions/0025-tag-driven-release.md`
 
 ## graphite.com
 
@@ -408,7 +415,7 @@ Unique external links: 294. Citing documents: 82.
 
 ## keepachangelog.com
 
-- [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — cited in `CHANGELOG.md`
+- [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — cited in `CHANGELOG.md`, `docs/decisions/0025-tag-driven-release.md`
 
 ## langchain-ai.github.io
 

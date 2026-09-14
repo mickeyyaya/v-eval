@@ -1,8 +1,14 @@
 # Changelog
 
-All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project will follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html) once a first release is tagged.
+All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from the first tagged release, 0.1.0.
 
 ## [Unreleased]
+
+Nothing yet.
+
+## [0.1.0] - 2026-09-15
+
+First tagged release: the core walking skeleton, the `veval` command line, the skill wired to it, and the release process itself.
 
 ### Added
 
@@ -22,9 +28,12 @@ All notable changes to this project are documented in this file. The format foll
 - The `veval` command line (`cmd/veval`): `version`, `validate`, `aggregate`, `render`, and `export sarif`; exit 0 for success, 1 for a report that fails its rules, 2 for a usage or input error; `-` reads standard input, `-o -` writes standard output, and `--` terminates the flags.
 - Continuous integration for Go on macOS, Linux, and Windows (`.github/workflows/go.yml`) and a GoReleaser configuration covering six operating-system and architecture targets (`.goreleaser.yaml`).
 - Skill wiring: `skills/evaluate-output/` calls the `veval` core when it is present, with per-host reference files for Claude Code, Codex, Gemini CLI, Antigravity, Hermes, and ollama-backed agents (`skills/evaluate-output/references/hosts/`), and a contract test that fails when a command name in SKILL.md drifts from the CLI.
-- Documentation tooling: `tools/docs/gen_sources.py` and `tools/docs/check_links.py` also skip `.superpowers`, so git-ignored scratch is never counted in the source register or link-checked.
+- Documentation tooling: `tools/docs/gen_sources.py` and `tools/docs/check_links.py` also skip `.superpowers` and `build`, so git-ignored scratch and release build output are never counted in the source register or link-checked.
 - Decision record 0023: a fourth locator shape, `note`, for evidence that was neither opened nor run; it never qualifies for `PASS` (`docs/decisions/0023-note-locator-shape.md`).
 - Decision record 0024: the evaluation contract is the report schema's `contract` section rather than a schema file of its own, so there is one canonical record and one drift test (`docs/decisions/0024-contract-inside-report-schema.md`).
+- HTML report design pass (`core/render`): a masthead with the overall status as a hero card and blocked-by chips, a sticky section navigation, a two-column facts grid, evidence cards with kind-tinted tags, forensic severity badges, zebra tables, a footer naming the report, and print rules; still one file, no script, light and dark, and no sideways scroll at phone width.
+- Release process ([decision 0025](docs/decisions/0025-tag-driven-release.md)): a tag `v*` runs `.github/workflows/release.yml`, which tests, extracts this file's section for the tag with `tools/release/release_notes.py`, renders the two example reports with the freshly built binary, and publishes six archives, `checksums.txt`, and the reports through GoReleaser.
+- Install instructions in `README.md`: download an archive from the release, verify its checksum, run `veval version`.
 - The canonical form is documented (`docs/architecture/report-schema.md`): the encoding, the normalization of nil arrays and objects to empty ones, how `identity.report_id` and `provenance.evidence_digest` are built, and the requirement that a second implementation reproduce the bytes rather than an equivalent document.
 
 ### Changed
@@ -47,3 +56,6 @@ All notable changes to this project are documented in this file. The format foll
 ### Not yet implemented
 
 - The plugin manifests, the agent profile, the isolation profile, the adapters, the classifier, the forensic detectors, the precedent bank, and the pilot set are designed but not built.
+
+[Unreleased]: https://github.com/mickeyyaya/v-eval/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/mickeyyaya/v-eval/releases/tag/v0.1.0
