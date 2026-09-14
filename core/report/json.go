@@ -25,11 +25,19 @@ func Decode(raw []byte) (Report, error) {
 // is what the digests are taken over, so a report built in Go and the same
 // report decoded from JSON must encode to the same bytes.
 func Encode(rep Report) ([]byte, error) {
-	out, err := canonicalJSON(normalize(rep), true)
+	out, err := CanonicalJSON(normalize(rep))
 	if err != nil {
 		return nil, fmt.Errorf("report: encode: %w", err)
 	}
 	return out, nil
+}
+
+// CanonicalJSON writes any value in the canonical form a report takes:
+// two-space indent, no HTML escaping, one trailing newline. It is exported so
+// that anything written beside a report -- an export, a fixture -- goes
+// through this encoder rather than a second one that could drift from it.
+func CanonicalJSON(v any) ([]byte, error) {
+	return canonicalJSON(v, true)
 }
 
 // canonicalJSON is the one encoder every written report and every digest goes

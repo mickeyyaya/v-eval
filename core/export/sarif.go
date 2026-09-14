@@ -5,8 +5,6 @@
 package export
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -29,11 +27,18 @@ const (
 	sha256HashName        = "sha-256"
 )
 
-// ToSARIF maps a report onto a SARIF log. It fails rather than guess: a
-// criterion result the schema does not define has no SARIF kind, and a result
-// whose criterion is absent from the contract has no rule to report against.
+// ToSARIF maps a report onto a SARIF log. It expects a report that passed
+// report.Validate -- every locator one complete group, every result naming a
+// criterion the contract defines -- and it fails rather than guess where that
+// does not hold: a criterion result the schema does not define has no SARIF
+// kind, and a result or a finding whose criterion is absent from the contract
+// has no rule to report against.
 func ToSARIF(rep report.Report) (Log, error) {
 	results, err := criterionResults(rep)
+	if err != nil {
+		return Log{}, err
+	}
+	findings, err := forensicResults(rep)
 	if err != nil {
 		return Log{}, err
 	}
@@ -41,23 +46,21 @@ func ToSARIF(rep report.Report) (Log, error) {
 		Tool:        Tool{Driver: driver(rep)},
 		Invocations: invocations(rep),
 		Artifacts:   artifactHashes(rep.Identity.Artifact),
-		Results:     append(results, forensicResults(rep.Forensics)...),
+		Results:     append(results, findings...),
 		Properties:  Properties{"veval": vevalProperties(rep)},
 	}
 	return Log{Schema: schemaURI, Version: sarifVersion, Runs: []Run{run}}, nil
 }
 
-// Marshal writes a log in the canonical form every v-eval JSON takes:
-// two-space indent, no HTML escaping, one trailing newline.
+// Marshal writes a log in the canonical form every v-eval JSON takes. It is
+// the report's own encoder, so a log and the report it came from are written
+// by one set of rules rather than two that could drift apart.
 func Marshal(log Log) ([]byte, error) {
-	var out bytes.Buffer
-	enc := json.NewEncoder(&out)
-	enc.SetEscapeHTML(false)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(log); err != nil {
+	out, err := report.CanonicalJSON(log)
+	if err != nil {
 		return nil, fmt.Errorf("export: marshal: %w", err)
 	}
-	return out.Bytes(), nil
+	return out, nil
 }
 
 // driver states the tool and turns every contract criterion into a rule, so
@@ -108,9 +111,12 @@ func criterionResults(rep report.Report) ([]Result, error) {
 
 // forensicResults reports each finding against the criterion it bears on.
 // A finding is a detector hit awaiting judgment, so it is always for review.
-func forensicResults(findings []report.Finding) []Result {
-	out := make([]Result, 0, len(findings))
-	for _, finding := range findings {
+func forensicResults(rep report.Report) ([]Result, error) {
+	out := make([]Result, 0, len(rep.Forensics))
+	for _, finding := range rep.Forensics {
+		if _, ok := rep.Contract.CriterionByID(finding.CriterionID); !ok {
+			return nil, fmt.Errorf("export: finding %q: no such criterion %q in the contract", finding.FindingID, finding.CriterionID)
+		}
 		out = append(out, Result{
 			RuleID:    finding.CriterionID,
 			Kind:      kindReview,
@@ -126,7 +132,7 @@ func forensicResults(findings []report.Finding) []Result {
 			},
 		})
 	}
-	return out
+	return out, nil
 }
 
 // The SARIF result kinds this export writes. UNKNOWN and ERROR have no kind
@@ -195,9 +201,31 @@ func evidenceProperties(evidence []report.Evidence) []map[string]any {
 		entry["origin"] = string(item.Origin)
 		entry["isolation"] = string(item.Isolation)
 		entry["observation"] = item.Observation
+		entry["provenance"] = provenanceFields(item)
 		out = append(out, entry)
 	}
 	return out
+}
+
+// provenanceFields records what produced a piece of evidence and when. A
+// rubric version and a model are part of that answer for a judgment and part
+// of no other kind, so they are written only where the report states them: an
+// empty string here would read as a rubric nobody can name rather than as a
+// kind of evidence no rubric applies to.
+func provenanceFields(item report.Evidence) map[string]any {
+	fields := map[string]any{
+		"tool":      item.Provenance.Tool,
+		"version":   item.Provenance.Version,
+		"revision":  item.Provenance.Revision,
+		"timestamp": item.Provenance.Timestamp,
+	}
+	if item.RubricVersion != "" {
+		fields["rubric_version"] = item.RubricVersion
+	}
+	if item.Model != "" {
+		fields["model"] = item.Model
+	}
+	return fields
 }
 
 // locatorFields spells out where a piece of evidence came from, in the report's
@@ -255,8 +283,8 @@ func invocations(rep report.Report) []Invocation {
 			CommandLine:         command.Command,
 			WorkingDirectory:    &ArtifactLocation{URI: command.Cwd},
 			ExitCode:            &exit,
-			StartTimeUtc:        command.StartedAt,
-			EndTimeUtc:          command.EndedAt,
+			StartTimeUTC:        command.StartedAt,
+			EndTimeUTC:          command.EndedAt,
 			ExecutionSuccessful: completed && exit == 0,
 			Properties: Properties{
 				"veval_isolation": string(command.Isolation),

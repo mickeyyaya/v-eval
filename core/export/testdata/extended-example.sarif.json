@@ -165,7 +165,13 @@
                 "kind": "execution",
                 "log_ref": "logs/e1-go-test.log",
                 "observation": "ok  github.com/example/service  1.204s; 42 tests, 0 failures",
-                "origin": "observed"
+                "origin": "observed",
+                "provenance": {
+                  "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+                  "timestamp": "2026-09-14T00:03:12Z",
+                  "tool": "go",
+                  "version": "1.23.1"
+                }
               }
             ],
             "veval_result": "PASS"
@@ -199,6 +205,12 @@
                 "observation": "The vendor states the limit as 100 requests per minute per API key.",
                 "origin": "retrieved",
                 "passage": "Clients may issue at most 100 requests per minute per API key.",
+                "provenance": {
+                  "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+                  "timestamp": "2026-09-14T00:04:00Z",
+                  "tool": "assistant",
+                  "version": "fixture"
+                },
                 "source_date_or_version": "2026-08-30",
                 "source_ref": "https://api.example.test/docs/rate-limits"
               },
@@ -209,7 +221,13 @@
                 "line_end": 52,
                 "line_start": 48,
                 "observation": "const rateLimitPerMinute = 100 // per API key",
-                "origin": "observed"
+                "origin": "observed",
+                "provenance": {
+                  "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+                  "timestamp": "2026-09-14T00:04:00Z",
+                  "tool": "assistant",
+                  "version": "fixture"
+                }
               }
             ],
             "veval_result": "PASS"
@@ -228,7 +246,13 @@
                 "kind": "supplied",
                 "note": "Benchmark number quoted in the pull request description, paragraph 2",
                 "observation": "Quotes 610 requests per second; no workload, tool, or log accompanies the number.",
-                "origin": "candidate_supplied"
+                "origin": "candidate_supplied",
+                "provenance": {
+                  "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+                  "timestamp": "2026-09-14T00:06:00Z",
+                  "tool": "assistant",
+                  "version": "fixture"
+                }
               }
             ],
             "veval_result": "UNKNOWN"
@@ -250,7 +274,13 @@
                 "kind": "execution",
                 "log_ref": "logs/e4-docker-build.log",
                 "observation": "zsh: command not found: docker",
-                "origin": "observed"
+                "origin": "observed",
+                "provenance": {
+                  "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+                  "timestamp": "2026-09-14T00:06:30Z",
+                  "tool": "shell",
+                  "version": "zsh 5.9"
+                }
               }
             ],
             "veval_result": "ERROR"
@@ -284,7 +314,13 @@
                 "line_end": 1,
                 "line_start": 1,
                 "observation": "# no vendored third-party sources at this revision",
-                "origin": "observed"
+                "origin": "observed",
+                "provenance": {
+                  "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+                  "timestamp": "2026-09-14T00:04:30Z",
+                  "tool": "assistant",
+                  "version": "fixture"
+                }
               }
             ],
             "veval_result": "NOT_APPLICABLE"
@@ -318,14 +354,28 @@
                 "line_end": 1,
                 "line_start": 1,
                 "observation": "Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.",
-                "origin": "observed"
+                "origin": "observed",
+                "provenance": {
+                  "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+                  "timestamp": "2026-09-14T00:07:00Z",
+                  "tool": "mtime-drift",
+                  "version": "0.3"
+                }
               },
               {
                 "isolation": "none",
                 "kind": "judgment",
                 "note": "Integrity rubric applied to the modification-time drift above",
                 "observation": "The rubric cannot separate a benign checkout touch from a content change without the pre-evaluation tree digest.",
-                "origin": "observed"
+                "origin": "observed",
+                "provenance": {
+                  "model": "unknown",
+                  "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+                  "rubric_version": "integrity-rubric-0.2",
+                  "timestamp": "2026-09-14T00:07:10Z",
+                  "tool": "assistant",
+                  "version": "fixture"
+                }
               }
             ],
             "veval_result": "UNKNOWN"
@@ -359,7 +409,13 @@
                 "line_end": 1,
                 "line_start": 1,
                 "observation": "Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.",
-                "origin": "observed"
+                "origin": "observed",
+                "provenance": {
+                  "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
+                  "timestamp": "2026-09-14T00:07:00Z",
+                  "tool": "mtime-drift",
+                  "version": "0.3"
+                }
               }
             ],
             "veval_benign_alternative": "A checkout or a formatter touched the file without changing its contents.",

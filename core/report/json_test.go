@@ -6,6 +6,24 @@ import (
 	"testing"
 )
 
+func TestEncodeWritesWhatCanonicalJSONWrites(t *testing.T) {
+	t.Parallel()
+	// One encoder, so a report and anything exported beside it cannot drift
+	// apart on indentation, escaping, or the trailing newline.
+	rep := loadFixture(t)
+	encoded, err := Encode(rep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	canonical, err := CanonicalJSON(rep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(encoded, canonical) {
+		t.Fatalf("Encode and CanonicalJSON disagree:\n%s\n%s", encoded, canonical)
+	}
+}
+
 func TestFixtureDecodesAndEncodesCanonically(t *testing.T) {
 	t.Parallel()
 	rep := loadFixture(t)

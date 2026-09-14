@@ -287,8 +287,74 @@ func TestSARIFFileEvidenceObjectIsSelfContained(t *testing.T) {
 	if file["file"] != "examples/extended/service.go" || file["line_start"] != 48 || file["line_end"] != 52 {
 		t.Fatalf("file evidence = %v, want its own file and line range", file)
 	}
+	provenance, ok := file["provenance"].(map[string]any)
+	if !ok {
+		t.Fatalf("file evidence carries no provenance: %v", file)
+	}
+	if provenance["tool"] != "assistant" || provenance["version"] != "fixture" ||
+		provenance["revision"] != "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f" ||
+		provenance["timestamp"] != "2026-09-14T00:04:00Z" {
+		t.Fatalf("provenance = %v, want what produced the evidence and when", provenance)
+	}
 	if len(got.Locations) != 1 {
 		t.Fatalf("locations = %+v, want the file locator kept as a physicalLocation too", got.Locations)
+	}
+}
+
+func TestSARIFJudgmentEvidenceCarriesRubricAndModel(t *testing.T) {
+	t.Parallel()
+	// E6 cites a rubric judgment; the rubric version and the model are what
+	// produced it, and a reader cannot weigh the judgment without them.
+	got := resultsFor(t, mustSARIF(t, loadReport(t, "extended-example")), "E6")[0]
+	judgment := evidenceOf(t, got)[1]
+	provenance, ok := judgment["provenance"].(map[string]any)
+	if !ok {
+		t.Fatalf("judgment evidence carries no provenance: %v", judgment)
+	}
+	if provenance["rubric_version"] != "integrity-rubric-0.2" || provenance["model"] != "unknown" {
+		t.Fatalf("provenance = %v, want the rubric version and the model", provenance)
+	}
+}
+
+func TestSARIFEvidenceOmitsAbsentRubricAndModel(t *testing.T) {
+	t.Parallel()
+	// Inspection evidence names no rubric and no model, and an empty string
+	// would read as one that is unknown rather than one that does not apply.
+	got := resultsFor(t, mustSARIF(t, loadFixture(t)), "C1")[0]
+	provenance := evidenceOf(t, got)[0]["provenance"].(map[string]any)
+	if _, ok := provenance["rubric_version"]; ok {
+		t.Fatalf("provenance = %v, want no empty rubric_version", provenance)
+	}
+	if _, ok := provenance["model"]; ok {
+		t.Fatalf("provenance = %v, want no empty model", provenance)
+	}
+}
+
+func TestSARIFIncompleteLocatorPointsNowhere(t *testing.T) {
+	t.Parallel()
+	// The export assumes a report that passed report.Validate, where a locator
+	// is one complete group. A locator that is not says where nothing is, and
+	// the export states the evidence without inventing a place for it.
+	rep := oneCriterionReport(report.Evidence{
+		Kind:        report.KindInspection,
+		Locator:     report.Locator{File: "service.go"}, // no line range: no complete shape
+		Observation: "half a locator",
+		Origin:      report.OriginObserved,
+		Isolation:   report.IsolationNone,
+	})
+	got := resultsFor(t, mustSARIF(t, rep), "C1")[0]
+	if len(got.Locations) != 0 {
+		t.Fatalf("locations = %+v, want none for a locator of no complete shape", got.Locations)
+	}
+	entry := evidenceOf(t, got)[0]
+	want := []string{"kind", "origin", "isolation", "observation", "provenance"}
+	if len(entry) != len(want) {
+		t.Fatalf("evidence entry = %v, want only %v", entry, want)
+	}
+	for _, key := range want {
+		if _, ok := entry[key]; !ok {
+			t.Fatalf("evidence entry %v is missing %q", entry, key)
+		}
 	}
 }
 
@@ -302,7 +368,7 @@ func TestSARIFCommandsBecomeInvocations(t *testing.T) {
 	first := inv[0]
 	if first.CommandLine != "go test ./..." || first.WorkingDirectory.URI != "/tmp/veval-worktree" ||
 		first.ExitCode == nil || *first.ExitCode != 0 ||
-		first.StartTimeUtc != "2026-09-14T00:03:10Z" || first.EndTimeUtc != "2026-09-14T00:03:12Z" {
+		first.StartTimeUTC != "2026-09-14T00:03:10Z" || first.EndTimeUTC != "2026-09-14T00:03:12Z" {
 		t.Fatalf("invocation = %+v", first)
 	}
 	if first.Properties["veval_isolation"] != "worktree" || first.Properties["veval_log_ref"] != "logs/e1-go-test.log" {
@@ -479,6 +545,9 @@ func TestSARIFForensicFindingBecomesResult(t *testing.T) {
 	if len(finding.Locations) != 1 || len(evidenceOf(t, finding)) != 1 {
 		t.Fatalf("finding evidence was not mapped: %+v", finding)
 	}
+	if _, ok := finding.Properties["veval_result"]; ok {
+		t.Fatalf("a finding is not a criterion verdict and states no result: %v", finding.Properties)
+	}
 }
 
 func TestSARIFRejectsResultOutsideTheSchema(t *testing.T) {
@@ -530,6 +599,15 @@ func TestSARIFBlockedByIsNeverNull(t *testing.T) {
 	}
 }
 
+func TestSARIFRejectsFindingMissingFromContract(t *testing.T) {
+	t.Parallel()
+	rep := loadReport(t, "extended-example")
+	rep.Forensics[0].CriterionID = "E9"
+	if _, err := export.ToSARIF(rep); err == nil {
+		t.Fatal("a finding on no contract criterion has no rule and must be an error")
+	}
+}
+
 func TestMarshalIsCanonicalJSON(t *testing.T) {
 	t.Parallel()
 	rep := loadFixture(t)
@@ -546,6 +624,15 @@ func TestMarshalIsCanonicalJSON(t *testing.T) {
 	}
 	if !bytes.Contains(out, []byte("a < b && c > d")) {
 		t.Fatal("canonical JSON does not escape HTML")
+	}
+}
+
+// oneCriterionReport is the smallest report that carries one piece of
+// evidence: one required criterion, failed, citing it.
+func oneCriterionReport(evidence report.Evidence) report.Report {
+	return report.Report{
+		Contract: report.Contract{Criteria: []report.Criterion{{ID: "C1", Requirement: "r", Required: true}}},
+		Criteria: []report.CriterionResult{{ID: "C1", Result: report.ResultFail, Evidence: []report.Evidence{evidence}}},
 	}
 }
 

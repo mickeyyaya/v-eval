@@ -122,7 +122,13 @@
                 "line_end": 27,
                 "line_start": 27,
                 "observation": "    return sorted(set(email.strip() for email in emails))",
-                "origin": "observed"
+                "origin": "observed",
+                "provenance": {
+                  "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+                  "timestamp": "2026-09-14T00:00:00Z",
+                  "tool": "assistant",
+                  "version": "fixture"
+                }
               }
             ],
             "veval_result": "FAIL"
@@ -157,7 +163,13 @@
                 "line_end": 27,
                 "line_start": 27,
                 "observation": "    return sorted(set(email.strip() for email in emails))",
-                "origin": "observed"
+                "origin": "observed",
+                "provenance": {
+                  "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+                  "timestamp": "2026-09-14T00:00:00Z",
+                  "tool": "assistant",
+                  "version": "fixture"
+                }
               }
             ],
             "veval_result": "FAIL"
@@ -192,7 +204,13 @@
                 "line_end": 27,
                 "line_start": 27,
                 "observation": "    return sorted(set(email.strip() for email in emails))",
-                "origin": "observed"
+                "origin": "observed",
+                "provenance": {
+                  "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+                  "timestamp": "2026-09-14T00:00:00Z",
+                  "tool": "assistant",
+                  "version": "fixture"
+                }
               }
             ],
             "veval_result": "FAIL"
@@ -226,7 +244,13 @@
                 "line_end": 27,
                 "line_start": 26,
                 "observation": "The complete supplied function uses built-ins and a string method only.",
-                "origin": "observed"
+                "origin": "observed",
+                "provenance": {
+                  "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+                  "timestamp": "2026-09-14T00:00:00Z",
+                  "tool": "assistant",
+                  "version": "fixture"
+                }
               }
             ],
             "veval_result": "PASS"
@@ -245,7 +269,13 @@
                 "kind": "supplied",
                 "note": "Candidate author's statement in input.md",
                 "observation": "Claims tests passed; no tests, command, logs, or verified artifact binding supplied.",
-                "origin": "candidate_supplied"
+                "origin": "candidate_supplied",
+                "provenance": {
+                  "revision": "content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+                  "timestamp": "2026-09-14T00:00:00Z",
+                  "tool": "assistant",
+                  "version": "fixture"
+                }
               }
             ],
             "veval_result": "UNKNOWN"

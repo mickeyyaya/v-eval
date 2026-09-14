@@ -92,8 +92,8 @@ type Invocation struct {
 	CommandLine                string            `json:"commandLine,omitempty"`
 	WorkingDirectory           *ArtifactLocation `json:"workingDirectory,omitempty"`
 	ExitCode                   *int              `json:"exitCode,omitempty"`
-	StartTimeUtc               string            `json:"startTimeUtc,omitempty"`
-	EndTimeUtc                 string            `json:"endTimeUtc,omitempty"`
+	StartTimeUTC               string            `json:"startTimeUtc,omitempty"`
+	EndTimeUTC                 string            `json:"endTimeUtc,omitempty"`
 	ExecutionSuccessful        bool              `json:"executionSuccessful"`
 	ToolExecutionNotifications []Notification    `json:"toolExecutionNotifications,omitempty"`
 	Properties                 Properties        `json:"properties,omitempty"`
