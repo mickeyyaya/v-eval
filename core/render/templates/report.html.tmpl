@@ -1,0 +1,313 @@
+{{- /* One evidence line: what it is, how isolated it ran, where it points,
+what it said, whether the candidate supplied it rather than the evaluator
+gathering it, and what produced it. */ -}}
+{{- define "evidence" -}}
+<li><span class="tag">kind {{.Kind}}</span> <span class="tag">isolation {{.Isolation}}</span> <code>{{locator .Locator}}</code> <span>{{.Observation}}{{supplied .}}</span> <span class="via">via {{.Provenance.Tool}} {{.Provenance.Version}}{{if isJudgment .}}, rubric {{orUnknown .RubricVersion}}, model {{orUnknown .Model}}{{end}}</span></li>
+{{end -}}
+{{- /* The same lines as a list, which says "none" rather than showing
+nothing: a reader must be able to tell cited-nothing from rendered-nothing. */ -}}
+{{- define "evidenceList" -}}
+{{- if . -}}
+<ul class="evidence">
+{{range .}}{{template "evidence" .}}{{end}}</ul>
+{{- else -}}
+<p class="none">none</p>
+{{- end -}}
+{{- end -}}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v-eval report: {{.Identity.Artifact.Kind}} {{.Identity.Artifact.Revision}}</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #fbfbf9;
+  --panel: #f2f2ee;
+  --fg: #1b1b19;
+  --muted: #5c5c56;
+  --rule: #d8d8d1;
+  --code: #ecece6;
+  --pass-bg: #d7ead9; --pass-fg: #12492a;
+  --fail-bg: #f3d6d6; --fail-fg: #781d1d;
+  --unknown-bg: #e4e4de; --unknown-fg: #3d3d38;
+  --error-bg: #f4e0c7; --error-fg: #6f3703;
+  --not-applicable-bg: #dfe5ec; --not-applicable-fg: #2f4258;
+  --incomplete-bg: #e9e2f3; --incomplete-fg: #43336b;
+  --advisory-bg: #dfe9f1; --advisory-fg: #26445c;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181b;
+    --panel: #1e2126;
+    --fg: #e6e6e2;
+    --muted: #a3a39c;
+    --rule: #333941;
+    --code: #23272d;
+    --pass-bg: #16341f; --pass-fg: #9ddfae;
+    --fail-bg: #3a1c1c; --fail-fg: #f0a8a8;
+    --unknown-bg: #2b2f34; --unknown-fg: #c9c9c2;
+    --error-bg: #3a2a12; --error-fg: #e8bd80;
+    --not-applicable-bg: #1f2a36; --not-applicable-fg: #a9c1d8;
+    --incomplete-bg: #2a2340; --incomplete-fg: #c3b2e8;
+    --advisory-bg: #1d2c38; --advisory-fg: #a5c6dc;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  max-width: 72rem;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+h1 { font-size: 1.6rem; margin: 0 0 0.25rem; }
+h2 { font-size: 1.25rem; margin: 0 0 0.75rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--rule); }
+h3 { font-size: 1rem; margin: 0 0 0.25rem; }
+p { margin: 0 0 0.5rem; }
+section { margin: 2rem 0 0; }
+header .revision { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+dl.facts { display: grid; grid-template-columns: minmax(9rem, auto) 1fr; gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
+dl.facts dt { color: var(--muted); }
+dl.facts dd { margin: 0; }
+article { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.75rem 1rem; margin: 0 0 0.75rem; }
+table { width: 100%; border-collapse: collapse; margin: 0 0 0.5rem; }
+th, td { border: 1px solid var(--rule); padding: 0.5rem; text-align: left; vertical-align: top; }
+th { background: var(--panel); font-size: 0.9rem; }
+td { font-size: 0.95rem; }
+code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; word-break: break-word; }
+ul.evidence { list-style: none; margin: 0 0 0.5rem; padding: 0; }
+ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; margin: 0 0 0.4rem; font-size: 0.9rem; }
+.tag { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 0 0.3rem; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.via, .note { color: var(--muted); font-size: 0.85rem; }
+.conflict { border-left: 3px solid var(--fail-bg); padding: 0 0 0 0.6rem; }
+.none { color: var(--muted); }
+.overall { font-size: 1.1rem; }
+.badge { display: inline-block; border-radius: 3px; padding: 0.05rem 0.5rem; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em; background: var(--unknown-bg); color: var(--unknown-fg); }
+.badge.pass { background: var(--pass-bg); color: var(--pass-fg); }
+.badge.fail { background: var(--fail-bg); color: var(--fail-fg); }
+.badge.unknown { background: var(--unknown-bg); color: var(--unknown-fg); }
+.badge.error { background: var(--error-bg); color: var(--error-fg); }
+.badge.not_applicable { background: var(--not-applicable-bg); color: var(--not-applicable-fg); }
+.badge.incomplete { background: var(--incomplete-bg); color: var(--incomplete-fg); }
+.badge.advisory { background: var(--advisory-bg); color: var(--advisory-fg); }
+@media (max-width: 40rem) {
+  dl.facts { grid-template-columns: 1fr; }
+  dl.facts dd { margin: 0 0 0.4rem; }
+}
+</style>
+</head>
+<body>
+<header>
+<h1>v-eval report: {{.Identity.Artifact.Kind}}</h1>
+<p class="revision">{{.Identity.Artifact.Revision}}</p>
+<dl class="facts">
+<dt>Report id</dt><dd><code>{{.Identity.ReportID}}</code></dd>
+<dt>Created</dt><dd>{{.Identity.CreatedAt}}</dd>
+<dt>Host</dt><dd>{{.Identity.Host.CLI}} on {{.Identity.Host.OS}}/{{.Identity.Host.Arch}}{{with .Identity.Host.Model}}, model {{.}}{{end}}</dd>
+<dt>Versions</dt><dd>schema {{.Identity.SchemaVersion}}, v-eval {{.Identity.VevalVersion}}, skill revision {{.Identity.SkillRevision}}</dd>
+<dt>Contract</dt><dd>{{.Contract.ContractID}} version {{.Contract.ContractVersion}} ({{.Contract.Status}})</dd>
+<dt>Artifact paths</dt><dd>{{joinIDs .Identity.Artifact.Paths}}</dd>
+<dt>Bundle digest</dt><dd>{{with .Identity.Artifact.BundleDigest}}<code>{{.}}</code>{{else}}(none){{end}}</dd>
+<dt>Requested outcome</dt><dd>{{.Identity.Task.RequestedOutcome}}</dd>
+<dt>Intended user</dt><dd>{{.Identity.Task.IntendedUser}}</dd>
+<dt>Brief</dt><dd>{{.Identity.Task.BriefRef}}</dd>
+</dl>
+</header>
+<main>
+<section id="status">
+<h2>Status</h2>
+<p class="overall"><span class="{{overallClass .Status.Overall}}">{{.Status.Overall}}</span></p>
+<dl class="facts">
+<dt>Rule applied</dt><dd>{{.Status.RuleApplied}}</dd>
+<dt>Blocked by</dt><dd>{{joinIDs .Status.BlockedBy}}</dd>
+</dl>
+{{- range .Contract.Conflicts}}
+<p class="conflict">Contract conflict ({{.Resolution}}) between {{joinIDs .Between}}: {{.Description}}</p>
+{{- end}}
+</section>
+<section id="observations">
+<h2>Observations</h2>
+{{- range .Observations}}
+<article>
+<h3>{{.ID}} <span class="note">{{.Origin}}</span></h3>
+<p>{{.Text}}</p>
+<p class="note">Criteria: {{joinIDs .CriterionIDs}}</p>
+{{template "evidenceList" .Evidence}}
+</article>
+{{- else}}
+<p class="none">None recorded.</p>
+{{- end}}
+</section>
+<section id="claims">
+<h2>Claims</h2>
+{{- if .Claims}}
+<table>
+<thead><tr><th scope="col">ID</th><th scope="col">Claim</th><th scope="col">Status</th><th scope="col">Location</th><th scope="col">Verification</th><th scope="col">Notes</th></tr></thead>
+<tbody>
+{{- range .Claims}}
+<tr>
+<td>{{.ClaimID}}</td>
+<td>{{.Text}}</td>
+<td>{{.Status}}</td>
+<td>{{.Location}}</td>
+<td>
+{{template "evidenceList" .Verification}}
+</td>
+<td>{{.Notes}}</td>
+</tr>
+{{- end}}
+</tbody>
+</table>
+{{- else}}
+<p class="none">None recorded.</p>
+{{- end}}
+</section>
+<section id="criteria">
+<h2>Criteria</h2>
+{{- if .Criteria}}
+<table>
+<thead><tr><th scope="col">ID</th><th scope="col">Requirement</th><th scope="col">Result</th><th scope="col">Method</th><th scope="col">Evidence and reasoning</th><th scope="col">Next action</th></tr></thead>
+<tbody>
+{{- range .Criteria}}
+<tr>
+<td>{{.ID}}</td>
+<td>{{requirement $.Contract .ID}}</td>
+<td><span class="{{resultClass .Result}}">{{badge .Result}}</span></td>
+<td>{{.MethodUsed}}</td>
+<td>
+{{template "evidenceList" .Evidence}}
+<p>{{.Reasoning}}</p>
+{{- if .SharedCauseWith}}
+<p class="note">Shared cause with {{joinIDs .SharedCauseWith}}.</p>
+{{- end}}
+{{- if .DimensionRefs}}
+<p class="note">Dimensions: {{joinIDs .DimensionRefs}}.</p>
+{{- end}}
+</td>
+<td>{{.NextAction}}</td>
+</tr>
+{{- end}}
+</tbody>
+</table>
+{{- else}}
+<p class="none">None recorded.</p>
+{{- end}}
+</section>
+<section id="forensics">
+<h2>Forensics</h2>
+{{- range .Forensics}}
+<article>
+<h3>{{.FindingID}} <span class="note">{{.Detector}} {{.DetectorVersion}}</span></h3>
+<p>On {{.CriterionID}}: severity {{.Severity}}, disposition {{.Disposition}}.</p>
+<p>Benign alternative: {{.BenignAlternative}}</p>
+{{template "evidenceList" .Evidence}}
+</article>
+{{- else}}
+<p class="none">None recorded.</p>
+{{- end}}
+</section>
+{{- if .Dimensions}}
+<section id="dimensions">
+<h2>Dimensions</h2>
+{{- range .Dimensions}}
+<article>
+<h3>{{.Dimension}} <span class="note">{{.Metric}} version {{.MetricVersion}}</span></h3>
+<dl class="facts">
+<dt>Value</dt><dd>{{if .Value}}{{.Value}} {{.Unit}}{{else}}missing{{end}}</dd>
+<dt>Threshold</dt><dd>{{.Threshold}} from {{.ThresholdSource}}</dd>
+<dt>Authority</dt><dd>{{.AuthorityType}}, defined at {{.DefinitionRef}}</dd>
+<dt>Measurement</dt><dd>{{.Tool}} {{.ToolVersion}} on workload {{.Workload}}, direction {{.Direction}}, range {{.Range}}</dd>
+</dl>
+<p>{{.Interpretation}}</p>
+{{template "evidenceList" .Evidence}}
+</article>
+{{- end}}
+</section>
+{{- end}}
+<section id="counts">
+<h2>Counts</h2>
+<table>
+<thead><tr><th scope="col">Class</th><th scope="col">Applicable</th><th scope="col">PASS</th><th scope="col">FAIL</th><th scope="col">UNKNOWN</th><th scope="col">ERROR</th><th scope="col">Not applicable</th></tr></thead>
+<tbody>
+<tr><td>Required</td><td>{{.Counts.Required.Applicable}}</td><td>{{.Counts.Required.Pass}}</td><td>{{.Counts.Required.Fail}}</td><td>{{.Counts.Required.Unknown}}</td><td>{{.Counts.Required.Error}}</td><td>{{.Counts.Required.NotApplicable}}</td></tr>
+<tr><td>Optional</td><td>{{.Counts.Optional.Applicable}}</td><td>{{.Counts.Optional.Pass}}</td><td>{{.Counts.Optional.Fail}}</td><td>{{.Counts.Optional.Unknown}}</td><td>{{.Counts.Optional.Error}}</td><td>{{.Counts.Optional.NotApplicable}}</td></tr>
+</tbody>
+</table>
+<p>Coverage: {{if .Counts.Coverage.Undefined}}undefined (0 applicable){{else}}{{.Counts.Coverage.Numerator}}/{{.Counts.Coverage.Denominator}} applicable criteria assessed{{end}}. Coverage is not a correctness score.</p>
+</section>
+<section id="improvement">
+<h2>Improvement</h2>
+{{- range .Improvement}}
+<article>
+<h3>{{.Issue}}</h3>
+<dl class="facts">
+<dt>Locations</dt><dd>{{joinIDs .Locations}}</dd>
+<dt>Change</dt><dd>{{.SuggestedChange}}</dd>
+<dt>Preserve</dt><dd>{{joinIDs .ConstraintsToPreserve}}</dd>
+<dt>Verify by</dt><dd>{{.VerifyBy}}</dd>
+<dt>Criteria</dt><dd>{{joinIDs .LinkedCriteria}}</dd>
+</dl>
+</article>
+{{- else}}
+<p class="none">None recorded.</p>
+{{- end}}
+</section>
+<section id="limitations">
+<h2>Limitations</h2>
+<dl class="facts">
+<dt>Not inspected</dt><dd>{{joinIDs .Limitations.NotInspected}}</dd>
+<dt>Not executed</dt><dd>{{joinIDs .Limitations.NotExecuted}}</dd>
+<dt>Unknown metadata</dt><dd>{{joinIDs .Limitations.UnknownMetadata}}</dd>
+<dt>Assumptions</dt><dd>{{joinIDs .Limitations.Assumptions}}</dd>
+</dl>
+</section>
+<section id="routing">
+<h2>Routing</h2>
+<p>{{.Routing.Rationale}}</p>
+<dl class="facts">
+<dt>Supplied</dt><dd>{{range $i, $s := .Routing.Supplied}}{{if $i}}, {{end}}{{$s.SourceType}} x{{$s.Count}} from {{$s.Origin}}{{else}}none{{end}}</dd>
+<dt>Profiles</dt><dd>{{range $i, $p := .Routing.Profiles}}{{if $i}}, {{end}}{{$p.Name}} {{$p.Version}}{{else}}none{{end}}</dd>
+<dt>Adapters run</dt><dd>{{range $i, $a := .Routing.AdaptersRun}}{{if $i}}; {{end}}{{$a.Name}} {{$a.Version}} over {{joinIDs $a.InputsUsed}}{{else}}none{{end}}</dd>
+<dt>Adapters skipped</dt><dd>{{range $i, $a := .Routing.AdaptersSkipped}}{{if $i}}; {{end}}{{$a.Name}}, missing {{$a.MissingInput}}{{else}}none{{end}}</dd>
+<dt>Ambiguity</dt><dd>{{range .Routing.Ambiguity}}{{.Question}} Resolved: {{.Resolution}}{{else}}none{{end}}</dd>
+</dl>
+</section>
+<section id="provenance">
+<h2>Provenance</h2>
+<dl class="facts">
+<dt>Tools</dt><dd>{{range $i, $t := .Provenance.Tools}}{{if $i}}, {{end}}{{$t.Name}} {{$t.Version}}{{else}}none{{end}}</dd>
+<dt>Environment</dt><dd>{{.Provenance.Environment.OS}}/{{.Provenance.Environment.Arch}}{{range $name, $version := .Provenance.Environment.RuntimeVersions}}, runtime {{$name}} {{$version}}{{end}}</dd>
+<dt>Isolation levels used</dt><dd>{{range $i, $l := .Provenance.IsolationLevelsUsed}}{{if $i}}, {{end}}{{$l}}{{else}}none{{end}}</dd>
+<dt>Bundle digest</dt><dd>{{with .Identity.Artifact.BundleDigest}}<code>{{.}}</code>{{else}}(none){{end}}</dd>
+<dt>Evidence digest</dt><dd><code>{{.Provenance.EvidenceDigest}}</code></dd>
+</dl>
+{{- if .Provenance.Commands}}
+<table>
+<thead><tr><th scope="col">Command</th><th scope="col">Working directory</th><th scope="col">Exit</th><th scope="col">Isolation</th><th scope="col">Started</th><th scope="col">Ended</th><th scope="col">Log</th></tr></thead>
+<tbody>
+{{- range .Provenance.Commands}}
+<tr><td><code>{{.Command}}</code></td><td>{{.Cwd}}</td><td>{{.ExitStatus}}</td><td>{{.Isolation}}</td><td>{{.StartedAt}}</td><td>{{.EndedAt}}</td><td>{{.LogRef}}</td></tr>
+{{- end}}
+</tbody>
+</table>
+{{- else}}
+<p class="none">Commands: none</p>
+{{- end}}
+</section>
+{{- with .Learning}}
+<section id="learning">
+<h2>Learning</h2>
+<dl class="facts">
+<dt>Precedents retrieved</dt><dd>{{range $i, $p := .PrecedentsRetrieved}}{{if $i}}; {{end}}{{$p.PrecedentID}} for {{$p.Criterion}}, similarity {{$p.Similarity}}{{else}}none{{end}}</dd>
+<dt>Reward records created</dt><dd>{{joinIDs .RewardRecordsCreated}}</dd>
+</dl>
+</section>
+{{- end}}
+</main>
+</body>
+</html>

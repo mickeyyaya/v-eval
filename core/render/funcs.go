@@ -66,11 +66,18 @@ func locator(l report.Locator) string {
 // requirement is what the contract asks of a criterion, by id. A result whose
 // id the contract does not name says so: the row is still shown, because a
 // result the contract has no criterion for is exactly what a reader must see.
+// A provisional criterion is marked, because its verdict rests on a
+// requirement nobody has confirmed yet.
 func requirement(contract report.Contract, id string) string {
-	if criterion, ok := contract.CriterionByID(id); ok {
+	criterion, ok := contract.CriterionByID(id)
+	switch {
+	case !ok:
+		return "(not in contract)"
+	case criterion.Provisional:
+		return criterion.Requirement + " (provisional)"
+	default:
 		return criterion.Requirement
 	}
-	return "(not in contract)"
 }
 
 // isJudgment reports whether evidence is a judgment, which is shown with the

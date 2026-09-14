@@ -2,15 +2,11 @@ package render
 
 import (
 	"bytes"
-	"embed"
 	"fmt"
 	"text/template"
 
 	"github.com/mickeyyaya/v-eval/core/report"
 )
-
-//go:embed templates/report.md.tmpl
-var templates embed.FS
 
 // markdownTemplate is parsed once, at package load. The template is compiled
 // into the binary, so a broken template is a build-time defect rather than a

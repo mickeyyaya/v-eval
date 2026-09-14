@@ -80,6 +80,16 @@ func TestRequirementFallsBackWhenTheContractDoesNotNameTheID(t *testing.T) {
 	}
 }
 
+func TestRequirementMarksAProvisionalCriterion(t *testing.T) {
+	t.Parallel()
+	contract := report.Contract{Criteria: []report.Criterion{
+		{ID: "C1", Requirement: "Addresses collapse", Provisional: true},
+	}}
+	if got := requirement(contract, "C1"); got != "Addresses collapse (provisional)" {
+		t.Errorf("requirement() = %q, want %q", got, "Addresses collapse (provisional)")
+	}
+}
+
 func TestIsJudgmentAndOrUnknown(t *testing.T) {
 	t.Parallel()
 	if !isJudgment(report.Evidence{Kind: report.KindJudgment}) {

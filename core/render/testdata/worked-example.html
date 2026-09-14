@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v-eval report: code_change content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #fbfbf9;
+  --panel: #f2f2ee;
+  --fg: #1b1b19;
+  --muted: #5c5c56;
+  --rule: #d8d8d1;
+  --code: #ecece6;
+  --pass-bg: #d7ead9; --pass-fg: #12492a;
+  --fail-bg: #f3d6d6; --fail-fg: #781d1d;
+  --unknown-bg: #e4e4de; --unknown-fg: #3d3d38;
+  --error-bg: #f4e0c7; --error-fg: #6f3703;
+  --not-applicable-bg: #dfe5ec; --not-applicable-fg: #2f4258;
+  --incomplete-bg: #e9e2f3; --incomplete-fg: #43336b;
+  --advisory-bg: #dfe9f1; --advisory-fg: #26445c;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181b;
+    --panel: #1e2126;
+    --fg: #e6e6e2;
+    --muted: #a3a39c;
+    --rule: #333941;
+    --code: #23272d;
+    --pass-bg: #16341f; --pass-fg: #9ddfae;
+    --fail-bg: #3a1c1c; --fail-fg: #f0a8a8;
+    --unknown-bg: #2b2f34; --unknown-fg: #c9c9c2;
+    --error-bg: #3a2a12; --error-fg: #e8bd80;
+    --not-applicable-bg: #1f2a36; --not-applicable-fg: #a9c1d8;
+    --incomplete-bg: #2a2340; --incomplete-fg: #c3b2e8;
+    --advisory-bg: #1d2c38; --advisory-fg: #a5c6dc;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  max-width: 72rem;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+h1 { font-size: 1.6rem; margin: 0 0 0.25rem; }
+h2 { font-size: 1.25rem; margin: 0 0 0.75rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--rule); }
+h3 { font-size: 1rem; margin: 0 0 0.25rem; }
+p { margin: 0 0 0.5rem; }
+section { margin: 2rem 0 0; }
+header .revision { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+dl.facts { display: grid; grid-template-columns: minmax(9rem, auto) 1fr; gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
+dl.facts dt { color: var(--muted); }
+dl.facts dd { margin: 0; }
+article { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.75rem 1rem; margin: 0 0 0.75rem; }
+table { width: 100%; border-collapse: collapse; margin: 0 0 0.5rem; }
+th, td { border: 1px solid var(--rule); padding: 0.5rem; text-align: left; vertical-align: top; }
+th { background: var(--panel); font-size: 0.9rem; }
+td { font-size: 0.95rem; }
+code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; word-break: break-word; }
+ul.evidence { list-style: none; margin: 0 0 0.5rem; padding: 0; }
+ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; margin: 0 0 0.4rem; font-size: 0.9rem; }
+.tag { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 0 0.3rem; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.via, .note { color: var(--muted); font-size: 0.85rem; }
+.conflict { border-left: 3px solid var(--fail-bg); padding: 0 0 0 0.6rem; }
+.none { color: var(--muted); }
+.overall { font-size: 1.1rem; }
+.badge { display: inline-block; border-radius: 3px; padding: 0.05rem 0.5rem; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em; background: var(--unknown-bg); color: var(--unknown-fg); }
+.badge.pass { background: var(--pass-bg); color: var(--pass-fg); }
+.badge.fail { background: var(--fail-bg); color: var(--fail-fg); }
+.badge.unknown { background: var(--unknown-bg); color: var(--unknown-fg); }
+.badge.error { background: var(--error-bg); color: var(--error-fg); }
+.badge.not_applicable { background: var(--not-applicable-bg); color: var(--not-applicable-fg); }
+.badge.incomplete { background: var(--incomplete-bg); color: var(--incomplete-fg); }
+.badge.advisory { background: var(--advisory-bg); color: var(--advisory-fg); }
+@media (max-width: 40rem) {
+  dl.facts { grid-template-columns: 1fr; }
+  dl.facts dd { margin: 0 0 0.4rem; }
+}
+</style>
+</head>
+<body>
+<header>
+<h1>v-eval report: code_change</h1>
+<p class="revision">content:sha256:befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8</p>
+<dl class="facts">
+<dt>Report id</dt><dd><code>sha256:980127c94f0d4d54d823d69e78f1108cb50c2212e7e82cde283f4a3e99ae487a</code></dd>
+<dt>Created</dt><dd>2026-09-14T00:00:00Z</dd>
+<dt>Host</dt><dd>fixture on any/any</dd>
+<dt>Versions</dt><dd>schema 0.1.0, v-eval 0.0.0-dev, skill revision draft-2</dd>
+<dt>Contract</dt><dd>code-review-example version 1 (user_specified)</dd>
+<dt>Artifact paths</dt><dd>examples/code-review/input.md</dd>
+<dt>Bundle digest</dt><dd>(none)</dd>
+<dt>Requested outcome</dt><dd>Deduplicate email-address strings for a contact import. Compare addresses ignoring surrounding whitespace and case. Keep the first occurrence&#39;s spelling after trimming. Preserve first-seen order. Do not add dependencies.</dd>
+<dt>Intended user</dt><dd>developer reviewing an AI-generated change</dd>
+<dt>Brief</dt><dd>examples/code-review/input.md#intent</dd>
+</dl>
+</header>
+<main>
+<section id="status">
+<h2>Status</h2>
+<p class="overall"><span class="badge fail">FAIL</span></p>
+<dl class="facts">
+<dt>Rule applied</dt><dd>required applicable criterion failed</dd>
+<dt>Blocked by</dt><dd>C1, C2, C3</dd>
+</dl>
+</section>
+<section id="observations">
+<h2>Observations</h2>
+<article>
+<h3>O1 <span class="note">assistant</span></h3>
+<p>The function sorts its output with sorted(), so first-seen order cannot be preserved.</p>
+<p class="note">Criteria: C2</p>
+<ul class="evidence">
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span>    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+</ul>
+</article>
+</section>
+<section id="claims">
+<h2>Claims</h2>
+<table>
+<thead><tr><th scope="col">ID</th><th scope="col">Claim</th><th scope="col">Status</th><th scope="col">Location</th><th scope="col">Verification</th><th scope="col">Notes</th></tr></thead>
+<tbody>
+<tr>
+<td>CL1</td>
+<td>The code is production-ready and all tests passed.</td>
+<td>unverified</td>
+<td>input.md, Candidate author&#39;s statement</td>
+<td>
+<p class="none">none</p>
+</td>
+<td>No tests, command, environment, or logs accompany the statement.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="criteria">
+<h2>Criteria</h2>
+<table>
+<thead><tr><th scope="col">ID</th><th scope="col">Requirement</th><th scope="col">Result</th><th scope="col">Method</th><th scope="col">Evidence and reasoning</th><th scope="col">Next action</th></tr></thead>
+<tbody>
+<tr>
+<td>C1</td>
+<td>Whitespace and case variants collapse into one address</td>
+<td><span class="badge fail">FAIL</span></td>
+<td>static_inspection</td>
+<td>
+<ul class="evidence">
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span>    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+</ul>
+<p>The candidate strips whitespace but puts original-case strings in a set. For [&#39; A@x.test &#39;, &#39;a@x.test&#39;], the two stripped strings remain distinct by Python string comparison. This is a reasoned counterexample, not an executed result.</p>
+</td>
+<td>Deduplicate using a normalized comparison key.</td>
+</tr>
+<tr>
+<td>C2</td>
+<td>Output preserves first-seen order</td>
+<td><span class="badge fail">FAIL</span></td>
+<td>static_inspection</td>
+<td>
+<ul class="evidence">
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span>    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+</ul>
+<p>sorted(...) replaces input order with sorting order. [&#39;z@x.test&#39;, &#39;a@x.test&#39;] therefore cannot preserve first-seen order.</p>
+</td>
+<td>Append first occurrences to an output list while tracking seen keys.</td>
+</tr>
+<tr>
+<td>C3</td>
+<td>Each kept address retains the first occurrence&#39;s spelling after trimming</td>
+<td><span class="badge fail">FAIL</span></td>
+<td>static_inspection</td>
+<td>
+<ul class="evidence">
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span>    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+</ul>
+<p>[&#39;A@x.test&#39;, &#39;a@x.test&#39;] retains both spellings, including the second occurrence. This violates the rule to keep only the first occurrence&#39;s spelling for an equivalent address.</p>
+</td>
+<td>Store the first trimmed value for each normalized key.</td>
+</tr>
+<tr>
+<td>C4</td>
+<td>Complete supplied implementation uses no third-party dependency</td>
+<td><span class="badge pass">PASS</span></td>
+<td>static_inspection</td>
+<td>
+<ul class="evidence">
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:26-27</code> <span>The complete supplied function uses built-ins and a string method only.</span> <span class="via">via assistant fixture</span></li>
+</ul>
+<p>The complete supplied function uses built-ins and a string method; it imports or calls no third-party dependency. The conclusion covers only this snippet.</p>
+</td>
+<td>None.</td>
+</tr>
+<tr>
+<td>C5</td>
+<td>Regression tests pass for this exact artifact</td>
+<td><span class="badge unknown">UNKNOWN</span></td>
+<td>execution</td>
+<td>
+<ul class="evidence">
+<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Candidate author&#39;s statement in input.md</code> <span>Claims tests passed; no tests, command, logs, or verified artifact binding supplied. (supplied)</span> <span class="via">via assistant fixture</span></li>
+</ul>
+<p>The candidate author&#39;s statement supplies no tests, command, environment, logs, or verified artifact binding.</p>
+</td>
+<td>Provide and run the regression suite against the exact artifact in an authorized environment.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="forensics">
+<h2>Forensics</h2>
+<p class="none">None recorded.</p>
+</section>
+<section id="counts">
+<h2>Counts</h2>
+<table>
+<thead><tr><th scope="col">Class</th><th scope="col">Applicable</th><th scope="col">PASS</th><th scope="col">FAIL</th><th scope="col">UNKNOWN</th><th scope="col">ERROR</th><th scope="col">Not applicable</th></tr></thead>
+<tbody>
+<tr><td>Required</td><td>5</td><td>1</td><td>3</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>Optional</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+</tbody>
+</table>
+<p>Coverage: 4/5 applicable criteria assessed. Coverage is not a correctness score.</p>
+</section>
+<section id="improvement">
+<h2>Improvement</h2>
+<article>
+<h3>Whitespace and case variants are not collapsed into one address.</h3>
+<dl class="facts">
+<dt>Locations</dt><dd>examples/code-review/input.md:27</dd>
+<dt>Change</dt><dd>Deduplicate using a normalized comparison key.</dd>
+<dt>Preserve</dt><dd>Do not add dependencies.</dd>
+<dt>Verify by</dt><dd>Inspect the comparison key, or run a test over whitespace and case variants.</dd>
+<dt>Criteria</dt><dd>C1</dd>
+</dl>
+</article>
+<article>
+<h3>Output order follows sorting order, not first-seen order.</h3>
+<dl class="facts">
+<dt>Locations</dt><dd>examples/code-review/input.md:27</dd>
+<dt>Change</dt><dd>Append first occurrences to an output list while tracking seen keys.</dd>
+<dt>Preserve</dt><dd>Do not add dependencies.</dd>
+<dt>Verify by</dt><dd>Inspect how the output list is built, or run a test over unsorted input.</dd>
+<dt>Criteria</dt><dd>C2</dd>
+</dl>
+</article>
+<article>
+<h3>Both spellings of an equivalent address are kept.</h3>
+<dl class="facts">
+<dt>Locations</dt><dd>examples/code-review/input.md:27</dd>
+<dt>Change</dt><dd>Store the first trimmed value for each normalized key.</dd>
+<dt>Preserve</dt><dd>Do not add dependencies.</dd>
+<dt>Verify by</dt><dd>Inspect which value is stored per key, or run a test over mixed-case duplicates.</dd>
+<dt>Criteria</dt><dd>C3</dd>
+</dl>
+</article>
+</section>
+<section id="limitations">
+<h2>Limitations</h2>
+<dl class="facts">
+<dt>Not inspected</dt><dd>none</dd>
+<dt>Not executed</dt><dd>regression suite</dd>
+<dt>Unknown metadata</dt><dd>test environment</dd>
+<dt>Assumptions</dt><dd>none</dd>
+</dl>
+</section>
+<section id="routing">
+<h2>Routing</h2>
+<p>Code change with explicit criteria; no tests or execution record supplied, so execution criteria stay UNKNOWN.</p>
+<dl class="facts">
+<dt>Supplied</dt><dd>brief x1 from user, artifact x1 from candidate, candidate_claim x1 from candidate</dd>
+<dt>Profiles</dt><dd>requirements-and-tests 0.1</dd>
+<dt>Adapters run</dt><dd>none</dd>
+<dt>Adapters skipped</dt><dd>test-evidence, missing test definitions and execution record</dd>
+<dt>Ambiguity</dt><dd>none</dd>
+</dl>
+</section>
+<section id="provenance">
+<h2>Provenance</h2>
+<dl class="facts">
+<dt>Tools</dt><dd>veval 0.0.0-dev</dd>
+<dt>Environment</dt><dd>any/any</dd>
+<dt>Isolation levels used</dt><dd>none</dd>
+<dt>Bundle digest</dt><dd>(none)</dd>
+<dt>Evidence digest</dt><dd><code>sha256:97ad849882cb469710b6936e039815324d3c8f1e226732e37f3c36b50712db34</code></dd>
+</dl>
+<p class="none">Commands: none</p>
+</section>
+</main>
+</body>
+</html>

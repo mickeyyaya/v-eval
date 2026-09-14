@@ -3,7 +3,18 @@
 // a reader sees is what the report states.
 package render
 
-import "github.com/mickeyyaya/v-eval/core/report"
+import (
+	"embed"
+
+	"github.com/mickeyyaya/v-eval/core/report"
+)
+
+// templates holds every report template, compiled into the binary so that a
+// rendering never reads a file at run time and a broken template is a
+// build-time defect rather than a failure a caller could hit.
+//
+//go:embed templates
+var templates embed.FS
 
 // Renderer turns a report into the bytes of one output format.
 type Renderer interface {
@@ -17,7 +28,8 @@ type Renderer interface {
 // package-level var rather than a registration call so that the set of
 // formats this build offers can be read in one place.
 var renderers = map[string]Renderer{
-	"md": markdownRenderer{},
+	"md":   markdownRenderer{},
+	"html": htmlRenderer{},
 }
 
 // ByFormat returns the renderer registered for a format name, and whether
