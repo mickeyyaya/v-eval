@@ -1,0 +1,140 @@
+{{- /* One evidence line: what it is, how isolated it ran, where it points,
+what it said, and whether the candidate supplied it rather than the
+evaluator gathering it. */ -}}
+{{- define "evidence" -}}
+[kind {{.Kind}}, isolation {{.Isolation}}] {{locator .Locator | cell}} — {{cell .Observation}}{{supplied .}}
+{{- end -}}
+{{- /* The same lines inside one table cell, where a newline would end the row. */ -}}
+{{- define "evidenceCell" -}}
+{{range $i, $e := .}}{{if $i}}<br>{{end}}{{template "evidence" $e}}{{else}}none{{end}}
+{{- end -}}
+# v-eval report: {{.Identity.Artifact.Kind}} {{.Identity.Artifact.Revision}}
+
+- Report id: {{.Identity.ReportID}}
+- Created: {{.Identity.CreatedAt}} by {{.Identity.Host.CLI}} on {{.Identity.Host.OS}}/{{.Identity.Host.Arch}}
+- Schema {{.Identity.SchemaVersion}}, v-eval {{.Identity.VevalVersion}}, skill revision {{.Identity.SkillRevision}}
+- Contract: {{.Contract.ContractID}} version {{.Contract.ContractVersion}} ({{.Contract.Status}})
+- Artifact paths: {{joinIDs .Identity.Artifact.Paths}}
+- Requested outcome: {{.Identity.Task.RequestedOutcome}}
+
+## Status
+
+Overall: {{.Status.Overall}}
+
+- Rule applied: {{.Status.RuleApplied}}
+- Blocked by: {{joinIDs .Status.BlockedBy}}
+{{- range .Contract.Conflicts}}
+- Contract conflict ({{.Resolution}}) between {{joinIDs .Between}}: {{.Description}}
+{{- end}}
+
+## Observations
+{{range .Observations}}
+- **{{.ID}}** ({{.Origin}}) {{.Text}} Criteria: {{joinIDs .CriterionIDs}}.
+{{- range .Evidence}}
+  - {{template "evidence" .}}
+{{- end}}
+{{else}}
+None recorded.
+{{end}}
+## Claims
+{{if .Claims}}
+| ID | Claim | Status | Location | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+{{- range .Claims}}
+| {{.ClaimID}} | {{cell .Text}} | {{.Status}} | {{cell .Location}} | {{template "evidenceCell" .Verification}} | {{cell .Notes}} |
+{{- end}}
+{{else}}
+None recorded.
+{{end}}
+## Criteria
+
+| ID | Result | Method | Evidence and reasoning | Next action |
+| --- | --- | --- | --- | --- |
+{{- range .Criteria}}
+| {{.ID}} | {{badge .Result}} | {{.MethodUsed}} | {{template "evidenceCell" .Evidence}}<br>{{cell .Reasoning}}
+    {{- if .SharedCauseWith}}<br>Shared cause with {{joinIDs .SharedCauseWith}}.{{end}}
+    {{- if .DimensionRefs}}<br>Dimensions: {{joinIDs .DimensionRefs}}.{{end}} | {{cell .NextAction}} |
+{{- end}}
+
+## Forensics
+{{range .Forensics}}
+- **{{.FindingID}}** {{.Detector}} {{.DetectorVersion}} on {{.CriterionID}}: severity {{.Severity}}, disposition {{.Disposition}}.
+  - Benign alternative: {{.BenignAlternative}}
+{{- range .Evidence}}
+  - {{template "evidence" .}}
+{{- end}}
+{{else}}
+None recorded.
+{{end}}
+{{- if .Dimensions}}
+## Dimensions
+{{range .Dimensions}}
+- **{{.Dimension}}** {{.Metric}} version {{.MetricVersion}} ({{.AuthorityType}}), defined at {{.DefinitionRef}}
+  - Value: {{if .Value}}{{.Value}} {{.Unit}}{{else}}not measured{{end}}; threshold {{.Threshold}} from {{.ThresholdSource}}
+  - Measured by {{.Tool}} {{.ToolVersion}} on workload {{.Workload}}, direction {{.Direction}}, range {{.Range}}
+  - {{.Interpretation}}
+{{- range .Evidence}}
+  - {{template "evidence" .}}
+{{- end}}
+{{end}}
+{{- end}}
+## Counts
+
+- Required: {{.Counts.Required.Applicable}} applicable — {{.Counts.Required.Pass}} PASS, {{.Counts.Required.Fail}} FAIL, {{.Counts.Required.Unknown}} UNKNOWN, {{.Counts.Required.Error}} ERROR, {{.Counts.Required.NotApplicable}} not applicable
+- Optional: {{.Counts.Optional.Applicable}} applicable — {{.Counts.Optional.Pass}} PASS, {{.Counts.Optional.Fail}} FAIL, {{.Counts.Optional.Unknown}} UNKNOWN, {{.Counts.Optional.Error}} ERROR, {{.Counts.Optional.NotApplicable}} not applicable
+- Coverage: {{if .Counts.Coverage.Undefined}}undefined (0 applicable){{else}}{{.Counts.Coverage.Numerator}}/{{.Counts.Coverage.Denominator}} applicable criteria assessed{{end}}. Coverage is not a correctness score.
+
+## Improvement
+{{range .Improvement}}
+- **{{.Issue}}**
+  - Locations: {{joinIDs .Locations}}
+  - Change: {{.SuggestedChange}}
+  - Preserve: {{joinIDs .ConstraintsToPreserve}}
+  - Verify by: {{.VerifyBy}}
+  - Criteria: {{joinIDs .LinkedCriteria}}
+{{else}}
+None recorded.
+{{end}}
+## Limitations
+
+- Not inspected: {{joinIDs .Limitations.NotInspected}}
+- Not executed: {{joinIDs .Limitations.NotExecuted}}
+- Unknown metadata: {{joinIDs .Limitations.UnknownMetadata}}
+- Assumptions: {{joinIDs .Limitations.Assumptions}}
+
+## Routing
+
+{{.Routing.Rationale}}
+
+- Supplied: {{range $i, $s := .Routing.Supplied}}{{if $i}}, {{end}}{{$s.SourceType}} x{{$s.Count}} from {{$s.Origin}}{{else}}none{{end}}
+- Profiles: {{range $i, $p := .Routing.Profiles}}{{if $i}}, {{end}}{{$p.Name}} {{$p.Version}}{{else}}none{{end}}
+- Adapters run: {{range $i, $a := .Routing.AdaptersRun}}{{if $i}}; {{end}}{{$a.Name}} {{$a.Version}} over {{joinIDs $a.InputsUsed}}{{else}}none{{end}}
+- Adapters skipped: {{range $i, $a := .Routing.AdaptersSkipped}}{{if $i}}; {{end}}{{$a.Name}}, missing {{$a.MissingInput}}{{else}}none{{end}}
+- Ambiguity:{{if not .Routing.Ambiguity}} none{{end}}
+{{- range .Routing.Ambiguity}}
+  - {{.Question}} Resolved: {{.Resolution}}
+{{- end}}
+
+## Provenance
+
+- Tools: {{range $i, $t := .Provenance.Tools}}{{if $i}}, {{end}}{{$t.Name}} {{$t.Version}}{{else}}none{{end}}
+- Environment: {{.Provenance.Environment.OS}}/{{.Provenance.Environment.Arch}}
+{{- range $name, $version := .Provenance.Environment.RuntimeVersions}}
+  - runtime {{$name}} {{$version}}
+{{- end}}
+- Isolation levels used: {{range $i, $l := .Provenance.IsolationLevelsUsed}}{{if $i}}, {{end}}{{$l}}{{else}}none{{end}}
+- Evidence digest: {{.Provenance.EvidenceDigest}}
+- Commands:{{if not .Provenance.Commands}} none{{end}}
+{{- range .Provenance.Commands}}
+  - {{cell .Command}} in {{.Cwd}}, exit {{.ExitStatus}}, isolation {{.Isolation}}, {{.StartedAt}} to {{.EndedAt}}, log {{.LogRef}}
+{{- end}}
+{{- with .Learning}}
+
+## Learning
+
+- Precedents retrieved:{{if not .PrecedentsRetrieved}} none{{end}}
+{{- range .PrecedentsRetrieved}}
+  - {{.PrecedentID}} for {{.Criterion}}, similarity {{.Similarity}}
+{{- end}}
+- Reward records created: {{joinIDs .RewardRecordsCreated}}
+{{- end}}
