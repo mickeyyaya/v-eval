@@ -85,7 +85,7 @@ func TestMarkdownGoldens(t *testing.T) {
 			out := renderFixture(t, testCase.name)
 			// The structural checks run first: they name what is wrong,
 			// where a golden mismatch only says that something is.
-			assertSectionOrder(t, out, testCase.sections)
+			assertOrder(t, out, testCase.sections)
 			for _, heading := range testCase.absent {
 				if bytes.Contains(out, []byte(heading)) {
 					t.Errorf("section %q must not appear: the fixture has no such content", heading)
@@ -98,19 +98,6 @@ func TestMarkdownGoldens(t *testing.T) {
 			}
 			assertGolden(t, testCase.name+".md", out)
 		})
-	}
-}
-
-// assertSectionOrder requires every heading to appear, once, in order.
-func assertSectionOrder(t *testing.T, out []byte, sections []string) {
-	t.Helper()
-	last := -1
-	for _, heading := range sections {
-		i := bytes.Index(out, []byte(heading))
-		if i < 0 || i < last {
-			t.Fatalf("section %q missing or out of order", heading)
-		}
-		last = i
 	}
 }
 

@@ -38,19 +38,6 @@ func renderHTML(t *testing.T, rep report.Report) []byte {
 	return out
 }
 
-// assertOrder requires every needle to appear, in order.
-func assertOrder(t *testing.T, out []byte, needles []string) {
-	t.Helper()
-	last := -1
-	for _, needle := range needles {
-		i := bytes.Index(out, []byte(needle))
-		if i < 0 || i < last {
-			t.Fatalf("section %s missing or out of order", needle)
-		}
-		last = i
-	}
-}
-
 func TestHTMLIsSelfContainedThemedOrderedAndEscaped(t *testing.T) {
 	t.Parallel()
 	rep := loadFixture(t, "worked-example")

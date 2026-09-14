@@ -47,6 +47,19 @@ func assertGolden(t *testing.T, name string, got []byte) {
 	}
 }
 
+// assertOrder requires every needle to appear in out, once, in order.
+func assertOrder(t *testing.T, out []byte, needles []string) {
+	t.Helper()
+	last := -1
+	for _, needle := range needles {
+		i := bytes.Index(out, []byte(needle))
+		if i < 0 || i < last {
+			t.Fatalf("section %q missing or out of order", needle)
+		}
+		last = i
+	}
+}
+
 // mustRenderer returns the markdown renderer, or fails the test.
 func mustRenderer(t *testing.T) render.Renderer {
 	t.Helper()
