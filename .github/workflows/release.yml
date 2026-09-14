@@ -1,0 +1,37 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: test
+        run: go test -count=1 ./...
+      - name: release notes
+        shell: bash
+        run: python tools/release/release_notes.py CHANGELOG.md "${GITHUB_REF_NAME#v}" -o build/release-notes.md
+      - name: example reports
+        run: |
+          mkdir -p build/examples
+          go run ./cmd/veval render --format html core/report/testdata/worked-example.json -o build/examples/example-report-code-review.html
+          go run ./cmd/veval render --format html core/report/testdata/extended-example.json -o build/examples/example-report-service-change.html
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean --release-notes build/release-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

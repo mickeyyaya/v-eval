@@ -37,5 +37,7 @@ jobs:
           python-version: "3.12"
       - name: unit tests
         run: python -m unittest discover -s tools/docs -p "test_*.py" -v
+      - name: release tooling unit tests
+        run: python -m unittest discover -s tools/release -p "test_*.py" -v
       - name: source register is current
         run: python tools/docs/vdocs.py register . --check
