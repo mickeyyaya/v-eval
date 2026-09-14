@@ -3,6 +3,7 @@ package report
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 
@@ -347,7 +348,7 @@ func ruleCriteriaContractLink(rep Report) []Violation {
 func rulePassRequiresObservedLocator(rep Report) []Violation {
 	var violations []Violation
 	for i, result := range rep.Criteria {
-		if result.Result != ResultPass || anyEvidence(result.Evidence, Evidence.SupportsPass) {
+		if result.Result != ResultPass || slices.ContainsFunc(result.Evidence, Evidence.SupportsPass) {
 			continue
 		}
 		violations = append(violations, Violation{
@@ -356,16 +357,6 @@ func rulePassRequiresObservedLocator(rep Report) []Violation {
 			Message: "PASS needs observed evidence with a file, command, or passage locator"})
 	}
 	return violations
-}
-
-// anyEvidence reports whether any entry satisfies match.
-func anyEvidence(list []Evidence, match func(Evidence) bool) bool {
-	for _, evidence := range list {
-		if match(evidence) {
-			return true
-		}
-	}
-	return false
 }
 
 // ruleCandidateSuppliedKind keeps candidate-supplied evidence labelled as
@@ -414,17 +405,12 @@ func ruleNotApplicableReasoning(rep Report) []Violation {
 // ran: execution evidence, or a command that exited non-zero. An ERROR with
 // neither is a judgment in disguise.
 func ruleErrorIsOperational(rep Report) []Violation {
-	attempted := false
-	for _, command := range rep.Provenance.Commands {
-		if command.ExitStatus != 0 {
-			attempted = true
-			break
-		}
-	}
+	attempted := slices.ContainsFunc(rep.Provenance.Commands,
+		func(c CommandRecord) bool { return c.ExitStatus != 0 })
 
 	var violations []Violation
 	for i, result := range rep.Criteria {
-		executed := anyEvidence(result.Evidence, func(e Evidence) bool { return e.Kind == KindExecution })
+		executed := slices.ContainsFunc(result.Evidence, func(e Evidence) bool { return e.Kind == KindExecution })
 		if result.Result != ResultError || attempted || executed {
 			continue
 		}
