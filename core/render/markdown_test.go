@@ -83,7 +83,8 @@ func TestMarkdownGoldens(t *testing.T) {
 	for _, testCase := range goldenCases() {
 		t.Run(testCase.name, func(t *testing.T) {
 			out := renderFixture(t, testCase.name)
-			assertGolden(t, testCase.name+".md", out)
+			// The structural checks run first: they name what is wrong,
+			// where a golden mismatch only says that something is.
 			assertSectionOrder(t, out, testCase.sections)
 			for _, heading := range testCase.absent {
 				if bytes.Contains(out, []byte(heading)) {
@@ -95,6 +96,7 @@ func TestMarkdownGoldens(t *testing.T) {
 					t.Errorf("rendering does not contain %q", want)
 				}
 			}
+			assertGolden(t, testCase.name+".md", out)
 		})
 	}
 }
@@ -122,7 +124,7 @@ func TestEveryEvidenceLineShowsKindAndIsolation(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			rep := loadFixture(t, testCase.name)
 			out := renderFixture(t, testCase.name)
-			want := countEvidence(rep)
+			want := len(report.WalkEvidence(rep))
 			if want == 0 {
 				t.Fatal("fixture carries no evidence to render")
 			}
@@ -131,27 +133,6 @@ func TestEveryEvidenceLineShowsKindAndIsolation(t *testing.T) {
 			}
 		})
 	}
-}
-
-// countEvidence counts every evidence entry a report cites, anywhere.
-func countEvidence(rep report.Report) int {
-	total := 0
-	for _, result := range rep.Criteria {
-		total += len(result.Evidence)
-	}
-	for _, observation := range rep.Observations {
-		total += len(observation.Evidence)
-	}
-	for _, claim := range rep.Claims {
-		total += len(claim.Verification)
-	}
-	for _, finding := range rep.Forensics {
-		total += len(finding.Evidence)
-	}
-	for _, dimension := range rep.Dimensions {
-		total += len(dimension.Evidence)
-	}
-	return total
 }
 
 func TestRenderingIsCleanMarkdown(t *testing.T) {

@@ -2,7 +2,7 @@
 what it said, and whether the candidate supplied it rather than the
 evaluator gathering it. */ -}}
 {{- define "evidence" -}}
-[kind {{.Kind}}, isolation {{.Isolation}}] {{locator .Locator | cell}} — {{cell .Observation}}{{supplied .}} — via {{cell .Provenance.Tool}} {{cell .Provenance.Version}}{{if isJudgment .}}, rubric {{orUnknown .RubricVersion | cell}}, model {{orUnknown .Model | cell}}{{end}}
+[kind {{.Kind}}, isolation {{.Isolation}}] {{locator .Locator | cell}} — {{cell .Observation}}{{supplied .}} — via {{cell .Provenance.Tool}} {{cell .Provenance.Version}}{{if isJudgment .}}, rubric {{orNotRecorded .RubricVersion | cell}}, model {{orNotRecorded .Model | cell}}{{else}}{{with .Model}}, model {{cell .}}{{end}}{{end}}
 {{- end -}}
 {{- /* The same lines inside one table cell, where a newline would end the row. */ -}}
 {{- define "evidenceCell" -}}
@@ -32,7 +32,7 @@ Overall: {{.Status.Overall}}
 
 ## Observations
 {{range .Observations}}
-- **{{.ID}}** ({{.Origin}}) {{.Text}} Criteria: {{joinIDs .CriterionIDs}}.
+- **{{.ID}}** ({{.Origin}}) {{cell .Text}} Criteria: {{joinIDs .CriterionIDs}}.
 {{- range .Evidence}}
   - {{template "evidence" .}}
 {{- end}}
@@ -50,7 +50,7 @@ None recorded.
 None recorded.
 {{end}}
 ## Criteria
-
+{{if .Criteria}}
 | ID | Requirement | Result | Method | Evidence and reasoning | Next action |
 | --- | --- | --- | --- | --- | --- |
 {{- range .Criteria}}
@@ -58,11 +58,13 @@ None recorded.
     {{- if .SharedCauseWith}}<br>Shared cause with {{joinIDs .SharedCauseWith}}.{{end}}
     {{- if .DimensionRefs}}<br>Dimensions: {{joinIDs .DimensionRefs}}.{{end}} | {{cell .NextAction}} |
 {{- end}}
-
+{{else}}
+None recorded.
+{{end}}
 ## Forensics
 {{range .Forensics}}
 - **{{.FindingID}}** {{.Detector}} {{.DetectorVersion}} on {{.CriterionID}}: severity {{.Severity}}, disposition {{.Disposition}}.
-  - Benign alternative: {{.BenignAlternative}}
+  - Benign alternative: {{cell .BenignAlternative}}
 {{- range .Evidence}}
   - {{template "evidence" .}}
 {{- end}}
@@ -89,7 +91,7 @@ None recorded.
 
 ## Improvement
 {{range .Improvement}}
-- **{{.Issue}}**
+- **{{cell .Issue}}**
   - Locations: {{joinIDs .Locations}}
   - Change: {{.SuggestedChange}}
   - Preserve: {{joinIDs .ConstraintsToPreserve}}
@@ -107,7 +109,7 @@ None recorded.
 
 ## Routing
 
-{{.Routing.Rationale}}
+{{cell .Routing.Rationale}}
 
 - Supplied: {{range $i, $s := .Routing.Supplied}}{{if $i}}, {{end}}{{$s.SourceType}} x{{$s.Count}} from {{$s.Origin}}{{else}}none{{end}}
 - Profiles: {{range $i, $p := .Routing.Profiles}}{{if $i}}, {{end}}{{$p.Name}} {{$p.Version}}{{else}}none{{end}}

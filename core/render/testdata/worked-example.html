@@ -54,7 +54,7 @@ h2 { font-size: 1.25rem; margin: 0 0 0.75rem; padding-bottom: 0.25rem; border-bo
 h3 { font-size: 1rem; margin: 0 0 0.25rem; }
 p { margin: 0 0 0.5rem; }
 section { margin: 2rem 0 0; }
-header .revision { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+header .revision { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
 dl.facts { display: grid; grid-template-columns: minmax(9rem, auto) 1fr; gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
 dl.facts dt { color: var(--muted); }
 dl.facts dd { margin: 0; }
@@ -63,12 +63,14 @@ table { width: 100%; border-collapse: collapse; margin: 0 0 0.5rem; }
 th, td { border: 1px solid var(--rule); padding: 0.5rem; text-align: left; vertical-align: top; }
 th { background: var(--panel); font-size: 0.9rem; }
 td { font-size: 0.95rem; }
-code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; word-break: break-word; }
+code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; overflow-wrap: anywhere; }
 ul.evidence { list-style: none; margin: 0 0 0.5rem; padding: 0; }
 ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; margin: 0 0 0.4rem; font-size: 0.9rem; }
 .tag { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 0 0.3rem; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
 .via, .note { color: var(--muted); font-size: 0.85rem; }
 .conflict { border-left: 3px solid var(--fail-bg); padding: 0 0 0 0.6rem; }
+.text { white-space: pre-wrap; }
+.scroll { overflow-x: auto; }
 .none { color: var(--muted); }
 .overall { font-size: 1.1rem; }
 .badge { display: inline-block; border-radius: 3px; padding: 0.05rem 0.5rem; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em; background: var(--unknown-bg); color: var(--unknown-fg); }
@@ -115,15 +117,16 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <h2>Observations</h2>
 <article>
 <h3>O1 <span class="note">assistant</span></h3>
-<p>The function sorts its output with sorted(), so first-seen order cannot be preserved.</p>
+<p class="text">The function sorts its output with sorted(), so first-seen order cannot be preserved.</p>
 <p class="note">Criteria: C2</p>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span>    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
 </ul>
 </article>
 </section>
 <section id="claims">
 <h2>Claims</h2>
+<div class="scroll">
 <table>
 <thead><tr><th scope="col">ID</th><th scope="col">Claim</th><th scope="col">Status</th><th scope="col">Location</th><th scope="col">Verification</th><th scope="col">Notes</th></tr></thead>
 <tbody>
@@ -139,9 +142,11 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 </tr>
 </tbody>
 </table>
+</div>
 </section>
 <section id="criteria">
 <h2>Criteria</h2>
+<div class="scroll">
 <table>
 <thead><tr><th scope="col">ID</th><th scope="col">Requirement</th><th scope="col">Result</th><th scope="col">Method</th><th scope="col">Evidence and reasoning</th><th scope="col">Next action</th></tr></thead>
 <tbody>
@@ -152,9 +157,9 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span>    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
 </ul>
-<p>The candidate strips whitespace but puts original-case strings in a set. For [&#39; A@x.test &#39;, &#39;a@x.test&#39;], the two stripped strings remain distinct by Python string comparison. This is a reasoned counterexample, not an executed result.</p>
+<p class="text">The candidate strips whitespace but puts original-case strings in a set. For [&#39; A@x.test &#39;, &#39;a@x.test&#39;], the two stripped strings remain distinct by Python string comparison. This is a reasoned counterexample, not an executed result.</p>
 </td>
 <td>Deduplicate using a normalized comparison key.</td>
 </tr>
@@ -165,9 +170,9 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span>    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
 </ul>
-<p>sorted(...) replaces input order with sorting order. [&#39;z@x.test&#39;, &#39;a@x.test&#39;] therefore cannot preserve first-seen order.</p>
+<p class="text">sorted(...) replaces input order with sorting order. [&#39;z@x.test&#39;, &#39;a@x.test&#39;] therefore cannot preserve first-seen order.</p>
 </td>
 <td>Append first occurrences to an output list while tracking seen keys.</td>
 </tr>
@@ -178,9 +183,9 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span>    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:27-27</code> <span class="text">    return sorted(set(email.strip() for email in emails))</span> <span class="via">via assistant fixture</span></li>
 </ul>
-<p>[&#39;A@x.test&#39;, &#39;a@x.test&#39;] retains both spellings, including the second occurrence. This violates the rule to keep only the first occurrence&#39;s spelling for an equivalent address.</p>
+<p class="text">[&#39;A@x.test&#39;, &#39;a@x.test&#39;] retains both spellings, including the second occurrence. This violates the rule to keep only the first occurrence&#39;s spelling for an equivalent address.</p>
 </td>
 <td>Store the first trimmed value for each normalized key.</td>
 </tr>
@@ -191,9 +196,9 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:26-27</code> <span>The complete supplied function uses built-ins and a string method only.</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/code-review/input.md:26-27</code> <span class="text">The complete supplied function uses built-ins and a string method only.</span> <span class="via">via assistant fixture</span></li>
 </ul>
-<p>The complete supplied function uses built-ins and a string method; it imports or calls no third-party dependency. The conclusion covers only this snippet.</p>
+<p class="text">The complete supplied function uses built-ins and a string method; it imports or calls no third-party dependency. The conclusion covers only this snippet.</p>
 </td>
 <td>None.</td>
 </tr>
@@ -204,14 +209,15 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>execution</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Candidate author&#39;s statement in input.md</code> <span>Claims tests passed; no tests, command, logs, or verified artifact binding supplied. (supplied)</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Candidate author&#39;s statement in input.md</code> <span class="text">Claims tests passed; no tests, command, logs, or verified artifact binding supplied. (supplied)</span> <span class="via">via assistant fixture</span></li>
 </ul>
-<p>The candidate author&#39;s statement supplies no tests, command, environment, logs, or verified artifact binding.</p>
+<p class="text">The candidate author&#39;s statement supplies no tests, command, environment, logs, or verified artifact binding.</p>
 </td>
 <td>Provide and run the regression suite against the exact artifact in an authorized environment.</td>
 </tr>
 </tbody>
 </table>
+</div>
 </section>
 <section id="forensics">
 <h2>Forensics</h2>
@@ -219,6 +225,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 </section>
 <section id="counts">
 <h2>Counts</h2>
+<div class="scroll">
 <table>
 <thead><tr><th scope="col">Class</th><th scope="col">Applicable</th><th scope="col">PASS</th><th scope="col">FAIL</th><th scope="col">UNKNOWN</th><th scope="col">ERROR</th><th scope="col">Not applicable</th></tr></thead>
 <tbody>
@@ -226,6 +233,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <tr><td>Optional</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
 </tbody>
 </table>
+</div>
 <p>Coverage: 4/5 applicable criteria assessed. Coverage is not a correctness score.</p>
 </section>
 <section id="improvement">

@@ -90,7 +90,7 @@ func TestRequirementMarksAProvisionalCriterion(t *testing.T) {
 	}
 }
 
-func TestIsJudgmentAndOrUnknown(t *testing.T) {
+func TestIsJudgmentAndOrNotRecorded(t *testing.T) {
 	t.Parallel()
 	if !isJudgment(report.Evidence{Kind: report.KindJudgment}) {
 		t.Error("judgment evidence must be recognised")
@@ -98,10 +98,13 @@ func TestIsJudgmentAndOrUnknown(t *testing.T) {
 	if isJudgment(report.Evidence{Kind: report.KindInspection}) {
 		t.Error("inspection evidence is not a judgment")
 	}
-	if got := orUnknown(""); got != "unknown" {
-		t.Errorf("orUnknown(\"\") = %q, want %q", got, "unknown")
+	if got := orNotRecorded(""); got != "(not recorded)" {
+		t.Errorf("orNotRecorded(\"\") = %q, want %q", got, "(not recorded)")
 	}
-	if got := orUnknown("gpt-9"); got != "gpt-9" {
-		t.Errorf("orUnknown() = %q, want %q", got, "gpt-9")
+	if got := orNotRecorded("unknown"); got != "unknown" {
+		t.Errorf("orNotRecorded(%q) = %q, want %q: a recorded unknown is not an absent value", "unknown", got, "unknown")
+	}
+	if got := orNotRecorded("gpt-9"); got != "gpt-9" {
+		t.Errorf("orNotRecorded() = %q, want %q", got, "gpt-9")
 	}
 }

@@ -136,7 +136,8 @@ func TestHTMLGoldens(t *testing.T) {
 	for _, testCase := range htmlGoldenCases() {
 		t.Run(testCase.name, func(t *testing.T) {
 			out := renderHTML(t, loadFixture(t, testCase.name))
-			assertGolden(t, testCase.name+".html", out)
+			// The structural checks run first: they name what is wrong,
+			// where a golden mismatch only says that something is.
 			assertOrder(t, out, testCase.sections)
 			for _, unwanted := range testCase.absent {
 				if bytes.Contains(out, []byte(unwanted)) {
@@ -148,31 +149,8 @@ func TestHTMLGoldens(t *testing.T) {
 					t.Errorf("rendering does not contain %q", want)
 				}
 			}
+			assertGolden(t, testCase.name+".html", out)
 		})
-	}
-}
-
-func TestHTMLShowsAMissingDimensionValueAsMissing(t *testing.T) {
-	t.Parallel()
-	out := renderHTML(t, loadFixture(t, "extended-example"))
-	if !bytes.Contains(out, []byte("<dd>missing</dd>")) {
-		t.Error("a dimension with no value must say the value is missing")
-	}
-	if bytes.Contains(out, []byte("0 req/s")) {
-		t.Error("a missing dimension value must never be shown as zero")
-	}
-}
-
-func TestHTMLShowsAMeasuredZeroAsZero(t *testing.T) {
-	t.Parallel()
-	zero := 0.0
-	rep := report.Report{Dimensions: []report.Dimension{{Dimension: "latency", Unit: "ms", Value: &zero}}}
-	out := renderHTML(t, rep)
-	if !bytes.Contains(out, []byte("<dd>0 ms</dd>")) {
-		t.Error("a measured zero is a measurement and must be shown as zero")
-	}
-	if bytes.Contains(out, []byte("<dd>missing</dd>")) {
-		t.Error("a measured zero must not be reported as a missing value")
 	}
 }
 
@@ -189,50 +167,6 @@ func TestHTMLOutputIsCleanMarkup(t *testing.T) {
 	}
 }
 
-func TestProvisionalCriterionIsMarkedInEveryFormat(t *testing.T) {
-	t.Parallel()
-	const marker = "(provisional)"
-	for _, format := range []string{"md", "html"} {
-		t.Run(format, func(t *testing.T) {
-			t.Parallel()
-			rep := loadFixture(t, "worked-example")
-			rep.Contract.Criteria[0].Provisional = true
-			renderer, ok := render.ByFormat(format)
-			if !ok {
-				t.Fatalf("%s renderer missing", format)
-			}
-			out, err := renderer.Render(rep)
-			if err != nil {
-				t.Fatal(err)
-			}
-			want := "Whitespace and case variants collapse into one address " + marker
-			if !bytes.Contains(out, []byte(want)) {
-				t.Errorf("a provisional criterion is not marked in its row: want %q", want)
-			}
-			if got := bytes.Count(out, []byte(marker)); got != 1 {
-				t.Errorf("%d criteria carry the provisional marker, want 1", got)
-			}
-		})
-	}
-}
-
-func TestUnmarkedCriteriaCarryNoProvisionalMarker(t *testing.T) {
-	t.Parallel()
-	for _, format := range []string{"md", "html"} {
-		renderer, ok := render.ByFormat(format)
-		if !ok {
-			t.Fatalf("%s renderer missing", format)
-		}
-		out, err := renderer.Render(loadFixture(t, "worked-example"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if bytes.Contains(out, []byte("(provisional)")) {
-			t.Errorf("%s marks a criterion the contract does not call provisional", format)
-		}
-	}
-}
-
 func TestHTMLRenderingAnEmptyReportSaysSoRatherThanFailing(t *testing.T) {
 	t.Parallel()
 	out := renderHTML(t, report.Report{})
@@ -243,6 +177,56 @@ func TestHTMLRenderingAnEmptyReportSaysSoRatherThanFailing(t *testing.T) {
 	}
 	if bytes.Contains(out, []byte(`id="learning"`)) || bytes.Contains(out, []byte(`id="dimensions"`)) {
 		t.Error("an empty report has no learning or dimensions block to show")
+	}
+}
+
+func TestHTMLKeepsTheShapeOfAnExcerpt(t *testing.T) {
+	t.Parallel()
+	const excerpt = "first line\n    indented line"
+	rep := report.Report{
+		Observations: []report.Observation{{
+			ID: "O1", Text: excerpt,
+			Evidence: []report.Evidence{{Kind: report.KindInspection, Observation: excerpt}},
+		}},
+		Criteria: []report.CriterionResult{{ID: "C1", Result: report.ResultPass, Reasoning: excerpt}},
+	}
+	out := renderHTML(t, rep)
+	if !bytes.Contains(out, []byte("white-space: pre-wrap")) {
+		t.Fatal("excerpt text must keep its newlines and indentation")
+	}
+	for _, want := range []string{
+		`<p class="text">` + excerpt + `</p>`,
+		`<span class="text">` + excerpt + `</span>`,
+	} {
+		if !bytes.Contains(out, []byte(want)) {
+			t.Errorf("rendering does not carry %q on a pre-wrapped element", want)
+		}
+	}
+	if got := bytes.Count(out, []byte(`<p class="text">`+excerpt+`</p>`)); got != 2 {
+		t.Errorf("%d pre-wrapped paragraphs carry the excerpt, want 2 (observation text and reasoning)", got)
+	}
+}
+
+func TestHTMLTablesScrollSidewaysSoTheBodyDoesNot(t *testing.T) {
+	t.Parallel()
+	out := renderHTML(t, loadFixture(t, "extended-example"))
+	const wrapper = `<div class="scroll">`
+	tables := bytes.Count(out, []byte("<table"))
+	if tables == 0 {
+		t.Fatal("the fixture renders no table to wrap")
+	}
+	if got := bytes.Count(out, []byte(wrapper)); got != tables {
+		t.Errorf("%d scroll wrappers for %d tables, want one each", got, tables)
+	}
+	for i, before := range bytes.Split(out, []byte("<table"))[:tables] {
+		if !bytes.HasSuffix(bytes.TrimRight(before, " \t\n"), []byte(wrapper)) {
+			t.Errorf("table %d is not directly inside %s", i+1, wrapper)
+		}
+	}
+	for _, want := range []string{"overflow-x: auto", "overflow-wrap: anywhere", "padding: 2rem 1rem 4rem"} {
+		if !bytes.Contains(out, []byte(want)) {
+			t.Errorf("the stylesheet does not carry %q, so the body can scroll sideways", want)
+		}
 	}
 }
 

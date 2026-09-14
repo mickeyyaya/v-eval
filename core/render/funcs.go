@@ -13,14 +13,14 @@ import (
 // where those words go and computes nothing of its own.
 func funcMap() template.FuncMap {
 	return template.FuncMap{
-		"badge":       badge,
-		"joinIDs":     joinIDs,
-		"supplied":    supplied,
-		"locator":     locator,
-		"cell":        cell,
-		"requirement": requirement,
-		"isJudgment":  isJudgment,
-		"orUnknown":   orUnknown,
+		"badge":         badge,
+		"joinIDs":       joinIDs,
+		"supplied":      supplied,
+		"locator":       locator,
+		"cell":          cell,
+		"requirement":   requirement,
+		"isJudgment":    isJudgment,
+		"orNotRecorded": orNotRecorded,
 	}
 }
 
@@ -84,11 +84,14 @@ func requirement(contract report.Contract, id string) string {
 // rubric it applied and the model that applied it.
 func isJudgment(evidence report.Evidence) bool { return evidence.Kind == report.KindJudgment }
 
-// orUnknown names an absent value rather than leaving a blank a reader would
-// read as an omission by the renderer.
-func orUnknown(value string) string {
+// orNotRecorded names an absent value rather than leaving a blank a reader
+// would read as an omission by the renderer. It says "(not recorded)" rather
+// than "unknown", because a value nobody wrote down and a value recorded as
+// the literal "unknown" are different states, and the second one is a
+// statement the evaluation actually made.
+func orNotRecorded(value string) string {
 	if value == "" {
-		return "unknown"
+		return "(not recorded)"
 	}
 	return value
 }

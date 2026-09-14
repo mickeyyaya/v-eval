@@ -54,7 +54,7 @@ h2 { font-size: 1.25rem; margin: 0 0 0.75rem; padding-bottom: 0.25rem; border-bo
 h3 { font-size: 1rem; margin: 0 0 0.25rem; }
 p { margin: 0 0 0.5rem; }
 section { margin: 2rem 0 0; }
-header .revision { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+header .revision { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
 dl.facts { display: grid; grid-template-columns: minmax(9rem, auto) 1fr; gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
 dl.facts dt { color: var(--muted); }
 dl.facts dd { margin: 0; }
@@ -63,12 +63,14 @@ table { width: 100%; border-collapse: collapse; margin: 0 0 0.5rem; }
 th, td { border: 1px solid var(--rule); padding: 0.5rem; text-align: left; vertical-align: top; }
 th { background: var(--panel); font-size: 0.9rem; }
 td { font-size: 0.95rem; }
-code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; word-break: break-word; }
+code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; overflow-wrap: anywhere; }
 ul.evidence { list-style: none; margin: 0 0 0.5rem; padding: 0; }
 ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; margin: 0 0 0.4rem; font-size: 0.9rem; }
 .tag { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 0 0.3rem; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
 .via, .note { color: var(--muted); font-size: 0.85rem; }
 .conflict { border-left: 3px solid var(--fail-bg); padding: 0 0 0 0.6rem; }
+.text { white-space: pre-wrap; }
+.scroll { overflow-x: auto; }
 .none { color: var(--muted); }
 .overall { font-size: 1.1rem; }
 .badge { display: inline-block; border-radius: 3px; padding: 0.05rem 0.5rem; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em; background: var(--unknown-bg); color: var(--unknown-fg); }
@@ -116,23 +118,24 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <h2>Observations</h2>
 <article>
 <h3>O1 <span class="note">assistant</span></h3>
-<p>The request path enforces the limit per API key, matching the published documentation.</p>
+<p class="text">The request path enforces the limit per API key, matching the published documentation.</p>
 <p class="note">Criteria: E2</p>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:48-52</code> <span>const rateLimitPerMinute = 100 // per API key</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:48-52</code> <span class="text">const rateLimitPerMinute = 100 // per API key</span> <span class="via">via assistant fixture</span></li>
 </ul>
 </article>
 <article>
 <h3>O2 <span class="note">adapter</span></h3>
-<p>The evaluation host has no container toolchain, so the reproducibility and throughput checks could not run.</p>
+<p class="text">The evaluation host has no container toolchain, so the reproducibility and throughput checks could not run.</p>
 <p class="note">Criteria: E3, E4</p>
 <ul class="evidence">
-<li><span class="tag">kind execution</span> <span class="tag">isolation none</span> <code>docker --version (exit 127)</code> <span>zsh: command not found: docker</span> <span class="via">via shell zsh 5.9</span></li>
+<li><span class="tag">kind execution</span> <span class="tag">isolation none</span> <code>docker --version (exit 127)</code> <span class="text">zsh: command not found: docker</span> <span class="via">via shell zsh 5.9</span></li>
 </ul>
 </article>
 </section>
 <section id="claims">
 <h2>Claims</h2>
+<div class="scroll">
 <table>
 <thead><tr><th scope="col">ID</th><th scope="col">Claim</th><th scope="col">Status</th><th scope="col">Location</th><th scope="col">Verification</th><th scope="col">Notes</th></tr></thead>
 <tbody>
@@ -143,7 +146,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>pull request description, paragraph 1</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind execution</span> <span class="tag">isolation worktree</span> <code>go test ./... (exit 0)</code> <span>ok  github.com/example/service  1.204s; 42 tests, 0 failures</span> <span class="via">via go 1.23.1</span></li>
+<li><span class="tag">kind execution</span> <span class="tag">isolation worktree</span> <code>go test ./... (exit 0)</code> <span class="text">ok  github.com/example/service  1.204s; 42 tests, 0 failures</span> <span class="via">via go 1.23.1</span></li>
 </ul>
 </td>
 <td>Re-run by the evaluator in a worktree checked out at this revision.</td>
@@ -160,9 +163,11 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 </tr>
 </tbody>
 </table>
+</div>
 </section>
 <section id="criteria">
 <h2>Criteria</h2>
+<div class="scroll">
 <table>
 <thead><tr><th scope="col">ID</th><th scope="col">Requirement</th><th scope="col">Result</th><th scope="col">Method</th><th scope="col">Evidence and reasoning</th><th scope="col">Next action</th></tr></thead>
 <tbody>
@@ -173,9 +178,9 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>execution</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind execution</span> <span class="tag">isolation worktree</span> <code>go test ./... (exit 0)</code> <span>ok  github.com/example/service  1.204s; 42 tests, 0 failures</span> <span class="via">via go 1.23.1</span></li>
+<li><span class="tag">kind execution</span> <span class="tag">isolation worktree</span> <code>go test ./... (exit 0)</code> <span class="text">ok  github.com/example/service  1.204s; 42 tests, 0 failures</span> <span class="via">via go 1.23.1</span></li>
 </ul>
-<p>The suite ran in a worktree checked out at this revision and exited zero with no failures reported. The conclusion covers the suite as supplied, not untested paths.</p>
+<p class="text">The suite ran in a worktree checked out at this revision and exited zero with no failures reported. The conclusion covers the suite as supplied, not untested paths.</p>
 </td>
 <td>None.</td>
 </tr>
@@ -186,10 +191,10 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>source_verification</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>Clients may issue at most 100 requests per minute per API key. from https://api.example.test/docs/rate-limits (2026-08-30)</code> <span>The vendor states the limit as 100 requests per minute per API key.</span> <span class="via">via assistant fixture</span></li>
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:48-52</code> <span>const rateLimitPerMinute = 100 // per API key</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>Clients may issue at most 100 requests per minute per API key. from https://api.example.test/docs/rate-limits (2026-08-30)</code> <span class="text">The vendor states the limit as 100 requests per minute per API key.</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:48-52</code> <span class="text">const rateLimitPerMinute = 100 // per API key</span> <span class="via">via assistant fixture</span></li>
 </ul>
-<p>The enforced constant is 100 per minute per key, the same limit and the same unit the cited documentation states at the version read.</p>
+<p class="text">The enforced constant is 100 per minute per key, the same limit and the same unit the cited documentation states at the version read.</p>
 </td>
 <td>None.</td>
 </tr>
@@ -200,9 +205,9 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>deterministic_check</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Benchmark number quoted in the pull request description, paragraph 2</code> <span>Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied)</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Benchmark number quoted in the pull request description, paragraph 2</code> <span class="text">Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied)</span> <span class="via">via assistant fixture</span></li>
 </ul>
-<p>No benchmark ran on this host, so the throughput dimension carries no measured value and the target is neither met nor missed.</p>
+<p class="text">No benchmark ran on this host, so the throughput dimension carries no measured value and the target is neither met nor missed.</p>
 <p class="note">Shared cause with E4.</p>
 <p class="note">Dimensions: throughput.</p>
 </td>
@@ -215,9 +220,9 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>execution</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind execution</span> <span class="tag">isolation none</span> <code>docker build --no-cache . (exit 127)</code> <span>zsh: command not found: docker</span> <span class="via">via shell zsh 5.9</span></li>
+<li><span class="tag">kind execution</span> <span class="tag">isolation none</span> <code>docker build --no-cache . (exit 127)</code> <span class="text">zsh: command not found: docker</span> <span class="via">via shell zsh 5.9</span></li>
 </ul>
-<p>The build never started: the container toolchain is absent from the evaluation host. Reproducibility is untested here, not refuted.</p>
+<p class="text">The build never started: the container toolchain is absent from the evaluation host. Reproducibility is untested here, not refuted.</p>
 <p class="note">Shared cause with E3.</p>
 </td>
 <td>Re-run the evaluation on a host that has the container toolchain installed.</td>
@@ -229,9 +234,9 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>static_inspection</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/vendor.txt:1-1</code> <span># no vendored third-party sources at this revision</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/vendor.txt:1-1</code> <span class="text"># no vendored third-party sources at this revision</span> <span class="via">via assistant fixture</span></li>
 </ul>
-<p>This revision vendors no third-party sources, so the header requirement has nothing to apply to.</p>
+<p class="text">This revision vendors no third-party sources, so the header requirement has nothing to apply to.</p>
 </td>
 <td>None while the revision vendors nothing.</td>
 </tr>
@@ -242,15 +247,16 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>rubric_judgment</td>
 <td>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:1-1</code> <span>Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.</span> <span class="via">via mtime-drift 0.3</span></li>
-<li><span class="tag">kind judgment</span> <span class="tag">isolation none</span> <code>Integrity rubric applied to the modification-time drift above</code> <span>The rubric cannot separate a benign checkout touch from a content change without the pre-evaluation tree digest.</span> <span class="via">via assistant fixture, rubric integrity-rubric-0.2, model unknown</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:1-1</code> <span class="text">Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.</span> <span class="via">via mtime-drift 0.3</span></li>
+<li><span class="tag">kind judgment</span> <span class="tag">isolation none</span> <code>Integrity rubric applied to the modification-time drift above</code> <span class="text">The rubric cannot separate a benign checkout touch from a content change without the pre-evaluation tree digest.</span> <span class="via">via assistant fixture, rubric integrity-rubric-0.2, model unknown</span></li>
 </ul>
-<p>A tracked file&#39;s modification time moved during the evaluation, and no pre-evaluation tree digest was recorded, so whether the artifact changed cannot be settled either way.</p>
+<p class="text">A tracked file&#39;s modification time moved during the evaluation, and no pre-evaluation tree digest was recorded, so whether the artifact changed cannot be settled either way.</p>
 </td>
 <td>Record a tree digest before evaluation begins, then re-run and compare.</td>
 </tr>
 </tbody>
 </table>
+</div>
 </section>
 <section id="forensics">
 <h2>Forensics</h2>
@@ -259,7 +265,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <p>On E6: severity suspicious, disposition open.</p>
 <p>Benign alternative: A checkout or a formatter touched the file without changing its contents.</p>
 <ul class="evidence">
-<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:1-1</code> <span>Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.</span> <span class="via">via mtime-drift 0.3</span></li>
+<li><span class="tag">kind inspection</span> <span class="tag">isolation none</span> <code>examples/extended/service.go:1-1</code> <span class="text">Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.</span> <span class="via">via mtime-drift 0.3</span></li>
 </ul>
 </article>
 </section>
@@ -268,19 +274,20 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <article>
 <h3>throughput <span class="note">requests_per_second version 1</span></h3>
 <dl class="facts">
-<dt>Value</dt><dd>missing</dd>
+<dt>Value</dt><dd>not measured</dd>
 <dt>Threshold</dt><dd>at or above 500 from examples/extended/brief.md#throughput</dd>
 <dt>Authority</dt><dd>established_measure, defined at examples/extended/brief.md#throughput</dd>
 <dt>Measurement</dt><dd>bench unknown on workload steady 60s at 8 concurrent workers, direction higher_is_better, range 0 and above</dd>
 </dl>
 <p>Not measured on this host: the quoted number has no workload or tool behind it, so no comparison to the target is possible.</p>
 <ul class="evidence">
-<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Benchmark number quoted in the pull request description, paragraph 2</code> <span>Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied)</span> <span class="via">via assistant fixture</span></li>
+<li><span class="tag">kind supplied</span> <span class="tag">isolation none</span> <code>Benchmark number quoted in the pull request description, paragraph 2</code> <span class="text">Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied)</span> <span class="via">via assistant fixture</span></li>
 </ul>
 </article>
 </section>
 <section id="counts">
 <h2>Counts</h2>
+<div class="scroll">
 <table>
 <thead><tr><th scope="col">Class</th><th scope="col">Applicable</th><th scope="col">PASS</th><th scope="col">FAIL</th><th scope="col">UNKNOWN</th><th scope="col">ERROR</th><th scope="col">Not applicable</th></tr></thead>
 <tbody>
@@ -288,6 +295,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <tr><td>Optional</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
 </tbody>
 </table>
+</div>
 <p>Coverage: 2/5 applicable criteria assessed. Coverage is not a correctness score.</p>
 </section>
 <section id="improvement">
@@ -352,6 +360,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <dt>Bundle digest</dt><dd><code>sha256:1f0a5c7f2b3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7</code></dd>
 <dt>Evidence digest</dt><dd><code>sha256:16b12842a5d5420296a18d9d03ee5be6461b32ea7a165a8742b8c95e03eb3bd7</code></dd>
 </dl>
+<div class="scroll">
 <table>
 <thead><tr><th scope="col">Command</th><th scope="col">Working directory</th><th scope="col">Exit</th><th scope="col">Isolation</th><th scope="col">Started</th><th scope="col">Ended</th><th scope="col">Log</th></tr></thead>
 <tbody>
@@ -360,6 +369,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <tr><td><code>docker build --no-cache .</code></td><td>/tmp/veval-worktree</td><td>127</td><td>none</td><td>2026-09-14T00:06:30Z</td><td>2026-09-14T00:06:30Z</td><td>logs/e4-docker-build.log</td></tr>
 </tbody>
 </table>
+</div>
 </section>
 <section id="learning">
 <h2>Learning</h2>

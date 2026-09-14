@@ -2,7 +2,7 @@
 what it said, whether the candidate supplied it rather than the evaluator
 gathering it, and what produced it. */ -}}
 {{- define "evidence" -}}
-<li><span class="tag">kind {{.Kind}}</span> <span class="tag">isolation {{.Isolation}}</span> <code>{{locator .Locator}}</code> <span>{{.Observation}}{{supplied .}}</span> <span class="via">via {{.Provenance.Tool}} {{.Provenance.Version}}{{if isJudgment .}}, rubric {{orUnknown .RubricVersion}}, model {{orUnknown .Model}}{{end}}</span></li>
+<li><span class="tag">kind {{.Kind}}</span> <span class="tag">isolation {{.Isolation}}</span> <code>{{locator .Locator}}</code> <span class="text">{{.Observation}}{{supplied .}}</span> <span class="via">via {{.Provenance.Tool}} {{.Provenance.Version}}{{if isJudgment .}}, rubric {{orNotRecorded .RubricVersion}}, model {{orNotRecorded .Model}}{{else}}{{with .Model}}, model {{.}}{{end}}{{end}}</span></li>
 {{end -}}
 {{- /* The same lines as a list, which says "none" rather than showing
 nothing: a reader must be able to tell cited-nothing from rendered-nothing. */ -}}
@@ -70,7 +70,7 @@ h2 { font-size: 1.25rem; margin: 0 0 0.75rem; padding-bottom: 0.25rem; border-bo
 h3 { font-size: 1rem; margin: 0 0 0.25rem; }
 p { margin: 0 0 0.5rem; }
 section { margin: 2rem 0 0; }
-header .revision { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+header .revision { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
 dl.facts { display: grid; grid-template-columns: minmax(9rem, auto) 1fr; gap: 0.125rem 1rem; margin: 0.75rem 0 0; }
 dl.facts dt { color: var(--muted); }
 dl.facts dd { margin: 0; }
@@ -79,12 +79,14 @@ table { width: 100%; border-collapse: collapse; margin: 0 0 0.5rem; }
 th, td { border: 1px solid var(--rule); padding: 0.5rem; text-align: left; vertical-align: top; }
 th { background: var(--panel); font-size: 0.9rem; }
 td { font-size: 0.95rem; }
-code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; word-break: break-word; }
+code { background: var(--code); border-radius: 3px; padding: 0 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; overflow-wrap: anywhere; }
 ul.evidence { list-style: none; margin: 0 0 0.5rem; padding: 0; }
 ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; margin: 0 0 0.4rem; font-size: 0.9rem; }
 .tag { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 0 0.3rem; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
 .via, .note { color: var(--muted); font-size: 0.85rem; }
 .conflict { border-left: 3px solid var(--fail-bg); padding: 0 0 0 0.6rem; }
+.text { white-space: pre-wrap; }
+.scroll { overflow-x: auto; }
 .none { color: var(--muted); }
 .overall { font-size: 1.1rem; }
 .badge { display: inline-block; border-radius: 3px; padding: 0.05rem 0.5rem; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em; background: var(--unknown-bg); color: var(--unknown-fg); }
@@ -135,7 +137,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 {{- range .Observations}}
 <article>
 <h3>{{.ID}} <span class="note">{{.Origin}}</span></h3>
-<p>{{.Text}}</p>
+<p class="text">{{.Text}}</p>
 <p class="note">Criteria: {{joinIDs .CriterionIDs}}</p>
 {{template "evidenceList" .Evidence}}
 </article>
@@ -146,6 +148,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <section id="claims">
 <h2>Claims</h2>
 {{- if .Claims}}
+<div class="scroll">
 <table>
 <thead><tr><th scope="col">ID</th><th scope="col">Claim</th><th scope="col">Status</th><th scope="col">Location</th><th scope="col">Verification</th><th scope="col">Notes</th></tr></thead>
 <tbody>
@@ -163,6 +166,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 {{- end}}
 </tbody>
 </table>
+</div>
 {{- else}}
 <p class="none">None recorded.</p>
 {{- end}}
@@ -170,6 +174,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <section id="criteria">
 <h2>Criteria</h2>
 {{- if .Criteria}}
+<div class="scroll">
 <table>
 <thead><tr><th scope="col">ID</th><th scope="col">Requirement</th><th scope="col">Result</th><th scope="col">Method</th><th scope="col">Evidence and reasoning</th><th scope="col">Next action</th></tr></thead>
 <tbody>
@@ -181,7 +186,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <td>{{.MethodUsed}}</td>
 <td>
 {{template "evidenceList" .Evidence}}
-<p>{{.Reasoning}}</p>
+<p class="text">{{.Reasoning}}</p>
 {{- if .SharedCauseWith}}
 <p class="note">Shared cause with {{joinIDs .SharedCauseWith}}.</p>
 {{- end}}
@@ -194,6 +199,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 {{- end}}
 </tbody>
 </table>
+</div>
 {{- else}}
 <p class="none">None recorded.</p>
 {{- end}}
@@ -218,7 +224,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <article>
 <h3>{{.Dimension}} <span class="note">{{.Metric}} version {{.MetricVersion}}</span></h3>
 <dl class="facts">
-<dt>Value</dt><dd>{{if .Value}}{{.Value}} {{.Unit}}{{else}}missing{{end}}</dd>
+<dt>Value</dt><dd>{{if .Value}}{{.Value}} {{.Unit}}{{else}}not measured{{end}}</dd>
 <dt>Threshold</dt><dd>{{.Threshold}} from {{.ThresholdSource}}</dd>
 <dt>Authority</dt><dd>{{.AuthorityType}}, defined at {{.DefinitionRef}}</dd>
 <dt>Measurement</dt><dd>{{.Tool}} {{.ToolVersion}} on workload {{.Workload}}, direction {{.Direction}}, range {{.Range}}</dd>
@@ -231,6 +237,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 {{- end}}
 <section id="counts">
 <h2>Counts</h2>
+<div class="scroll">
 <table>
 <thead><tr><th scope="col">Class</th><th scope="col">Applicable</th><th scope="col">PASS</th><th scope="col">FAIL</th><th scope="col">UNKNOWN</th><th scope="col">ERROR</th><th scope="col">Not applicable</th></tr></thead>
 <tbody>
@@ -238,6 +245,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <tr><td>Optional</td><td>{{.Counts.Optional.Applicable}}</td><td>{{.Counts.Optional.Pass}}</td><td>{{.Counts.Optional.Fail}}</td><td>{{.Counts.Optional.Unknown}}</td><td>{{.Counts.Optional.Error}}</td><td>{{.Counts.Optional.NotApplicable}}</td></tr>
 </tbody>
 </table>
+</div>
 <p>Coverage: {{if .Counts.Coverage.Undefined}}undefined (0 applicable){{else}}{{.Counts.Coverage.Numerator}}/{{.Counts.Coverage.Denominator}} applicable criteria assessed{{end}}. Coverage is not a correctness score.</p>
 </section>
 <section id="improvement">
@@ -287,6 +295,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 <dt>Evidence digest</dt><dd><code>{{.Provenance.EvidenceDigest}}</code></dd>
 </dl>
 {{- if .Provenance.Commands}}
+<div class="scroll">
 <table>
 <thead><tr><th scope="col">Command</th><th scope="col">Working directory</th><th scope="col">Exit</th><th scope="col">Isolation</th><th scope="col">Started</th><th scope="col">Ended</th><th scope="col">Log</th></tr></thead>
 <tbody>
@@ -295,6 +304,7 @@ ul.evidence li { border-left: 3px solid var(--rule); padding: 0 0 0 0.6rem; marg
 {{- end}}
 </tbody>
 </table>
+</div>
 {{- else}}
 <p class="none">Commands: none</p>
 {{- end}}

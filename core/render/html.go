@@ -22,15 +22,15 @@ var htmlTemplate = template.Must(
 // none there.
 func htmlFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"badge":        badge,
-		"resultClass":  resultClass,
-		"overallClass": overallClass,
-		"joinIDs":      joinIDs,
-		"supplied":     supplied,
-		"locator":      locator,
-		"requirement":  requirement,
-		"isJudgment":   isJudgment,
-		"orUnknown":    orUnknown,
+		"badge":         badge,
+		"resultClass":   resultClass,
+		"overallClass":  overallClass,
+		"joinIDs":       joinIDs,
+		"supplied":      supplied,
+		"locator":       locator,
+		"requirement":   requirement,
+		"isJudgment":    isJudgment,
+		"orNotRecorded": orNotRecorded,
 	}
 }
 
