@@ -86,8 +86,9 @@ type Region struct {
 	EndLine   int `json:"endLine,omitempty"`
 }
 
-// Invocation is one command the evaluator ran, or, when nothing ran under a
-// criterion that errored, the record that the run did not complete.
+// Invocation is one command the evaluator ran, or the synthesized record that
+// the evaluation errored: the latter names no command line, reports no
+// success, and carries one notification per errored criterion.
 type Invocation struct {
 	CommandLine                string            `json:"commandLine,omitempty"`
 	WorkingDirectory           *ArtifactLocation `json:"workingDirectory,omitempty"`

@@ -26,6 +26,8 @@ const (
 	RuleEnumValid                     = "enum.valid"
 	RuleTimeRFC3339                   = "time.rfc3339"
 	RuleLocatorShape                  = "locator.shape"
+	RuleCriteriaNonempty              = "criteria.nonempty"
+	RuleRangeValid                    = "range.valid"
 	RuleCriteriaContractLink          = "criteria.contract_link"
 	RulePassRequiresObservedLocator   = "evidence.pass_requires_observed_locator"
 	RuleCandidateSuppliedKind         = "evidence.candidate_supplied_kind"
@@ -51,11 +53,11 @@ type rule func(rep Report) []Violation
 func structuralRules() []rule {
 	return []rule{
 		ruleSchemaVersion, ruleRequiredNonempty, ruleEnumValid, ruleTimeRFC3339,
-		ruleLocatorShape, ruleCriteriaContractLink, rulePassRequiresObservedLocator,
-		ruleCandidateSuppliedKind, ruleJudgmentMetadata, ruleNotApplicableReasoning,
-		ruleErrorIsOperational, ruleClaimsVerificationPresent, ruleForensicsCriterionLink,
-		ruleForensicsConfirmedSeverity, ruleForensicsConfirmedImpliesFail,
-		ruleDimensionsNoComposite,
+		ruleLocatorShape, ruleCriteriaNonempty, ruleRangeValid, ruleCriteriaContractLink,
+		rulePassRequiresObservedLocator, ruleCandidateSuppliedKind, ruleJudgmentMetadata,
+		ruleNotApplicableReasoning, ruleErrorIsOperational, ruleClaimsVerificationPresent,
+		ruleForensicsCriterionLink, ruleForensicsConfirmedSeverity,
+		ruleForensicsConfirmedImpliesFail, ruleDimensionsNoComposite,
 	}
 }
 
@@ -124,6 +126,8 @@ func nonEmpty(fields []requiredField) []Violation {
 // ruleRequiredNonempty checks the fields a report says nothing without.
 // status.rule_applied is deliberately absent: status.match compares the whole
 // derived status, which is stricter, and is the rule that owns those fields.
+// Whether a list has any entries at all is criteria.nonempty's business, not
+// this rule's: this one is about a field that is present and says nothing.
 func ruleRequiredNonempty(rep Report) []Violation {
 	violations := nonEmpty(headerFields(rep))
 	violations = append(violations, nonEmpty(contractFields(rep.Contract))...)
@@ -192,6 +196,10 @@ func elementFields(rep Report) []requiredField {
 	}
 	for i, finding := range rep.Forensics {
 		fields = append(fields, requiredField{fmt.Sprintf("forensics[%d].finding_id", i), finding.FindingID})
+	}
+	for i, dimension := range rep.Dimensions {
+		fields = append(fields, requiredField{
+			fmt.Sprintf("dimensions[%d].definition_ref", i), dimension.DefinitionRef})
 	}
 	return fields
 }
@@ -314,6 +322,52 @@ func ruleLocatorShape(rep Report) []Violation {
 	return violations
 }
 
+// ruleCriteriaNonempty requires a report to judge something. A contract with
+// no criteria states no requirement to be judged against, and a report with no
+// results reaches no verdict about the requirements it does state; either one
+// would still tally and derive a status, which is how an empty evaluation
+// comes to look like a finished one.
+func ruleCriteriaNonempty(rep Report) []Violation {
+	var violations []Violation
+	if len(rep.Contract.Criteria) == 0 {
+		violations = append(violations, Violation{Path: "contract.criteria", Rule: RuleCriteriaNonempty,
+			Message: "a contract must state at least one criterion"})
+	}
+	if len(rep.Criteria) == 0 {
+		violations = append(violations, Violation{Path: "criteria", Rule: RuleCriteriaNonempty,
+			Message: "a report must reach a result for at least one criterion"})
+	}
+	return violations
+}
+
+// ruleRangeValid holds the two numbers whose range is part of what they mean:
+// a similarity is a fraction of one, and a count of the inputs an evaluator
+// received cannot be negative.
+func ruleRangeValid(rep Report) []Violation {
+	var violations []Violation
+	for i, supplied := range rep.Routing.Supplied {
+		if supplied.Count < 0 {
+			violations = append(violations, Violation{
+				Path:    fmt.Sprintf("routing.supplied[%d].count", i),
+				Rule:    RuleRangeValid,
+				Message: fmt.Sprintf("%d is not a count: it must be zero or more", supplied.Count)})
+		}
+	}
+	if rep.Learning == nil {
+		return violations
+	}
+	for i, precedent := range rep.Learning.PrecedentsRetrieved {
+		if precedent.Similarity < 0 || precedent.Similarity > 1 {
+			violations = append(violations, Violation{
+				Path: fmt.Sprintf("learning.precedents_retrieved[%d].similarity", i),
+				Rule: RuleRangeValid,
+				Message: fmt.Sprintf("%v is not a similarity: it must be between 0 and 1 inclusive",
+					precedent.Similarity)})
+		}
+	}
+	return violations
+}
+
 // ruleCriteriaContractLink requires the results and the contract to name the
 // same criteria: every result links to a contract criterion, and every
 // contract criterion has exactly one result.
@@ -401,23 +455,22 @@ func ruleNotApplicableReasoning(rep Report) []Violation {
 	return violations
 }
 
-// ruleErrorIsOperational requires an ERROR to rest on something that actually
-// ran: execution evidence, or a command that exited non-zero. An ERROR with
+// ruleErrorIsOperational requires each ERROR to rest on something that
+// actually ran under that criterion: execution evidence of its own, or
+// evidence pointing at a command that exited non-zero. The report's own list
+// of commands is not enough -- a command run for another criterion says
+// nothing about why this one could not be decided -- and an ERROR with
 // neither is a judgment in disguise.
 func ruleErrorIsOperational(rep Report) []Violation {
-	attempted := slices.ContainsFunc(rep.Provenance.Commands,
-		func(c CommandRecord) bool { return c.ExitStatus != 0 })
-
 	var violations []Violation
 	for i, result := range rep.Criteria {
-		executed := slices.ContainsFunc(result.Evidence, func(e Evidence) bool { return e.Kind == KindExecution })
-		if result.Result != ResultError || attempted || executed {
+		if result.Result != ResultError || slices.ContainsFunc(result.Evidence, Evidence.SupportsError) {
 			continue
 		}
 		violations = append(violations, Violation{
 			Path:    fmt.Sprintf("criteria[%d]", i),
 			Rule:    RuleErrorIsOperational,
-			Message: "ERROR needs execution evidence or a command that exited non-zero"})
+			Message: "ERROR needs its own execution evidence, or evidence of a command that exited non-zero"})
 	}
 	return violations
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -31,9 +32,13 @@ func newFlags(name string, stderr io.Writer) *flag.FlagSet {
 // returns the operands, and the exit code to end on when it could not: the
 // flag set has already written what went wrong.
 //
-// Only the flag tokens reach the flag set. The operands never do, so a path
-// that begins with a dash is a path, and a value-taking flag left without a
-// value is the last thing the set parses -- which is how it comes to say so.
+// Only the flag tokens reach the flag set. The operands never do, so the two
+// may be typed in any order, and a value-taking flag left without a value is
+// the last thing the set parses -- which is how it comes to say so.
+//
+// "-" alone is a path: it is the standard stream, not a flag. Any other path
+// that begins with a dash is read as a flag, so it has to be handed over
+// after "--".
 func parseArgs(flags *flag.FlagSet, args []string, want int) ([]string, int) {
 	flagArgs, operands := splitArgs(flags, args)
 	if err := flags.Parse(flagArgs); err != nil {
@@ -104,8 +109,23 @@ func takesValue(flags *flag.FlagSet, arg string) bool {
 	return !ok || !asBool.IsBoolFlag()
 }
 
-// readInput reads the report at path, or standard input when path is "-".
+// utf8BOM is the byte order mark some editors and shell redirections write at
+// the head of a UTF-8 file. It carries no meaning in JSON, so a decoder handed
+// one reports a syntax error against a report that is otherwise sound.
+var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
+
+// readInput reads the report at path, or standard input when path is "-",
+// without a leading byte order mark whichever it came from.
 func readInput(path string, stdin io.Reader) ([]byte, error) {
+	raw, err := readAll(path, stdin)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.TrimPrefix(raw, utf8BOM), nil
+}
+
+// readAll reads the bytes at path, or standard input when path is "-".
+func readAll(path string, stdin io.Reader) ([]byte, error) {
 	if path != streamPath {
 		raw, err := os.ReadFile(filepath.Clean(path))
 		if err != nil {

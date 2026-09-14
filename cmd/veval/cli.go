@@ -62,12 +62,19 @@ func formatChoices() string {
 }
 
 // run dispatches one invocation. No subcommand and an explicit request for
-// help are the same case: the caller does not yet know what to ask for, so
-// the usage goes to standard error and the exit code says nothing was done.
+// help print the same usage for opposite reasons, so they are answered on
+// opposite streams: a caller who typed nothing did not manage to ask for
+// anything, so the usage goes to standard error and the exit code says
+// nothing was done; a caller who asked for the usage got what they asked for,
+// so it goes to standard output and the exit code says the command succeeded.
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	if len(args) == 0 || args[0] == "-h" || args[0] == "--help" {
+	if len(args) == 0 {
 		fmt.Fprint(stderr, usage())
 		return exitError
+	}
+	if args[0] == "-h" || args[0] == "--help" {
+		fmt.Fprint(stdout, usage())
+		return exitOK
 	}
 	for _, cmd := range commands() {
 		if cmd.Name == args[0] {

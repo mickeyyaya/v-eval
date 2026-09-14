@@ -5,17 +5,25 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 )
 
-// Decode parses a report, rejecting any field the schema does not define.
+// Decode parses a report, rejecting any field the schema does not define and
+// anything at all after the report itself. A report is one JSON value: a
+// second value, or text that is not JSON, means the bytes do not say what they
+// appear to say, and a decoder that stopped at the first value would let the
+// rest through unread.
 func Decode(raw []byte) (Report, error) {
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.DisallowUnknownFields()
 	var rep Report
 	if err := dec.Decode(&rep); err != nil {
 		return Report{}, fmt.Errorf("report: decode: %w", err)
+	}
+	if dec.More() {
+		return Report{}, errors.New("report: decode: trailing data after the report")
 	}
 	return rep, nil
 }

@@ -8,13 +8,18 @@ import (
 	"github.com/mickeyyaya/v-eval/core/report"
 )
 
-// funcMap is the whole vocabulary a report template may call. Each function
-// turns one report value into the words a reader sees; the template decides
-// where those words go and computes nothing of its own.
+// funcMap is the whole vocabulary a Markdown report template may call. Each
+// function turns one report value into the words a reader sees; the template
+// decides where those words go and computes nothing of its own.
+//
+// joinIDs is bound to the escaping form here and to the plain one in the HTML
+// map: text/template writes whatever it is handed, so Markdown escaping is
+// this map's job, while html/template escapes by the context a value lands in
+// and needs none of it.
 func funcMap() template.FuncMap {
 	return template.FuncMap{
 		"badge":         badge,
-		"joinIDs":       joinIDs,
+		"joinIDs":       joinIDsCell,
 		"supplied":      supplied,
 		"locator":       locator,
 		"cell":          cell,
@@ -36,6 +41,12 @@ func joinIDs(ids []string) string {
 	}
 	return strings.Join(ids, ", ")
 }
+
+// joinIDsCell is joinIDs for Markdown. An id is a string a report carries like
+// any other -- a path, a criterion id, a constraint -- so a newline or a pipe
+// inside one would end the line or the row it sits in, and the rest of it
+// would read as the renderer's own words.
+func joinIDsCell(ids []string) string { return cell(joinIDs(ids)) }
 
 // supplied marks evidence the candidate handed over rather than evidence the
 // evaluator gathered, wherever that evidence is shown.

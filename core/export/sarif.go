@@ -25,6 +25,10 @@ const (
 	gitRevisionPrefix     = "git:"
 	contentRevisionPrefix = "content:sha256:"
 	sha256HashName        = "sha-256"
+
+	// sha256HexLength is how many characters a SHA-256 digest takes in
+	// hexadecimal: 32 bytes, two characters each.
+	sha256HexLength = 64
 )
 
 // ToSARIF maps a report onto a SARIF log. It expects a report that passed
@@ -266,19 +270,21 @@ func locatorFields(locator report.Locator) map[string]any {
 	}
 }
 
-// invocations records what the evaluator ran. An ERROR criterion means the
-// evaluation itself did not complete, so no invocation of the run counts as
-// successful and each errored criterion is named in a notification. The
-// notifications are written once, on the first invocation, because there is one
-// per errored criterion and not one per command: repeating them on every
-// invocation would say each command failed for a reason that was not its own. A
-// report that errored without running anything still gets an invocation to
-// carry them, because a failure SARIF does not show is a failure a reader
-// misses.
+// invocations records what the evaluator ran, and what the evaluation could
+// not decide. Each command invocation reports its own truth: its
+// executionSuccessful follows that command's exit status and nothing else,
+// because a command that exited zero did exit zero however the rest of the
+// evaluation went.
+//
+// An ERROR criterion is a fact about the run rather than about any one
+// command, so it is never attached to one. Every errored criterion is named in
+// a notification on a single synthesized invocation, appended last, which
+// names no command line and reports no success. A report that errored without
+// running anything still gets that invocation, because a failure SARIF does
+// not show is a failure a reader misses; a report with no errored criterion
+// gets none.
 func invocations(rep report.Report) []Invocation {
-	notifications := errorNotifications(rep.Criteria)
-	completed := len(notifications) == 0
-	out := make([]Invocation, 0, len(rep.Provenance.Commands))
+	out := make([]Invocation, 0, len(rep.Provenance.Commands)+1)
 	for _, command := range rep.Provenance.Commands {
 		exit := command.ExitStatus
 		out = append(out, Invocation{
@@ -287,20 +293,16 @@ func invocations(rep report.Report) []Invocation {
 			ExitCode:            &exit,
 			StartTimeUTC:        command.StartedAt,
 			EndTimeUTC:          command.EndedAt,
-			ExecutionSuccessful: completed && exit == 0,
+			ExecutionSuccessful: exit == 0,
 			Properties: Properties{
 				"veval_isolation": string(command.Isolation),
 				"veval_log_ref":   command.LogRef,
 			},
 		})
 	}
-	if completed {
-		return out
+	if notifications := errorNotifications(rep.Criteria); len(notifications) > 0 {
+		out = append(out, Invocation{ToolExecutionNotifications: notifications})
 	}
-	if len(out) == 0 {
-		out = append(out, Invocation{})
-	}
-	out[0].ToolExecutionNotifications = notifications
 	return out
 }
 
@@ -327,9 +329,14 @@ func errorNotifications(criteria []report.CriterionResult) []Notification {
 // report never made. A git revision in particular is not written as
 // versionControlProvenance: SARIF requires a repositoryUri on every entry and
 // a report carries none, so such an entry could only ever be invalid.
+//
+// A revision that announces a content digest without carrying one -- an empty
+// digest, or anything that is not a SHA-256 written the one way a report
+// writes it -- yields no entry either: an artifacts entry states what the file
+// hashes to, and half a digest states nothing a reader could check.
 func artifactHashes(artifact report.Artifact) []Artifact {
 	hash, ok := strings.CutPrefix(artifact.Revision, contentRevisionPrefix)
-	if !ok {
+	if !ok || !isSHA256Hex(hash) {
 		return nil
 	}
 	if len(artifact.Paths) == 0 {
@@ -343,6 +350,20 @@ func artifactHashes(artifact report.Artifact) []Artifact {
 		})
 	}
 	return out
+}
+
+// isSHA256Hex reports whether s is a SHA-256 digest in the one spelling a
+// report writes: exactly sha256HexLength lowercase hexadecimal characters.
+func isSHA256Hex(s string) bool {
+	if len(s) != sha256HexLength {
+		return false
+	}
+	for _, c := range s {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 // vevalProperties carries the report-level facts SARIF has no field for: the

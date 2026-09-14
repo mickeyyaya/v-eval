@@ -19,7 +19,9 @@ var htmlTemplate = template.Must(
 // the shared functions rather than extending the Markdown set so that neither
 // renderer's vocabulary can drift into the other's: cell, which escapes
 // Markdown table syntax, has no meaning here, and the class functions have
-// none there.
+// none there. joinIDs is the plain form for the same reason -- html/template
+// escapes by the context a value lands in, so escaping it first would show a
+// reader the escape rather than the id.
 func htmlFuncMap() template.FuncMap {
 	return template.FuncMap{
 		"badge":         badge,

@@ -105,15 +105,7 @@
           "exitCode": 0,
           "startTimeUtc": "2026-09-14T00:03:10Z",
           "endTimeUtc": "2026-09-14T00:03:12Z",
-          "executionSuccessful": false,
-          "toolExecutionNotifications": [
-            {
-              "level": "error",
-              "message": {
-                "text": "criterion E4 could not be evaluated: the evaluation errored"
-              }
-            }
-          ],
+          "executionSuccessful": true,
           "properties": {
             "veval_isolation": "worktree",
             "veval_log_ref": "logs/e1-go-test.log"
@@ -146,6 +138,17 @@
             "veval_isolation": "none",
             "veval_log_ref": "logs/e4-docker-build.log"
           }
+        },
+        {
+          "executionSuccessful": false,
+          "toolExecutionNotifications": [
+            {
+              "level": "error",
+              "message": {
+                "text": "criterion E4 could not be evaluated: the evaluation errored"
+              }
+            }
+          ]
         }
       ],
       "results": [

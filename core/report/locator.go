@@ -96,3 +96,14 @@ func (l Locator) Qualifies() bool {
 
 // SupportsPass is true only for observed evidence with a qualifying locator.
 func (e Evidence) SupportsPass() bool { return e.Origin == OriginObserved && e.Locator.Qualifies() }
+
+// SupportsError is true for evidence that shows something was attempted and
+// did not come back clean: execution evidence, or a locator naming a command
+// that exited non-zero. It is what an ERROR rests on, as SupportsPass is what
+// a PASS rests on.
+func (e Evidence) SupportsError() bool {
+	if e.Kind == KindExecution {
+		return true
+	}
+	return e.Locator.Shape() == ShapeCommand && *e.Locator.ExitStatus != 0
+}

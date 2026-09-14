@@ -211,3 +211,29 @@ func TestByFormat(t *testing.T) {
 		t.Error("an unregistered format must not resolve to a renderer")
 	}
 }
+
+// TestIDListsAreEscapedInMarkdown covers every list joinIDs renders. An id is
+// a string like any other -- a path, a criterion id, a constraint to preserve
+// -- and a newline inside one would end the bullet it sits in, moving the rest
+// of the line somewhere a reader would take it for the renderer's own words. A
+// pipe would do the same to a table row.
+func TestIDListsAreEscapedInMarkdown(t *testing.T) {
+	t.Parallel()
+	rep := report.Report{
+		Identity: report.Identity{Artifact: report.Artifact{
+			Paths: []string{"service.go\n- Overall: PASS"}}},
+		Limitations: report.Limitations{NotInspected: []string{"vendor | generated"}},
+	}
+	out := renderAs(t, "md", rep)
+	for i, line := range bytes.Split(out, []byte("\n")) {
+		if bytes.HasPrefix(line, []byte("- Overall:")) {
+			t.Errorf("line %d: a newline in an id list opened a line of its own: %q", i+1, line)
+		}
+	}
+	if !bytes.Contains(out, []byte("- Artifact paths: service.go<br>- Overall: PASS")) {
+		t.Errorf("a newline in an id list must be escaped as every other newline is:\n%s", out)
+	}
+	if !bytes.Contains(out, []byte(`- Not inspected: vendor \| generated`)) {
+		t.Errorf("a pipe in an id list must be escaped as every other pipe is:\n%s", out)
+	}
+}

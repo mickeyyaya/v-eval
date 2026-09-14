@@ -103,3 +103,42 @@ func TestEncodeNormalisesNestedNilEvidence(t *testing.T) {
 		t.Fatalf("nested nil evidence must not encode as null:\n%s", raw)
 	}
 }
+
+// TestDecodeRejectsTrailingData covers what a stream decoder would otherwise
+// read past: a report is one JSON value, so anything after the first one is
+// either a second report nobody asked for or text that is not a report at
+// all. Either way the bytes do not say what they appear to say, and stopping
+// at the first value would let the rest through unread.
+func TestDecodeRejectsTrailingData(t *testing.T) {
+	t.Parallel()
+	raw, err := os.ReadFile("testdata/worked-example.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := map[string]string{
+		"a second JSON value":    "{\"junk\":1}\n",
+		"prose after the report": "this is not JSON at all\n",
+		"a bare token":           "true\n",
+	}
+	for name, trailer := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			with := append(append([]byte(nil), raw...), trailer...)
+			_, err := Decode(with)
+			if err == nil {
+				t.Fatal("trailing data must be rejected")
+			}
+			const want = "report: decode: trailing data after the report"
+			if err.Error() != want {
+				t.Fatalf("error = %q, want %q", err, want)
+			}
+			_, violations, err := Validate(with)
+			if err != nil {
+				t.Fatalf("validate: %v", err)
+			}
+			if len(violations) != 1 || violations[0].Rule != RuleJSON {
+				t.Fatalf("violations = %v, want the single json violation", violations)
+			}
+		})
+	}
+}

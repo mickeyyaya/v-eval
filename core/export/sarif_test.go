@@ -138,7 +138,7 @@ func TestSARIFMapping(t *testing.T) {
 	}
 }
 
-func TestSARIFErrorCriterionMarksInvocationFailed(t *testing.T) {
+func TestSARIFErrorCriterionGetsAnInvocationOfItsOwn(t *testing.T) {
 	t.Parallel()
 	rep := loadFixture(t)
 	rep.Criteria[4].Result = report.ResultError
@@ -148,8 +148,16 @@ func TestSARIFErrorCriterionMarksInvocationFailed(t *testing.T) {
 		t.Fatal(err)
 	}
 	inv := log.Runs[0].Invocations
-	if len(inv) != 1 || inv[0].ExecutionSuccessful || len(inv[0].ToolExecutionNotifications) != 1 {
-		t.Fatalf("invocations = %+v", inv)
+	if len(inv) != 2 {
+		t.Fatalf("invocations = %+v, want the command and a synthesized carrier", inv)
+	}
+	if inv[0].CommandLine != "go test ./..." || inv[0].ExecutionSuccessful ||
+		len(inv[0].ToolExecutionNotifications) != 0 {
+		t.Fatalf("the command reports its own exit status and nothing else: %+v", inv[0])
+	}
+	if inv[1].CommandLine != "" || inv[1].ExecutionSuccessful ||
+		len(inv[1].ToolExecutionNotifications) != 1 {
+		t.Fatalf("synthesized invocation = %+v", inv[1])
 	}
 }
 
@@ -367,8 +375,8 @@ func TestSARIFCommandsBecomeInvocations(t *testing.T) {
 	t.Parallel()
 	log := mustSARIF(t, loadReport(t, "extended-example"))
 	inv := log.Runs[0].Invocations
-	if len(inv) != 3 {
-		t.Fatalf("invocations = %d, want one per command", len(inv))
+	if len(inv) != 4 {
+		t.Fatalf("invocations = %d, want one per command plus the errored criterion's own", len(inv))
 	}
 	first := inv[0]
 	if first.CommandLine != "go test ./..." || first.WorkingDirectory.URI != "/tmp/veval-worktree" ||
@@ -379,19 +387,26 @@ func TestSARIFCommandsBecomeInvocations(t *testing.T) {
 	if first.Properties["veval_isolation"] != "worktree" || first.Properties["veval_log_ref"] != "logs/e1-go-test.log" {
 		t.Fatalf("invocation properties = %v", first.Properties)
 	}
-	// E4 is an ERROR criterion, so no invocation of this run is successful and
-	// exactly one notification names it.
-	notifications := 0
-	for _, one := range inv {
+	// Each command reports its own truth: go test exited 0, and both docker
+	// commands exited 127.
+	if !inv[0].ExecutionSuccessful {
+		t.Fatalf("the command that exited 0 must report success: %+v", inv[0])
+	}
+	for _, one := range inv[1:3] {
 		if one.ExecutionSuccessful {
-			t.Fatalf("invocation %q reported success under an ERROR criterion", one.CommandLine)
+			t.Fatalf("a command that exited 127 must not report success: %+v", one)
 		}
-		notifications += len(one.ToolExecutionNotifications)
+		if len(one.ToolExecutionNotifications) != 0 {
+			t.Fatalf("a command carries no notification about a criterion: %+v", one)
+		}
 	}
-	if notifications != 1 {
-		t.Fatalf("notifications = %d, want one per ERROR criterion", notifications)
+	// E4 is an ERROR criterion: its notification sits on an invocation of its
+	// own, appended last, which names no command because none of them errored.
+	last := inv[len(inv)-1]
+	if last.CommandLine != "" || last.ExecutionSuccessful || len(last.ToolExecutionNotifications) != 1 {
+		t.Fatalf("synthesized invocation = %+v", last)
 	}
-	got := inv[0].ToolExecutionNotifications[0]
+	got := last.ToolExecutionNotifications[0]
 	if got.Level != "error" || !strings.Contains(got.Message.Text, "E4") {
 		t.Fatalf("notification = %+v", got)
 	}
@@ -483,6 +498,33 @@ func TestSARIFContentRevisionWithoutPaths(t *testing.T) {
 	run := mustSARIF(t, rep).Runs[0]
 	if len(run.Artifacts) != 1 || run.Artifacts[0].Location != nil {
 		t.Fatalf("artifacts = %+v, want one hash entry with no location", run.Artifacts)
+	}
+}
+
+// TestSARIFIncompleteContentDigestYieldsNoArtifact covers the revision that
+// names the right kind of identity without carrying one: an artifacts entry
+// built from it would state a hash nothing hashes to.
+func TestSARIFIncompleteContentDigestYieldsNoArtifact(t *testing.T) {
+	t.Parallel()
+	cases := map[string]string{
+		"empty digest":    "content:sha256:",
+		"short digest":    "content:sha256:befaf705",
+		"upper case":      "content:sha256:BEFAF705C894D30D62D3D53DD5E6653C910063747FC7E508C1B9DE2DE306DFA8",
+		"not hexadecimal": "content:sha256:zzzzf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8",
+	}
+	for name, revision := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			rep := loadFixture(t)
+			rep.Identity.Artifact.Revision = revision
+			run := mustSARIF(t, rep).Runs[0]
+			if len(run.Artifacts) != 0 {
+				t.Fatalf("artifacts = %+v, want none for a digest that pins nothing", run.Artifacts)
+			}
+			if vevalOf(t, run)["revision"] != revision {
+				t.Fatalf("the revision must still be stated as the report states it: %v", vevalOf(t, run))
+			}
+		})
 	}
 }
 

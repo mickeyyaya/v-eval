@@ -33,9 +33,10 @@ func TestAggregateFillsDerivedFieldsAndIsIdempotent(t *testing.T) {
 	}
 }
 
-// minimalReport is the smallest report that breaks no structural rule: an
-// empty contract, judged by no criteria. Every slice and map in it is nil,
-// which is the point of the test below.
+// minimalReport is the smallest report that breaks no structural rule: one
+// criterion, reached once, with nothing cited for it. Every slice and map
+// below that -- the evidence, the observations, the improvements, the runtime
+// versions -- is nil, which is the point of the test below.
 func minimalReport() Report {
 	return Report{
 		Identity: Identity{
@@ -43,12 +44,16 @@ func minimalReport() Report {
 			VevalVersion:  "0.1.0",
 			SkillRevision: "skill-rev-1",
 			Artifact:      Artifact{Kind: "repository", Revision: "0000000"},
-			Task:          Task{RequestedOutcome: "evaluate an empty contract"},
+			Task:          Task{RequestedOutcome: "evaluate one criterion"},
 			CreatedAt:     "2026-09-14T00:00:00Z",
 			Host:          Host{CLI: "v-eval", OS: "darwin", Arch: "arm64"},
 		},
-		Contract: Contract{ContractID: "K-empty", ContractVersion: "1", Status: ContractStatusUserSpecified},
-		Routing:  Routing{Rationale: "nothing was supplied, so no adapter ran"},
+		Contract: Contract{ContractID: "K-min", ContractVersion: "1", Status: ContractStatusUserSpecified,
+			Criteria: []Criterion{{ID: "K1", Requirement: "the suite passes", Required: true,
+				MethodsAllowed: []Method{MethodExecution}, AcceptanceRule: "the suite exits zero"}}},
+		Criteria: []CriterionResult{{ID: "K1", Result: ResultUnknown, MethodUsed: MethodExecution,
+			Reasoning: "nothing was supplied to run"}},
+		Routing: Routing{Rationale: "nothing was supplied, so no adapter ran"},
 	}
 }
 

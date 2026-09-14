@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/mickeyyaya/v-eval/core/render"
+	"github.com/mickeyyaya/v-eval/core/report"
 )
 
 func fixturePath() string {
@@ -102,35 +103,58 @@ var wantUsageLines = []string{
 	"veval version",
 }
 
-func TestUsageGoesToStderrAndNamesEveryCommand(t *testing.T) {
-	for _, args := range [][]string{nil, {"-h"}, {"--help"}} {
-		code, stdout, stderr := call(args, "")
-		if code != 2 {
-			t.Errorf("%v: code=%d, want 2", args, code)
+// assertUsage requires text to be the whole usage: one line per command,
+// naming that command's own flags and operands, and no block of global flags.
+func assertUsage(t *testing.T, text string) {
+	t.Helper()
+	for _, cmd := range commands() {
+		if !strings.Contains(text, cmd.Name) {
+			t.Errorf("usage does not name %q", cmd.Name)
 		}
-		if stdout != "" {
-			t.Errorf("%v: usage wrote %q to stdout, want stderr only", args, stdout)
-		}
-		for _, cmd := range commands() {
-			if !strings.Contains(stderr, cmd.Name) {
-				t.Errorf("%v: usage does not name %q", args, cmd.Name)
-			}
-			if !strings.Contains(stderr, cmd.Usage) {
-				t.Errorf("%v: usage does not carry %q", args, cmd.Usage)
-			}
-		}
-		for _, line := range wantUsageLines {
-			if !strings.Contains(stderr, line) {
-				t.Errorf("%v: usage does not carry %q", args, line)
-			}
-		}
-		if strings.Contains(stderr, "write to this file instead") {
-			t.Errorf("%v: usage still carries the global flags block", args)
+		if !strings.Contains(text, cmd.Usage) {
+			t.Errorf("usage does not carry %q", cmd.Usage)
 		}
 	}
-	code, _, stderr := call([]string{"frobnicate"}, "")
+	for _, line := range wantUsageLines {
+		if !strings.Contains(text, line) {
+			t.Errorf("usage does not carry %q", line)
+		}
+	}
+	if strings.Contains(text, "write to this file instead") {
+		t.Error("usage still carries the global flags block")
+	}
+}
+
+func TestUsageGoesToStderrWhenNoCommandIsNamed(t *testing.T) {
+	code, stdout, stderr := call(nil, "")
+	if code != 2 {
+		t.Errorf("code=%d, want 2", code)
+	}
+	if stdout != "" {
+		t.Errorf("usage wrote %q to stdout, want stderr only", stdout)
+	}
+	assertUsage(t, stderr)
+
+	code, _, stderr = call([]string{"frobnicate"}, "")
 	if code != 2 || !strings.Contains(stderr, `error: unknown command "frobnicate"`) {
 		t.Errorf("unknown command: code=%d err=%q", code, stderr)
+	}
+}
+
+// TestHelpIsAnAnswerNotAFailure separates the two cases the usage serves. A
+// caller who typed nothing was told what to type, which is a failed
+// invocation; a caller who asked for the usage was given what they asked for,
+// so it goes to standard output and the exit code says the command succeeded.
+func TestHelpIsAnAnswerNotAFailure(t *testing.T) {
+	for _, args := range [][]string{{"-h"}, {"--help"}} {
+		code, stdout, stderr := call(args, "")
+		if code != 0 {
+			t.Errorf("%v: code=%d, want 0", args, code)
+		}
+		if stderr != "" {
+			t.Errorf("%v: help wrote %q to stderr, want stdout only", args, stderr)
+		}
+		assertUsage(t, stdout)
 	}
 }
 
@@ -418,5 +442,55 @@ func TestNilStandardInputIsReportedNotPanicked(t *testing.T) {
 	code := run([]string{"validate", streamPath}, nil, &out, &errb)
 	if code != 2 || !strings.HasPrefix(errb.String(), "error:") {
 		t.Errorf("code=%d err=%q, want 2 and an error: line", code, errb.String())
+	}
+}
+
+// TestALeadingByteOrderMarkIsNotAParseError covers the mark some editors and
+// shell redirections write at the head of a UTF-8 file. It is not part of the
+// JSON, so a reader handed one would otherwise be told their report is
+// malformed, with nothing on screen to show what is wrong with it.
+func TestALeadingByteOrderMarkIsNotAParseError(t *testing.T) {
+	withBOM := "\ufeff" + mustRead(t, fixturePath())
+	code, stdout, stderr := call([]string{"validate", "-"}, withBOM)
+	if code != 0 || !strings.HasPrefix(stdout, "valid:") {
+		t.Fatalf("stdin: code=%d out=%q err=%q", code, stdout, stderr)
+	}
+	path := filepath.Join(t.TempDir(), "bom.json")
+	if err := os.WriteFile(path, []byte(withBOM), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	code, stdout, stderr = call([]string{"validate", path}, "")
+	if code != 0 || !strings.HasPrefix(stdout, "valid:") {
+		t.Fatalf("file: code=%d out=%q err=%q", code, stdout, stderr)
+	}
+}
+
+// TestAggregateReachesAnAdvisoryVerdict covers the one status a report asks
+// for rather than earns: advisory is stated on the way in, and everything
+// else about the status -- the verdict, the rule, the counts, the digests --
+// is left empty for aggregate to compute. The result must be a report that
+// validates, so the advisory path is closed end to end rather than only
+// inside Derive.
+func TestAggregateReachesAnAdvisoryVerdict(t *testing.T) {
+	rep, err := report.Decode([]byte(mustRead(t, fixturePath())))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rep.Counts, rep.Status = report.Counts{}, report.Status{Advisory: true}
+	rep.Identity.ReportID, rep.Provenance.EvidenceDigest = "", ""
+	raw, err := report.Encode(rep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, aggregated, stderr := call([]string{"aggregate", "-"}, string(raw))
+	if code != 0 {
+		t.Fatalf("aggregate: code=%d err=%q", code, stderr)
+	}
+	if !strings.Contains(aggregated, `"overall": "ADVISORY"`) {
+		t.Fatalf("an advisory report did not aggregate to ADVISORY:\n%s", aggregated)
+	}
+	code, stdout, stderr := call([]string{"validate", "-"}, aggregated)
+	if code != 0 {
+		t.Fatalf("the aggregated advisory report does not validate: code=%d out=%q err=%q", code, stdout, stderr)
 	}
 }
