@@ -31,62 +31,57 @@ const (
 	ShapeNone    LocatorShape = ""
 )
 
-// fileSet reports whether any file-group field is set, and whether the group is complete.
-func (l Locator) fileSet() (isSet, complete bool) {
-	isSet = l.File != "" || l.LineStart != 0 || l.LineEnd != 0
-	complete = l.File != "" && l.LineStart >= 1 && l.LineEnd >= l.LineStart
-	return isSet, complete
+// shapeGroup describes one field group's participation in a Locator: whether
+// any of its fields are set, and whether the full group is populated.
+type shapeGroup struct {
+	shape    LocatorShape
+	isSet    bool
+	complete bool
 }
 
-// commandSet reports whether any command-group field is set, and whether the group is complete.
-func (l Locator) commandSet() (isSet, complete bool) {
-	isSet = l.Command != "" || l.Cwd != "" || l.LogRef != "" || l.ExitStatus != nil
-	complete = l.Command != "" && l.Cwd != "" && l.LogRef != "" && l.ExitStatus != nil
-	return isSet, complete
+// fileGroup reports whether any file-group field is set, and whether the group is complete.
+func (l Locator) fileGroup() shapeGroup {
+	isSet := l.File != "" || l.LineStart != 0 || l.LineEnd != 0
+	complete := l.File != "" && l.LineStart >= 1 && l.LineEnd >= l.LineStart
+	return shapeGroup{ShapeFile, isSet, complete}
 }
 
-// passageSet reports whether any passage-group field is set, and whether the group is complete.
-func (l Locator) passageSet() (isSet, complete bool) {
-	isSet = l.Passage != "" || l.SourceRef != "" || l.SourceDateOrVersion != "" || l.AccessDate != ""
-	complete = l.Passage != "" && l.SourceRef != "" && l.SourceDateOrVersion != "" && l.AccessDate != ""
-	return isSet, complete
+// commandGroup reports whether any command-group field is set, and whether the group is complete.
+func (l Locator) commandGroup() shapeGroup {
+	isSet := l.Command != "" || l.Cwd != "" || l.LogRef != "" || l.ExitStatus != nil
+	complete := l.Command != "" && l.Cwd != "" && l.LogRef != "" && l.ExitStatus != nil
+	return shapeGroup{ShapeCommand, isSet, complete}
 }
 
-// noteSet reports whether the note-group field is set; the group is complete whenever it is set.
-func (l Locator) noteSet() (isSet, complete bool) {
-	isSet = l.Note != ""
-	return isSet, isSet
+// passageGroup reports whether any passage-group field is set, and whether the group is complete.
+func (l Locator) passageGroup() shapeGroup {
+	isSet := l.Passage != "" || l.SourceRef != "" || l.SourceDateOrVersion != "" || l.AccessDate != ""
+	complete := l.Passage != "" && l.SourceRef != "" && l.SourceDateOrVersion != "" && l.AccessDate != ""
+	return shapeGroup{ShapePassage, isSet, complete}
+}
+
+// noteGroup reports whether the note-group field is set; the group is complete whenever it is set.
+func (l Locator) noteGroup() shapeGroup {
+	isSet := l.Note != ""
+	return shapeGroup{ShapeNote, isSet, isSet}
 }
 
 // Shape returns the one complete shape; partial or mixed fields yield ShapeNone.
 func (l Locator) Shape() LocatorShape {
-	fileIsSet, fileComplete := l.fileSet()
-	cmdIsSet, cmdComplete := l.commandSet()
-	passIsSet, passComplete := l.passageSet()
-	noteIsSet, noteComplete := l.noteSet()
+	groups := []shapeGroup{l.fileGroup(), l.commandGroup(), l.passageGroup(), l.noteGroup()}
 
-	groupsSet := 0
-	for _, set := range []bool{fileIsSet, cmdIsSet, passIsSet, noteIsSet} {
-		if set {
-			groupsSet++
+	var found shapeGroup
+	setCount := 0
+	for _, g := range groups {
+		if g.isSet {
+			setCount++
+			found = g
 		}
 	}
-	if groupsSet != 1 {
+	if setCount != 1 || !found.complete {
 		return ShapeNone
 	}
-
-	switch {
-	case fileIsSet && fileComplete:
-		return ShapeFile
-	case cmdIsSet && cmdComplete:
-		return ShapeCommand
-	case passIsSet && passComplete:
-		return ShapePassage
-	case noteIsSet && noteComplete:
-		return ShapeNote
-	default:
-		return ShapeNone
-	}
+	return found.shape
 }
 
 // Qualifies is true for file, command, and passage: what the evaluator opened or ran.
