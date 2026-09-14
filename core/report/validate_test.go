@@ -15,6 +15,16 @@ func hasRule(vs []Violation, rule string) bool {
 	return false
 }
 
+// pathOf returns the path of the first violation citing the given rule id.
+func pathOf(vs []Violation, rule string) string {
+	for _, v := range vs {
+		if v.Rule == rule {
+			return v.Path
+		}
+	}
+	return ""
+}
+
 // violationsFor validates the worked example with one mutation applied.
 func violationsFor(t *testing.T, mutate func(rep *Report)) []Violation {
 	t.Helper()
@@ -57,6 +67,9 @@ func TestValidateRejectsPassWithoutObservedLocator(t *testing.T) {
 	_, violations, _ := Validate(raw)
 	if !hasRule(violations, "evidence.pass_requires_observed_locator") {
 		t.Fatalf("violations = %v", violations)
+	}
+	if got := pathOf(violations, "evidence.pass_requires_observed_locator"); got != "criteria[3].evidence" {
+		t.Fatalf("path = %q, want %q", got, "criteria[3].evidence")
 	}
 }
 

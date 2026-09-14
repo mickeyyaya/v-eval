@@ -15,6 +15,49 @@ import (
 // fail whenever the two drift apart: a field added to one and not the other,
 // a requiredness that disagrees, or an enum value only one side knows.
 
+// driftTypes binds every schema object that declares its own property set to
+// the Go struct it must mirror. A key is the object's location in the schema:
+// "$" is the report itself, a nested object is dotted onto its parent, "[]"
+// marks an array's items, and "$defs.x" is a named definition. Objects reached
+// through a $ref are bound once, under the definition they come from.
+func driftTypes() map[string]any {
+	return map[string]any{
+		"$":                               Report{},
+		"identity":                        Identity{},
+		"identity.artifact":               Artifact{},
+		"identity.task":                   Task{},
+		"identity.host":                   Host{},
+		"contract":                        Contract{},
+		"contract.conflicts[]":            Conflict{},
+		"routing":                         Routing{},
+		"routing.supplied[]":              SuppliedSource{},
+		"routing.profiles[]":              ProfileRef{},
+		"routing.adapters_run[]":          AdapterRun{},
+		"routing.adapters_skipped[]":      AdapterSkipped{},
+		"routing.ambiguity[]":             Ambiguity{},
+		"observations[]":                  Observation{},
+		"claims[]":                        Claim{},
+		"criteria[]":                      CriterionResult{},
+		"forensics[]":                     Finding{},
+		"dimensions[]":                    Dimension{},
+		"counts":                          Counts{},
+		"counts.coverage":                 Coverage{},
+		"status":                          Status{},
+		"improvement[]":                   Improvement{},
+		"limitations":                     Limitations{},
+		"provenance":                      Provenance{},
+		"provenance.tools[]":              ToolRef{},
+		"provenance.commands[]":           CommandRecord{},
+		"provenance.environment":          Environment{},
+		"learning":                        Learning{},
+		"learning.precedents_retrieved[]": PrecedentRef{},
+		"$defs.criterion":                 Criterion{},
+		"$defs.evidence":                  Evidence{},
+		"$defs.evidence.provenance":       EvidenceProvenance{},
+		"$defs.tally":                     Tally{},
+	}
+}
+
 // schemaDoc decodes the embedded JSON Schema document.
 func schemaDoc(t *testing.T) map[string]any {
 	t.Helper()
@@ -39,43 +82,74 @@ func node(t *testing.T, doc map[string]any, keys ...string) map[string]any {
 	return current
 }
 
-// driftObject binds one schema object to the Go struct it must mirror.
-type driftObject struct {
-	name   string
-	path   []string
-	goType any
+// schemaObject is one object found in the schema, with where it was found.
+type schemaObject struct {
+	key string
+	obj map[string]any
 }
 
-// driftObjects lists every schema object that has its own property set, with
-// the Go type that defines it. TestSchemaCoversEveryObject keeps this list
-// complete.
-func driftObjects() []driftObject {
-	return []driftObject{
-		{"$", nil, Report{}},
-		{"identity", []string{"properties", "identity"}, Identity{}},
-		{"contract", []string{"properties", "contract"}, Contract{}},
-		{"routing", []string{"properties", "routing"}, Routing{}},
-		{"observations[]", []string{"properties", "observations", "items"}, Observation{}},
-		{"claims[]", []string{"properties", "claims", "items"}, Claim{}},
-		{"criteria[]", []string{"properties", "criteria", "items"}, CriterionResult{}},
-		{"forensics[]", []string{"properties", "forensics", "items"}, Finding{}},
-		{"dimensions[]", []string{"properties", "dimensions", "items"}, Dimension{}},
-		{"counts", []string{"properties", "counts"}, Counts{}},
-		{"status", []string{"properties", "status"}, Status{}},
-		{"improvement[]", []string{"properties", "improvement", "items"}, Improvement{}},
-		{"limitations", []string{"properties", "limitations"}, Limitations{}},
-		{"provenance", []string{"properties", "provenance"}, Provenance{}},
-		{"learning", []string{"properties", "learning"}, Learning{}},
-		{"$defs.criterion", []string{"$defs", "criterion"}, Criterion{}},
-		{"$defs.evidence", []string{"$defs", "evidence"}, Evidence{}},
-		{"$defs.tally", []string{"$defs", "tally"}, Tally{}},
+// collectObjects returns every schema object that declares its own property
+// set: the report, each named definition, and everything nested inside them,
+// array items included. An object with no "properties" is a leaf, which is
+// what an enum, a $ref to a definition collected in its own right, and a
+// free-form map such as runtime_versions all are.
+func collectObjects(t *testing.T, doc map[string]any) []schemaObject {
+	t.Helper()
+	var found []schemaObject
+
+	var visit func(key string, obj map[string]any)
+	visit = func(key string, obj map[string]any) {
+		found = append(found, schemaObject{key: key, obj: obj})
+		properties := node(t, obj, "properties")
+		for _, name := range sortedKeys(properties) {
+			property, ok := properties[name].(map[string]any)
+			if !ok {
+				t.Fatalf("schema: %s.%s is not an object", key, name)
+			}
+			if child, suffix := objectOf(property); child != nil {
+				visit(childKey(key, name+suffix), child)
+			}
+		}
 	}
+
+	visit("$", doc)
+	for _, name := range sortedKeys(node(t, doc, "$defs")) {
+		definition := node(t, doc, "$defs", name)
+		if _, has := definition["properties"]; has {
+			visit("$defs."+name, definition)
+		}
+	}
+	return found
+}
+
+// objectOf returns the object a schema property declares inline — itself, or
+// its array items — with the suffix its key carries, or nil for a leaf.
+func objectOf(property map[string]any) (map[string]any, string) {
+	if _, ok := property["properties"]; ok {
+		return property, ""
+	}
+	if items, ok := property["items"].(map[string]any); ok {
+		if _, ok := items["properties"]; ok {
+			return items, "[]"
+		}
+	}
+	return nil, ""
+}
+
+// childKey names an object nested inside another: a property of the report
+// keeps its own name, anything deeper is dotted onto its parent's key.
+func childKey(parent, name string) string {
+	if parent == "$" {
+		return name
+	}
+	return parent + "." + name
 }
 
 // jsonTags returns every json tag name on a struct, and the subset declared
-// without omitempty, both sorted.
+// without omitempty, both sorted and never nil.
 func jsonTags(t *testing.T, goType any) (all, mandatory []string) {
 	t.Helper()
+	all, mandatory = []string{}, []string{}
 	typ := reflect.TypeOf(goType)
 	for i := 0; i < typ.NumField(); i++ {
 		tag, ok := typ.Field(i).Tag.Lookup("json")
@@ -93,19 +167,24 @@ func jsonTags(t *testing.T, goType any) (all, mandatory []string) {
 	return all, mandatory
 }
 
-// keys returns the sorted key set of a schema object's named map.
-func keys(t *testing.T, obj map[string]any, field string) []string {
-	t.Helper()
-	raw, ok := obj[field].(map[string]any)
-	if !ok {
-		t.Fatalf("schema object has no %s map", field)
-	}
+// sortedKeys returns a schema map's key set, sorted.
+func sortedKeys(raw map[string]any) []string {
 	names := make([]string, 0, len(raw))
 	for name := range raw {
 		names = append(names, name)
 	}
 	sort.Strings(names)
 	return names
+}
+
+// requiredNames returns an object's required list, empty when it states none.
+func requiredNames(t *testing.T, obj map[string]any) []string {
+	t.Helper()
+	raw, ok := obj["required"]
+	if !ok {
+		return []string{}
+	}
+	return stringList(t, raw, true)
 }
 
 // stringList converts a schema string array, sorted when sortIt is set.
@@ -131,64 +210,54 @@ func stringList(t *testing.T, raw any, sortIt bool) []string {
 
 func TestSchemaPropertiesMatchGoFields(t *testing.T) {
 	t.Parallel()
-	doc := schemaDoc(t)
-	for _, object := range driftObjects() {
-		t.Run(object.name, func(t *testing.T) {
+	types := driftTypes()
+	for _, object := range collectObjects(t, schemaDoc(t)) {
+		t.Run(object.key, func(t *testing.T) {
 			t.Parallel()
-			obj := node(t, doc, object.path...)
-			all, mandatory := jsonTags(t, object.goType)
-			if got := keys(t, obj, "properties"); !reflect.DeepEqual(got, all) {
+			goType, ok := types[object.key]
+			if !ok {
+				t.Fatalf("schema object %s is not bound to a Go type in driftTypes", object.key)
+			}
+			all, mandatory := jsonTags(t, goType)
+			if got := sortedKeys(node(t, object.obj, "properties")); !reflect.DeepEqual(got, all) {
 				t.Fatalf("schema properties %v, go json tags %v", got, all)
 			}
-			if got := stringList(t, obj["required"], true); !reflect.DeepEqual(got, mandatory) {
+			if got := requiredNames(t, object.obj); !reflect.DeepEqual(got, mandatory) {
 				t.Fatalf("schema required %v, go tags without omitempty %v", got, mandatory)
 			}
 		})
 	}
 }
 
-// TestSchemaCoversEveryObject fails when the schema grows an object that no
-// Go type is checked against, which would let that object drift unnoticed.
+// TestSchemaCoversEveryObject fails when the schema grows an object that no Go
+// type is checked against, which would let that object drift unnoticed, and
+// when driftTypes keeps a binding the schema no longer has.
 func TestSchemaCoversEveryObject(t *testing.T) {
 	t.Parallel()
-	doc := schemaDoc(t)
-	covered := map[string]bool{}
-	for _, object := range driftObjects() {
-		covered[object.name] = true
+	types := driftTypes()
+	found := map[string]bool{}
+	var unmapped []string
+	for _, object := range collectObjects(t, schemaDoc(t)) {
+		found[object.key] = true
+		if _, ok := types[object.key]; !ok {
+			unmapped = append(unmapped, object.key)
+		}
+	}
+	if len(unmapped) > 0 {
+		sort.Strings(unmapped)
+		t.Errorf("schema objects not bound to a Go type in driftTypes: %v", unmapped)
 	}
 
-	for name, raw := range node(t, doc, "properties") {
-		property, ok := raw.(map[string]any)
-		if !ok {
-			t.Fatalf("schema: properties.%s is not an object", name)
-		}
-		if key := objectKey(name, property); key != "" && !covered[key] {
-			t.Fatalf("schema object %s is not bound to a Go type in driftObjects", key)
+	var stale []string
+	for key := range types {
+		if !found[key] {
+			stale = append(stale, key)
 		}
 	}
-	for name, raw := range node(t, doc, "$defs") {
-		definition, ok := raw.(map[string]any)
-		if !ok {
-			t.Fatalf("schema: $defs.%s is not an object", name)
-		}
-		if _, has := definition["properties"]; has && !covered["$defs."+name] {
-			t.Fatalf("schema object $defs.%s is not bound to a Go type in driftObjects", name)
-		}
+	if len(stale) > 0 {
+		sort.Strings(stale)
+		t.Errorf("driftTypes binds objects the schema does not contain: %v", stale)
 	}
-}
-
-// objectKey names the driftObjects entry a schema property needs, or "" when
-// the property carries no property set of its own (a scalar, enum, or $ref).
-func objectKey(name string, property map[string]any) string {
-	if _, ok := property["properties"]; ok {
-		return name
-	}
-	if items, ok := property["items"].(map[string]any); ok {
-		if _, ok := items["properties"]; ok {
-			return name + "[]"
-		}
-	}
-	return ""
 }
 
 func TestSchemaEnumsMatchGoConstants(t *testing.T) {
@@ -225,7 +294,8 @@ func TestSchemaEnumsMatchGoConstants(t *testing.T) {
 }
 
 // TestSchemaLocatorBranchesCoverEveryField checks the locator, whose shape the
-// schema states as four exclusive branches rather than one property set.
+// schema states as four exclusive branches rather than one property set. Each
+// branch is partial by design, so only their union is compared.
 func TestSchemaLocatorBranchesCoverEveryField(t *testing.T) {
 	t.Parallel()
 	doc := schemaDoc(t)
@@ -240,14 +310,13 @@ func TestSchemaLocatorBranchesCoverEveryField(t *testing.T) {
 		if !ok {
 			t.Fatalf("locator branch %v is not an object", raw)
 		}
-		for _, name := range keys(t, branch, "properties") {
+		for _, name := range sortedKeys(node(t, branch, "properties")) {
 			union[name] = struct{}{}
 		}
 	}
 
-	got := keys(t, map[string]any{"properties": union}, "properties")
 	all, _ := jsonTags(t, Locator{})
-	if !reflect.DeepEqual(got, all) {
+	if got := sortedKeys(union); !reflect.DeepEqual(got, all) {
 		t.Fatalf("locator branch properties %v, go json tags %v", got, all)
 	}
 }

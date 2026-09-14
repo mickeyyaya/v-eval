@@ -531,14 +531,17 @@ func ruleCountsMatch(rep Report) []Violation {
 		Message: fmt.Sprintf("stated %+v, recomputed %+v", rep.Counts, want)}}
 }
 
-// ruleStatusMatch requires the stated verdict to be the verdict the rules give.
+// ruleStatusMatch requires the stated verdict to be the verdict the rules
+// give. The message quotes both sides in full Go syntax: a status differs from
+// its recomputation by one field as often as by all four, and %+v renders a
+// changed Overall and a changed BlockedBy alike.
 func ruleStatusMatch(rep Report) []Violation {
 	want := Derive(rep.Contract, rep.Criteria, rep.Status.Advisory)
 	if reflect.DeepEqual(rep.Status, want) {
 		return nil
 	}
 	return []Violation{{Path: "status", Rule: RuleStatusMatch,
-		Message: fmt.Sprintf("stated %+v, recomputed %+v", rep.Status, want)}}
+		Message: fmt.Sprintf("stated %#v, recomputed %#v", rep.Status, want)}}
 }
 
 // ruleEvidenceDigest requires the stated evidence digest to be the digest of
