@@ -33,7 +33,6 @@ func violationsFor(t *testing.T, mutate func(rep *Report)) []Violation {
 
 func TestValidateAcceptsFixture(t *testing.T) {
 	t.Parallel()
-	t.Skip("until Task 8 fills the digests")
 	raw, _ := os.ReadFile("testdata/worked-example.json")
 	_, violations, err := Validate(raw)
 	if err != nil || len(violations) != 0 {
@@ -63,7 +62,6 @@ func TestValidateRejectsPassWithoutObservedLocator(t *testing.T) {
 
 func TestValidateCatchesInventedStatusAndBrokenLinks(t *testing.T) {
 	t.Parallel()
-	t.Skip("until Task 8 fills the digests")
 	rep := loadFixture(t)
 	rep.Status.Overall = OverallPass
 	raw, _ := Encode(rep)

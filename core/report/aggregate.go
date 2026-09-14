@@ -177,14 +177,18 @@ func bump(t *Tally, result Result) {
 	}
 }
 
-// Aggregate returns a copy of rep with its derived fields recomputed from the
-// rest of the report, so that a report never states a count or a verdict its
-// own contents do not support.
+// Aggregate returns a copy of rep with its four derived fields recomputed
+// from the rest of the report, so that a report never states a count, a
+// verdict, or a digest its own contents do not support. It is what the four
+// derived validation rules check against, and it is idempotent.
 //
-// TODO(task-8): also fill Identity.ReportID and Provenance.EvidenceDigest, and
-// normalise nil slices, so that the four derived-field rules all hold.
+// Order matters: the evidence digest is part of what the report id covers, so
+// the id is computed last, over a report that is otherwise already final.
 func Aggregate(rep Report) Report {
+	rep = normalize(rep)
 	rep.Counts = TallyCounts(rep.Contract, rep.Criteria)
 	rep.Status = Derive(rep.Contract, rep.Criteria, rep.Status.Advisory)
+	rep.Provenance.EvidenceDigest = EvidenceDigest(rep)
+	rep.Identity.ReportID = ReportID(rep)
 	return rep
 }

@@ -1,6 +1,6 @@
 {
   "identity": {
-    "report_id": "",
+    "report_id": "sha256:d94612b77ca75da0ced6b5979ddb1454a3472c995b82dc275a52e3fd135db471",
     "schema_version": "0.1.0",
     "veval_version": "0.0.0-dev",
     "skill_revision": "draft-2",
@@ -418,6 +418,6 @@
     "isolation_levels_used": [
       "none"
     ],
-    "evidence_digest": ""
+    "evidence_digest": "sha256:8be74860a3e3c2458d4b295496ecd519a8f3cca75929fc7b16cccd529d9d9d94"
   }
 }
