@@ -307,12 +307,15 @@ func TestSARIFJudgmentEvidenceCarriesRubricAndModel(t *testing.T) {
 	// produced it, and a reader cannot weigh the judgment without them.
 	got := resultsFor(t, mustSARIF(t, loadReport(t, "extended-example")), "E6")[0]
 	judgment := evidenceOf(t, got)[1]
+	if judgment["rubric_version"] != "integrity-rubric-0.2" || judgment["model"] != "unknown" {
+		t.Fatalf("judgment evidence = %v, want the rubric version and the model the report states", judgment)
+	}
 	provenance, ok := judgment["provenance"].(map[string]any)
 	if !ok {
 		t.Fatalf("judgment evidence carries no provenance: %v", judgment)
 	}
-	if provenance["rubric_version"] != "integrity-rubric-0.2" || provenance["model"] != "unknown" {
-		t.Fatalf("provenance = %v, want the rubric version and the model", provenance)
+	if _, ok := provenance["rubric_version"]; ok {
+		t.Fatalf("provenance = %v, want only what produced the evidence and when", provenance)
 	}
 }
 
@@ -321,12 +324,12 @@ func TestSARIFEvidenceOmitsAbsentRubricAndModel(t *testing.T) {
 	// Inspection evidence names no rubric and no model, and an empty string
 	// would read as one that is unknown rather than one that does not apply.
 	got := resultsFor(t, mustSARIF(t, loadFixture(t)), "C1")[0]
-	provenance := evidenceOf(t, got)[0]["provenance"].(map[string]any)
-	if _, ok := provenance["rubric_version"]; ok {
-		t.Fatalf("provenance = %v, want no empty rubric_version", provenance)
+	entry := evidenceOf(t, got)[0]
+	if _, ok := entry["rubric_version"]; ok {
+		t.Fatalf("evidence entry = %v, want no empty rubric_version", entry)
 	}
-	if _, ok := provenance["model"]; ok {
-		t.Fatalf("provenance = %v, want no empty model", provenance)
+	if _, ok := entry["model"]; ok {
+		t.Fatalf("evidence entry = %v, want no empty model", entry)
 	}
 }
 

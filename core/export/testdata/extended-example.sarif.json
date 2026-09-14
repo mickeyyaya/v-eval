@@ -365,17 +365,17 @@
               {
                 "isolation": "none",
                 "kind": "judgment",
+                "model": "unknown",
                 "note": "Integrity rubric applied to the modification-time drift above",
                 "observation": "The rubric cannot separate a benign checkout touch from a content change without the pre-evaluation tree digest.",
                 "origin": "observed",
                 "provenance": {
-                  "model": "unknown",
                   "revision": "git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f",
-                  "rubric_version": "integrity-rubric-0.2",
                   "timestamp": "2026-09-14T00:07:10Z",
                   "tool": "assistant",
                   "version": "fixture"
-                }
+                },
+                "rubric_version": "integrity-rubric-0.2"
               }
             ],
             "veval_result": "UNKNOWN"

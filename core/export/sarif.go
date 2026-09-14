@@ -191,8 +191,12 @@ func locations(evidence []report.Evidence) []Location {
 }
 
 // evidenceProperties lists every piece of evidence cited, so that the record
-// of what was seen survives the export whole: what kind of evidence it is,
-// where it came from, what isolation it ran under, and what was observed.
+// of what was seen survives the export whole and in the shape the report
+// states it: what kind of evidence it is, where it came from, what isolation
+// it ran under, what was observed, what produced it, and -- for a judgment --
+// the rubric and model behind it. An empty rubric version or model is left
+// out: it would read as one nobody can name rather than as a kind of evidence
+// none applies to.
 func evidenceProperties(evidence []report.Evidence) []map[string]any {
 	out := make([]map[string]any, 0, len(evidence))
 	for _, item := range evidence {
@@ -201,31 +205,29 @@ func evidenceProperties(evidence []report.Evidence) []map[string]any {
 		entry["origin"] = string(item.Origin)
 		entry["isolation"] = string(item.Isolation)
 		entry["observation"] = item.Observation
-		entry["provenance"] = provenanceFields(item)
+		entry["provenance"] = provenanceFields(item.Provenance)
+		if item.RubricVersion != "" {
+			entry["rubric_version"] = item.RubricVersion
+		}
+		if item.Model != "" {
+			entry["model"] = item.Model
+		}
 		out = append(out, entry)
 	}
 	return out
 }
 
-// provenanceFields records what produced a piece of evidence and when. A
-// rubric version and a model are part of that answer for a judgment and part
-// of no other kind, so they are written only where the report states them: an
-// empty string here would read as a rubric nobody can name rather than as a
-// kind of evidence no rubric applies to.
-func provenanceFields(item report.Evidence) map[string]any {
-	fields := map[string]any{
-		"tool":      item.Provenance.Tool,
-		"version":   item.Provenance.Version,
-		"revision":  item.Provenance.Revision,
-		"timestamp": item.Provenance.Timestamp,
+// provenanceFields records what produced a piece of evidence and when, and
+// holds what the report's own provenance object holds and nothing else. A
+// rubric version and a model sit on the evidence beside it, where the report
+// puts them.
+func provenanceFields(provenance report.EvidenceProvenance) map[string]any {
+	return map[string]any{
+		"tool":      provenance.Tool,
+		"version":   provenance.Version,
+		"revision":  provenance.Revision,
+		"timestamp": provenance.Timestamp,
 	}
-	if item.RubricVersion != "" {
-		fields["rubric_version"] = item.RubricVersion
-	}
-	if item.Model != "" {
-		fields["model"] = item.Model
-	}
-	return fields
 }
 
 // locatorFields spells out where a piece of evidence came from, in the report's
