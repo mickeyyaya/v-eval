@@ -72,7 +72,14 @@ Each criterion receives exactly one result: PASS, FAIL, UNKNOWN, ERROR, or NOT_A
 
 Write the JSON report in the shape specified by [the report schema](../../docs/architecture/report-schema.md), then render it. Section order: task and artifact identity; contract status; routing rationale; observations; claim-to-verification table; per-criterion results with method, evidence, isolation level, and next action; forensic findings; dimension metrics where requested; counts for required and optional criteria separately and coverage as `(PASS + FAIL) / applicable`; overall status; improvement brief (issue, location, suggested change or missing investigation, constraints to preserve, how to verify); limitations and material not inspected; provenance; learned material referenced.
 
-When the v-eval core is present, run `veval validate` on the JSON and `veval render --html` to produce the HTML report. When it is not, write the JSON and a Markdown rendering by hand and state in the report that the core did not validate it.
+Write it as `report.json` with the derived fields left empty (`counts`, `status`, `report_id`, and `provenance.evidence_digest`); the core computes them from the criteria, and a hand-written value there is a claim about arithmetic nobody checked. When the v-eval core is present, run, in this order:
+
+1. `veval aggregate report.json -o report.json`, which fills those derived fields.
+2. `veval validate report.json`, and fix every violation it prints before reporting anything.
+3. `veval render --format html report.json -o report.html` and `veval render --format md report.json -o report.md` for the readable renders.
+4. Optionally `veval export sarif report.json -o report.sarif.json` when the reader wants the findings in a code-scanning surface.
+
+When `veval` is absent, say so in `limitations.unknown_metadata`, compute the counts and the overall status by the rules in step 6, leave `report_id` and `provenance.evidence_digest` empty rather than inventing a digest, write the Markdown rendering by hand, and label the report core-unvalidated wherever its status is stated.
 
 ### 8. Record reactions
 
@@ -80,7 +87,7 @@ If the user accepts, rejects, corrects, overrides, or questions a result, and th
 
 ## Host adaptation
 
-This skill speaks in actions: read a file, run a command, search content, open a URL. The mapping to a host's tools is in `references/hosts/<host>.md` for Claude Code, Codex, Gemini CLI, Antigravity, Hermes, and ollama-backed agents. When a host lacks a capability, apply the rule's intent with what exists: no command execution means execution criteria are UNKNOWN with the reason stated; no file reading means the evaluation cannot proceed and the report says so.
+This skill speaks in actions: read a file, search file contents, list files, run a command, fetch a URL, dispatch a subagent, invoke the v-eval core. The mapping from those actions to a host's own tools is one file per host, each carrying the same rows in the same order: [Claude Code](references/hosts/claude-code.md), [Codex](references/hosts/codex.md), [Gemini CLI](references/hosts/gemini-cli.md), [Antigravity](references/hosts/antigravity.md), [Hermes](references/hosts/hermes.md), and [ollama-backed agents](references/hosts/ollama.md). Where a host's own documentation does not name the tool for an action, the file says so instead of guessing; trust the tool list you actually have over any table, including those, and record which tool you used. When a host lacks a capability, apply the rule's intent with what exists: no command execution means execution criteria are UNKNOWN with the reason stated; no file reading means the evaluation cannot proceed and the report says so.
 
 Weak or small local models must not compute the rollup or invent evidence: use the core when present, keep results UNKNOWN when unsure, and prefer quoting over paraphrasing.
 

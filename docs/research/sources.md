@@ -2,7 +2,7 @@
 
 Generated from every Markdown file in the repository. Each external link cited anywhere in the documentation appears once, with the documents that cite it. All links were accessed on the research dates stated in the citing documents; this register does not re-verify them. Regenerate with `python tools/docs/vdocs.py register .` from the repository root; `--check` verifies the committed file is current.
 
-Unique external links: 293. Citing documents: 72.
+Unique external links: 294. Citing documents: 80.
 
 ## aclanthology.org
 
@@ -43,6 +43,10 @@ Unique external links: 293. Citing documents: 72.
 ## antigravity.google
 
 - [https://antigravity.google/docs/cli/plugins](https://antigravity.google/docs/cli/plugins) — cited in `docs/decisions/0020-portability-constraints.md`
+
+## api.example.test
+
+- [https://api.example.test/docs/rate-limits](https://api.example.test/docs/rate-limits) — cited in `core/render/testdata/extended-example.md`
 
 ## arcprize.org
 
