@@ -68,3 +68,30 @@ func TestCellKeepsTableRowsIntact(t *testing.T) {
 		t.Errorf("cell() = %q, want %q", got, `a \| b<br>c`)
 	}
 }
+
+func TestRequirementFallsBackWhenTheContractDoesNotNameTheID(t *testing.T) {
+	t.Parallel()
+	contract := report.Contract{Criteria: []report.Criterion{{ID: "C1", Requirement: "Addresses collapse"}}}
+	if got := requirement(contract, "C1"); got != "Addresses collapse" {
+		t.Errorf("requirement() = %q, want %q", got, "Addresses collapse")
+	}
+	if got := requirement(contract, "C9"); got != "(not in contract)" {
+		t.Errorf("requirement() = %q, want %q", got, "(not in contract)")
+	}
+}
+
+func TestIsJudgmentAndOrUnknown(t *testing.T) {
+	t.Parallel()
+	if !isJudgment(report.Evidence{Kind: report.KindJudgment}) {
+		t.Error("judgment evidence must be recognised")
+	}
+	if isJudgment(report.Evidence{Kind: report.KindInspection}) {
+		t.Error("inspection evidence is not a judgment")
+	}
+	if got := orUnknown(""); got != "unknown" {
+		t.Errorf("orUnknown(\"\") = %q, want %q", got, "unknown")
+	}
+	if got := orUnknown("gpt-9"); got != "gpt-9" {
+		t.Errorf("orUnknown() = %q, want %q", got, "gpt-9")
+	}
+}

@@ -1,11 +1,14 @@
 # v-eval report: service_change git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f
 
 - Report id: sha256:72760dea420ab21ef325ba034cc44081769cc290b495a524b53efd3c0f895ac4
-- Created: 2026-09-14T00:03:00Z by fixture on any/any
+- Created: 2026-09-14T00:03:00Z
+- Host: fixture on any/any, model unknown
 - Schema 0.1.0, v-eval 0.0.0-dev, skill revision draft-2
 - Contract: extended-example version 1 (provisional)
 - Artifact paths: examples/extended/service.go, examples/extended/service_test.go
 - Requested outcome: Enforce the vendor's published per-key rate limit in the request path, keep the regression suite passing, and ship a reproducible container image.
+- Intended user: release engineer deciding whether to deploy the change
+- Brief: examples/extended/brief.md#intent
 
 ## Status
 
@@ -18,34 +21,34 @@ Overall: INCOMPLETE
 ## Observations
 
 - **O1** (assistant) The request path enforces the limit per API key, matching the published documentation. Criteria: E2.
-  - [kind inspection, isolation none] examples/extended/service.go:48-52 — const rateLimitPerMinute = 100 // per API key
+  - [kind inspection, isolation none] examples/extended/service.go:48-52 — const rateLimitPerMinute = 100 // per API key — via assistant fixture
 
 - **O2** (adapter) The evaluation host has no container toolchain, so the reproducibility and throughput checks could not run. Criteria: E3, E4.
-  - [kind execution, isolation none] docker --version (exit 127) — zsh: command not found: docker
+  - [kind execution, isolation none] docker --version (exit 127) — zsh: command not found: docker — via shell zsh 5.9
 
 ## Claims
 
 | ID | Claim | Status | Location | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| CL1 | The regression suite passes on this revision. | verified | pull request description, paragraph 1 | [kind execution, isolation worktree] go test ./... (exit 0) — ok  github.com/example/service  1.204s; 42 tests, 0 failures | Re-run by the evaluator in a worktree checked out at this revision. |
+| CL1 | The regression suite passes on this revision. | verified | pull request description, paragraph 1 | [kind execution, isolation worktree] go test ./... (exit 0) — ok  github.com/example/service  1.204s; 42 tests, 0 failures — via go 1.23.1 | Re-run by the evaluator in a worktree checked out at this revision. |
 | CL2 | Throughput improved to 610 requests per second. | unverified | pull request description, paragraph 2 | none | No workload, tool, or log accompanies the number. |
 
 ## Criteria
 
-| ID | Result | Method | Evidence and reasoning | Next action |
-| --- | --- | --- | --- | --- |
-| E1 | PASS | execution | [kind execution, isolation worktree] go test ./... (exit 0) — ok  github.com/example/service  1.204s; 42 tests, 0 failures<br>The suite ran in a worktree checked out at this revision and exited zero with no failures reported. The conclusion covers the suite as supplied, not untested paths. | None. |
-| E2 | PASS | source_verification | [kind inspection, isolation none] Clients may issue at most 100 requests per minute per API key. from https://api.example.test/docs/rate-limits (2026-08-30) — The vendor states the limit as 100 requests per minute per API key.<br>[kind inspection, isolation none] examples/extended/service.go:48-52 — const rateLimitPerMinute = 100 // per API key<br>The enforced constant is 100 per minute per key, the same limit and the same unit the cited documentation states at the version read. | None. |
-| E3 | UNKNOWN | deterministic_check | [kind supplied, isolation none] Benchmark number quoted in the pull request description, paragraph 2 — Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied)<br>No benchmark ran on this host, so the throughput dimension carries no measured value and the target is neither met nor missed.<br>Shared cause with E4.<br>Dimensions: throughput. | Run the stated workload and record throughput with the tool and version that produced it. |
-| E4 | ERROR | execution | [kind execution, isolation none] docker build --no-cache . (exit 127) — zsh: command not found: docker<br>The build never started: the container toolchain is absent from the evaluation host. Reproducibility is untested here, not refuted.<br>Shared cause with E3. | Re-run the evaluation on a host that has the container toolchain installed. |
-| E5 | NOT_APPLICABLE | static_inspection | [kind inspection, isolation none] examples/extended/vendor.txt:1-1 — # no vendored third-party sources at this revision<br>This revision vendors no third-party sources, so the header requirement has nothing to apply to. | None while the revision vendors nothing. |
-| E6 | UNKNOWN | rubric_judgment | [kind inspection, isolation none] examples/extended/service.go:1-1 — Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.<br>[kind judgment, isolation none] Integrity rubric applied to the modification-time drift above — The rubric cannot separate a benign checkout touch from a content change without the pre-evaluation tree digest.<br>A tracked file's modification time moved during the evaluation, and no pre-evaluation tree digest was recorded, so whether the artifact changed cannot be settled either way. | Record a tree digest before evaluation begins, then re-run and compare. |
+| ID | Requirement | Result | Method | Evidence and reasoning | Next action |
+| --- | --- | --- | --- | --- | --- |
+| E1 | The regression suite passes against this exact revision | PASS | execution | [kind execution, isolation worktree] go test ./... (exit 0) — ok  github.com/example/service  1.204s; 42 tests, 0 failures — via go 1.23.1<br>The suite ran in a worktree checked out at this revision and exited zero with no failures reported. The conclusion covers the suite as supplied, not untested paths. | None. |
+| E2 | The enforced rate limit matches the vendor's published limit | PASS | source_verification | [kind inspection, isolation none] Clients may issue at most 100 requests per minute per API key. from https://api.example.test/docs/rate-limits (2026-08-30) — The vendor states the limit as 100 requests per minute per API key. — via assistant fixture<br>[kind inspection, isolation none] examples/extended/service.go:48-52 — const rateLimitPerMinute = 100 // per API key — via assistant fixture<br>The enforced constant is 100 per minute per key, the same limit and the same unit the cited documentation states at the version read. | None. |
+| E3 | Throughput stays at or above the stated target | UNKNOWN | deterministic_check | [kind supplied, isolation none] Benchmark number quoted in the pull request description, paragraph 2 — Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied) — via assistant fixture<br>No benchmark ran on this host, so the throughput dimension carries no measured value and the target is neither met nor missed.<br>Shared cause with E4.<br>Dimensions: throughput. | Run the stated workload and record throughput with the tool and version that produced it. |
+| E4 | The container image builds reproducibly from the revision | ERROR | execution | [kind execution, isolation none] docker build --no-cache . (exit 127) — zsh: command not found: docker — via shell zsh 5.9<br>The build never started: the container toolchain is absent from the evaluation host. Reproducibility is untested here, not refuted.<br>Shared cause with E3. | Re-run the evaluation on a host that has the container toolchain installed. |
+| E5 | Vendored third-party sources carry their upstream license headers | NOT_APPLICABLE | static_inspection | [kind inspection, isolation none] examples/extended/vendor.txt:1-1 — # no vendored third-party sources at this revision — via assistant fixture<br>This revision vendors no third-party sources, so the header requirement has nothing to apply to. | None while the revision vendors nothing. |
+| E6 | The artifact was not modified during evaluation | UNKNOWN | rubric_judgment | [kind inspection, isolation none] examples/extended/service.go:1-1 — Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z. — via mtime-drift 0.3<br>[kind judgment, isolation none] Integrity rubric applied to the modification-time drift above — The rubric cannot separate a benign checkout touch from a content change without the pre-evaluation tree digest. — via assistant fixture, rubric integrity-rubric-0.2, model unknown<br>A tracked file's modification time moved during the evaluation, and no pre-evaluation tree digest was recorded, so whether the artifact changed cannot be settled either way. | Record a tree digest before evaluation begins, then re-run and compare. |
 
 ## Forensics
 
 - **F1** mtime-drift 0.3 on E6: severity suspicious, disposition open.
   - Benign alternative: A checkout or a formatter touched the file without changing its contents.
-  - [kind inspection, isolation none] examples/extended/service.go:1-1 — Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z.
+  - [kind inspection, isolation none] examples/extended/service.go:1-1 — Modification time 2026-09-14T00:04:12Z, after the evaluation started at 2026-09-14T00:03:00Z. — via mtime-drift 0.3
 
 ## Dimensions
 
@@ -53,7 +56,7 @@ Overall: INCOMPLETE
   - Value: not measured; threshold at or above 500 from examples/extended/brief.md#throughput
   - Measured by bench unknown on workload steady 60s at 8 concurrent workers, direction higher_is_better, range 0 and above
   - Not measured on this host: the quoted number has no workload or tool behind it, so no comparison to the target is possible.
-  - [kind supplied, isolation none] Benchmark number quoted in the pull request description, paragraph 2 — Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied)
+  - [kind supplied, isolation none] Benchmark number quoted in the pull request description, paragraph 2 — Quotes 610 requests per second; no workload, tool, or log accompanies the number. (supplied) — via assistant fixture
 
 ## Counts
 
@@ -108,6 +111,7 @@ Service change with a supplied test suite and a cited external limit, so executi
 - Environment: any/any
   - runtime go 1.23.1
 - Isolation levels used: none, worktree
+- Bundle digest: sha256:1f0a5c7f2b3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7
 - Evidence digest: sha256:16b12842a5d5420296a18d9d03ee5be6461b32ea7a165a8742b8c95e03eb3bd7
 - Commands:
   - go test ./... in /tmp/veval-worktree, exit 0, isolation worktree, 2026-09-14T00:03:10Z to 2026-09-14T00:03:12Z, log logs/e1-go-test.log

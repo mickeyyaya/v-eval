@@ -13,11 +13,14 @@ import (
 // where those words go and computes nothing of its own.
 func funcMap() template.FuncMap {
 	return template.FuncMap{
-		"badge":    badge,
-		"joinIDs":  joinIDs,
-		"supplied": supplied,
-		"locator":  locator,
-		"cell":     cell,
+		"badge":       badge,
+		"joinIDs":     joinIDs,
+		"supplied":    supplied,
+		"locator":     locator,
+		"cell":        cell,
+		"requirement": requirement,
+		"isJudgment":  isJudgment,
+		"orUnknown":   orUnknown,
 	}
 }
 
@@ -58,6 +61,29 @@ func locator(l report.Locator) string {
 	default:
 		return "(no locator)"
 	}
+}
+
+// requirement is what the contract asks of a criterion, by id. A result whose
+// id the contract does not name says so: the row is still shown, because a
+// result the contract has no criterion for is exactly what a reader must see.
+func requirement(contract report.Contract, id string) string {
+	if criterion, ok := contract.CriterionByID(id); ok {
+		return criterion.Requirement
+	}
+	return "(not in contract)"
+}
+
+// isJudgment reports whether evidence is a judgment, which is shown with the
+// rubric it applied and the model that applied it.
+func isJudgment(evidence report.Evidence) bool { return evidence.Kind == report.KindJudgment }
+
+// orUnknown names an absent value rather than leaving a blank a reader would
+// read as an omission by the renderer.
+func orUnknown(value string) string {
+	if value == "" {
+		return "unknown"
+	}
+	return value
 }
 
 // cellEscapes rewrites the two characters that end a Markdown table cell or

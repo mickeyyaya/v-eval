@@ -47,14 +47,20 @@ func assertGolden(t *testing.T, name string, got []byte) {
 	}
 }
 
-// renderFixture renders one fixture with the markdown renderer.
-func renderFixture(t *testing.T, name string) []byte {
+// mustRenderer returns the markdown renderer, or fails the test.
+func mustRenderer(t *testing.T) render.Renderer {
 	t.Helper()
 	renderer, ok := render.ByFormat("md")
 	if !ok {
 		t.Fatal("md renderer missing")
 	}
-	out, err := renderer.Render(loadFixture(t, name))
+	return renderer
+}
+
+// renderFixture renders one fixture with the markdown renderer.
+func renderFixture(t *testing.T, name string) []byte {
+	t.Helper()
+	out, err := mustRenderer(t).Render(loadFixture(t, name))
 	if err != nil {
 		t.Fatal(err)
 	}

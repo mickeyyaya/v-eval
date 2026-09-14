@@ -2,7 +2,7 @@
 what it said, and whether the candidate supplied it rather than the
 evaluator gathering it. */ -}}
 {{- define "evidence" -}}
-[kind {{.Kind}}, isolation {{.Isolation}}] {{locator .Locator | cell}} — {{cell .Observation}}{{supplied .}}
+[kind {{.Kind}}, isolation {{.Isolation}}] {{locator .Locator | cell}} — {{cell .Observation}}{{supplied .}} — via {{cell .Provenance.Tool}} {{cell .Provenance.Version}}{{if isJudgment .}}, rubric {{orUnknown .RubricVersion | cell}}, model {{orUnknown .Model | cell}}{{end}}
 {{- end -}}
 {{- /* The same lines inside one table cell, where a newline would end the row. */ -}}
 {{- define "evidenceCell" -}}
@@ -11,11 +11,14 @@ evaluator gathering it. */ -}}
 # v-eval report: {{.Identity.Artifact.Kind}} {{.Identity.Artifact.Revision}}
 
 - Report id: {{.Identity.ReportID}}
-- Created: {{.Identity.CreatedAt}} by {{.Identity.Host.CLI}} on {{.Identity.Host.OS}}/{{.Identity.Host.Arch}}
+- Created: {{.Identity.CreatedAt}}
+- Host: {{.Identity.Host.CLI}} on {{.Identity.Host.OS}}/{{.Identity.Host.Arch}}{{with .Identity.Host.Model}}, model {{.}}{{end}}
 - Schema {{.Identity.SchemaVersion}}, v-eval {{.Identity.VevalVersion}}, skill revision {{.Identity.SkillRevision}}
 - Contract: {{.Contract.ContractID}} version {{.Contract.ContractVersion}} ({{.Contract.Status}})
 - Artifact paths: {{joinIDs .Identity.Artifact.Paths}}
 - Requested outcome: {{.Identity.Task.RequestedOutcome}}
+- Intended user: {{.Identity.Task.IntendedUser}}
+- Brief: {{.Identity.Task.BriefRef}}
 
 ## Status
 
@@ -48,10 +51,10 @@ None recorded.
 {{end}}
 ## Criteria
 
-| ID | Result | Method | Evidence and reasoning | Next action |
-| --- | --- | --- | --- | --- |
+| ID | Requirement | Result | Method | Evidence and reasoning | Next action |
+| --- | --- | --- | --- | --- | --- |
 {{- range .Criteria}}
-| {{.ID}} | {{badge .Result}} | {{.MethodUsed}} | {{template "evidenceCell" .Evidence}}<br>{{cell .Reasoning}}
+| {{.ID}} | {{requirement $.Contract .ID | cell}} | {{badge .Result}} | {{.MethodUsed}} | {{template "evidenceCell" .Evidence}}<br>{{cell .Reasoning}}
     {{- if .SharedCauseWith}}<br>Shared cause with {{joinIDs .SharedCauseWith}}.{{end}}
     {{- if .DimensionRefs}}<br>Dimensions: {{joinIDs .DimensionRefs}}.{{end}} | {{cell .NextAction}} |
 {{- end}}
@@ -123,6 +126,7 @@ None recorded.
   - runtime {{$name}} {{$version}}
 {{- end}}
 - Isolation levels used: {{range $i, $l := .Provenance.IsolationLevelsUsed}}{{if $i}}, {{end}}{{$l}}{{else}}none{{end}}
+- Bundle digest: {{if .Identity.Artifact.BundleDigest}}{{.Identity.Artifact.BundleDigest}}{{else}}(none){{end}}
 - Evidence digest: {{.Provenance.EvidenceDigest}}
 - Commands:{{if not .Provenance.Commands}} none{{end}}
 {{- range .Provenance.Commands}}

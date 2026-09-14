@@ -41,6 +41,13 @@ func goldenCases() []goldenCase {
 				"(supplied)",
 				"examples/code-review/input.md:27-27",
 				"Coverage: 4/5",
+				"- Intended user: developer reviewing an AI-generated change",
+				"- Brief: examples/code-review/input.md#intent",
+				"- Host: fixture on any/any\n",
+				"- Bundle digest: (none)",
+				"| ID | Requirement | Result | Method |",
+				"| C1 | Whitespace and case variants collapse into one address | FAIL |",
+				"via assistant fixture",
 			},
 		},
 		{
@@ -61,6 +68,12 @@ func goldenCases() []goldenCase {
 				"isolation worktree",
 				"from https://api.example.test/docs/rate-limits (2026-08-30)",
 				"not measured",
+				"- Host: fixture on any/any, model unknown",
+				"- Bundle digest: sha256:1f0a5c7f2b3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7",
+				"| E1 | The regression suite passes against this exact revision | PASS |",
+				"via go 1.23.1",
+				"via mtime-drift 0.3",
+				", rubric integrity-rubric-0.2, model unknown",
 			},
 		},
 	}
@@ -174,6 +187,33 @@ func TestRenderingAnEmptyReportSaysSoRatherThanFailing(t *testing.T) {
 	}
 	if bytes.Contains(out, []byte("## Learning")) {
 		t.Error("an empty report has no learning block to show")
+	}
+}
+
+func TestAdvisoryReportSaysSo(t *testing.T) {
+	t.Parallel()
+	rep := loadFixture(t, "worked-example")
+	rep.Status.Advisory = true
+	out, err := mustRenderer(t).Render(report.Aggregate(rep))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"Overall: ADVISORY", "Rule applied: " + report.StatusRuleAdvisory} {
+		if !bytes.Contains(out, []byte(want)) {
+			t.Errorf("an advisory rendering does not contain %q", want)
+		}
+	}
+}
+
+func TestResultOutsideTheContractSaysSo(t *testing.T) {
+	t.Parallel()
+	rep := report.Report{Criteria: []report.CriterionResult{{ID: "X9", Result: report.ResultUnknown}}}
+	out, err := mustRenderer(t).Render(rep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(out, []byte("| X9 | (not in contract) | UNKNOWN |")) {
+		t.Error("a result whose criterion is not in the contract must say so in its row")
 	}
 }
 
