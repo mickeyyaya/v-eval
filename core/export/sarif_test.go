@@ -86,6 +86,16 @@ func ruleByID(t *testing.T, log export.Log, id string) export.Rule {
 	return export.Rule{}
 }
 
+// vevalOf returns the run.properties.veval map a mapped run carries.
+func vevalOf(t *testing.T, run export.Run) map[string]any {
+	t.Helper()
+	veval, ok := run.Properties["veval"].(map[string]any)
+	if !ok {
+		t.Fatalf("run properties = %v", run.Properties)
+	}
+	return veval
+}
+
 // assertGolden compares got against testdata/name, or rewrites it under -update.
 func assertGolden(t *testing.T, name string, got []byte) {
 	t.Helper()
@@ -120,7 +130,7 @@ func TestSARIFMapping(t *testing.T) {
 	if kinds["C1"] != "fail" || kinds["C4"] != "pass" || kinds["C5"] != "review" {
 		t.Fatalf("kinds = %v", kinds)
 	}
-	veval := log.Runs[0].Properties["veval"].(map[string]any)
+	veval := vevalOf(t, log.Runs[0])
 	if veval["overall"] != "FAIL" {
 		t.Fatal("run.properties.veval.overall must carry the overall status")
 	}
@@ -358,7 +368,7 @@ func TestSARIFGitRevisionStaysInProperties(t *testing.T) {
 	// and a report carries none, so a git revision is stated in the property
 	// bag rather than in an entry no validator would accept.
 	log := mustSARIF(t, loadReport(t, "extended-example"))
-	veval := log.Runs[0].Properties["veval"].(map[string]any)
+	veval := vevalOf(t, log.Runs[0])
 	if veval["vcs_revision_id"] != "9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f" {
 		t.Fatalf("vcs_revision_id = %v", veval["vcs_revision_id"])
 	}
@@ -390,7 +400,7 @@ func TestSARIFContentRevisionBecomesArtifactHashes(t *testing.T) {
 	if got.Hashes["sha-256"] != "befaf705c894d30d62d3d53dd5e6653c910063747fc7e508c1b9de2de306dfa8" {
 		t.Fatalf("artifact hashes = %v", got.Hashes)
 	}
-	if _, ok := mustSARIF(t, loadFixture(t)).Runs[0].Properties["veval"].(map[string]any)["vcs_revision_id"]; ok {
+	if _, ok := vevalOf(t, mustSARIF(t, loadFixture(t)).Runs[0])["vcs_revision_id"]; ok {
 		t.Fatal("a content revision is not a version control revision id")
 	}
 }
@@ -413,7 +423,7 @@ func TestSARIFUnrecognizedRevisionStaysInProperties(t *testing.T) {
 	if len(run.Artifacts) != 0 {
 		t.Fatalf("an unrecognized revision must not be reshaped: %+v", run.Artifacts)
 	}
-	veval := run.Properties["veval"].(map[string]any)
+	veval := vevalOf(t, run)
 	if veval["revision"] != "svn:r1234" {
 		t.Fatalf("veval properties = %v", veval)
 	}
@@ -425,7 +435,7 @@ func TestSARIFUnrecognizedRevisionStaysInProperties(t *testing.T) {
 func TestSARIFRunPropertiesCarryTheVerdict(t *testing.T) {
 	t.Parallel()
 	rep := loadFixture(t)
-	veval := mustSARIF(t, rep).Runs[0].Properties["veval"].(map[string]any)
+	veval := vevalOf(t, mustSARIF(t, rep).Runs[0])
 	if veval["rule_applied"] != "required applicable criterion failed" || veval["advisory"] != false {
 		t.Fatalf("veval = %v", veval)
 	}
@@ -492,10 +502,7 @@ func TestSARIFRejectsCriterionMissingFromContract(t *testing.T) {
 // blockedByOf returns the blocked_by list a run states.
 func blockedByOf(t *testing.T, log export.Log) []string {
 	t.Helper()
-	veval, ok := log.Runs[0].Properties["veval"].(map[string]any)
-	if !ok {
-		t.Fatalf("run properties = %v", log.Runs[0].Properties)
-	}
+	veval := vevalOf(t, log.Runs[0])
 	blocked, ok := veval["blocked_by"].([]string)
 	if !ok {
 		t.Fatalf("blocked_by = %#v, want a list", veval["blocked_by"])
