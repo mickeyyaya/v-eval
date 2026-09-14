@@ -39,6 +39,8 @@ Option 1. A push of a tag matching `v*` runs `release.yml` on ubuntu-latest: it 
 
 `gh release view vX.Y.Z` lists six archives, `checksums.txt`, and the two example reports; `sha256sum -c --ignore-missing checksums.txt` passes against a downloaded archive; the binary inside prints `veval X.Y.Z (<short commit>) schema <schema version>`; `python tools/release/release_notes.py CHANGELOG.md X.Y.Z` prints the notes the release page shows. The confirmation for each release is recorded here after its workflow has run.
 
+Confirmed for v0.1.0 on 2026-09-15: workflow run 34910783993 published six archives, `checksums.txt` (eight entries), and the two example reports; `shasum -a 256 --check --ignore-missing checksums.txt` passed for `veval_darwin_arm64.tar.gz` and `example-report-service-change.html`; the extracted binary printed `veval 0.1.0 (c591242) schema 0.1.0`; the attached example report was byte-identical to that binary's own render of the fixture; the release body was the `[0.1.0]` section of `CHANGELOG.md`.
+
 ## Pros and Cons of the Options
 
 ### Tag-driven GoReleaser in CI with notes and example reports
