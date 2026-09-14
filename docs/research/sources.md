@@ -2,7 +2,7 @@
 
 Generated from every Markdown file in the repository. Each external link cited anywhere in the documentation appears once, with the documents that cite it. All links were accessed on the research dates stated in the citing documents; this register does not re-verify them. Regenerate with `python tools/docs/vdocs.py register .` from the repository root; `--check` verifies the committed file is current.
 
-Unique external links: 293. Citing documents: 71.
+Unique external links: 293. Citing documents: 72.
 
 ## aclanthology.org
 
