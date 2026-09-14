@@ -80,9 +80,9 @@ func TestExtendedFixtureCoversWhatTheWorkedExampleLacks(t *testing.T) {
 
 	shapes := map[LocatorShape]int{}
 	kinds := map[Kind]int{}
-	for _, ref := range walkEvidence(rep) {
-		shapes[ref.evidence.Locator.Shape()]++
-		kinds[ref.evidence.Kind]++
+	for _, ref := range WalkEvidence(rep) {
+		shapes[ref.Evidence.Locator.Shape()]++
+		kinds[ref.Evidence.Kind]++
 	}
 	for _, shape := range []LocatorShape{ShapeFile, ShapeCommand, ShapePassage, ShapeNote} {
 		if shapes[shape] == 0 {

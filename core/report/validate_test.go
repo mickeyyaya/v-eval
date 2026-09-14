@@ -2,6 +2,7 @@ package report
 
 import (
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -137,6 +138,10 @@ func TestValidateFiresEveryRule(t *testing.T) {
 			rep.Forensics = append(rep.Forensics, Finding{FindingID: "F1", CriterionID: "C9",
 				Severity: SeverityObserved, Disposition: DispositionOpen})
 		}},
+		{RuleForensicsConfirmedSeverity, func(rep *Report) {
+			rep.Forensics = append(rep.Forensics, Finding{FindingID: "F1", CriterionID: "C1",
+				Severity: SeveritySuspicious, Disposition: DispositionConfirmed})
+		}},
 		{RuleForensicsConfirmedImpliesFail, func(rep *Report) {
 			rep.Forensics = append(rep.Forensics, Finding{FindingID: "F1", CriterionID: "C4",
 				Severity: SeverityConfirmed, Disposition: DispositionConfirmed})
@@ -191,5 +196,52 @@ func TestAggregateRecomputesCountsAndStatus(t *testing.T) {
 	}
 	if got.Status.Overall != OverallFail || got.Status.RuleApplied != StatusRuleFailed {
 		t.Fatalf("status = %+v", got.Status)
+	}
+}
+
+// TestWalkEvidenceIsOrderedAndUnique pins the exported walk, which both the
+// validation rules and the evidence digest read: sections come in document
+// order, and every entry has a path of its own, because a violation and a
+// digest entry each name one.
+func TestWalkEvidenceIsOrderedAndUnique(t *testing.T) {
+	t.Parallel()
+	_, rep := readExtendedFixture(t)
+	refs := WalkEvidence(rep)
+	if len(refs) == 0 {
+		t.Fatal("the extended fixture cites no evidence")
+	}
+
+	sections := []string{"criteria[", "observations[", "claims[", "forensics[", "dimensions["}
+	seen := map[string]bool{}
+	at := 0
+	for _, ref := range refs {
+		for at < len(sections) && !strings.HasPrefix(ref.Path, sections[at]) {
+			at++
+		}
+		if at == len(sections) {
+			t.Fatalf("path %q is out of document order", ref.Path)
+		}
+		if seen[ref.Path] {
+			t.Fatalf("path %q appears twice", ref.Path)
+		}
+		seen[ref.Path] = true
+	}
+	if at != len(sections)-1 {
+		t.Fatalf("the walk reached section %d of %d; the fixture cites evidence in every one", at+1, len(sections))
+	}
+}
+
+// TestResultByIDFindsWhatTheContractNames covers the exported lookup the
+// forensics rules use: a known id returns its result, an unknown one does not
+// return a zero value that could pass for a verdict.
+func TestResultByIDFindsWhatTheContractNames(t *testing.T) {
+	t.Parallel()
+	rep := loadFixture(t)
+	result, ok := ResultByID(rep.Criteria, "C4")
+	if !ok || result.Result != ResultPass {
+		t.Fatalf("C4 = %+v, %v", result, ok)
+	}
+	if _, ok := ResultByID(rep.Criteria, "C9"); ok {
+		t.Fatal("C9 is not in the report")
 	}
 }

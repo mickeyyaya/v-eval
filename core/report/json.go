@@ -25,11 +25,30 @@ func Decode(raw []byte) (Report, error) {
 // is what the digests are taken over, so a report built in Go and the same
 // report decoded from JSON must encode to the same bytes.
 func Encode(rep Report) ([]byte, error) {
-	out, err := json.MarshalIndent(normalize(rep), "", "  ")
+	out, err := canonicalJSON(normalize(rep), true)
 	if err != nil {
 		return nil, fmt.Errorf("report: encode: %w", err)
 	}
-	return append(out, '\n'), nil
+	return out, nil
+}
+
+// canonicalJSON is the one encoder every written report and every digest goes
+// through. HTML escaping is off: a report quotes source, and "<" belongs in a
+// report as "<", not as an escape a reader has to decode. json.Encoder ends
+// its output with a newline, which is the trailing newline canonical form
+// wants; the compact form carries it too, harmlessly, since a digest only
+// needs the bytes to be the same bytes every time.
+func canonicalJSON(v any, indent bool) ([]byte, error) {
+	var out bytes.Buffer
+	enc := json.NewEncoder(&out)
+	enc.SetEscapeHTML(false)
+	if indent {
+		enc.SetIndent("", "  ")
+	}
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+	return out.Bytes(), nil
 }
 
 // normalize returns a copy of rep in which every nil slice and nil map has
@@ -48,8 +67,13 @@ func normalize(rep Report) Report {
 }
 
 // normalizeInto writes src into the settable value dst, substituting empty
-// containers for nil ones. Report types are plain structs of exported fields,
-// so every destination field is settable.
+// containers for nil ones.
+//
+// Report types must declare only exported fields: they mirror the JSON schema,
+// and a field JSON cannot carry has no business in one. An unexported field
+// added to any of them panics here rather than being skipped, because a field
+// silently left out of canonical form would move every digest in the project
+// without saying so.
 func normalizeInto(dst, src reflect.Value) {
 	switch src.Kind() {
 	case reflect.Slice:
@@ -72,9 +96,6 @@ func normalizeInto(dst, src reflect.Value) {
 		normalizeInto(dst.Elem(), src.Elem())
 	case reflect.Struct:
 		for i := 0; i < src.NumField(); i++ {
-			if !src.Type().Field(i).IsExported() {
-				continue
-			}
 			normalizeInto(dst.Field(i), src.Field(i))
 		}
 	default:
@@ -99,44 +120,21 @@ func ReportID(rep Report) string {
 	return digest(raw)
 }
 
-// EvidenceDigest is the digest over every evidence array in a report, grouped
-// by the entry that cites it and taken in the document order walkEvidence
-// documents: criteria, observations, claims, forensics, dimensions. It moves
-// when the evidence moves and stands still when only a verdict changes, so
-// two reports can be compared on what was seen rather than what was concluded.
-// Evidence JSON cannot represent yields the empty string, as ReportID does.
+// EvidenceDigest is the digest over every evidence array in a report, each
+// tagged with the section and the path that cites it and taken in the
+// document order evidenceSections defines: criteria, observations, claims,
+// forensics, dimensions. Tagging is what makes it a digest of where the
+// evidence sits and not merely of what it says, so moving a piece of evidence
+// from a criterion to an observation changes it. It stands still when only a
+// verdict changes, so two reports can be compared on what was seen rather
+// than on what was concluded. Evidence JSON cannot represent yields the empty
+// string, as ReportID does.
 func EvidenceDigest(rep Report) string {
-	rep = normalize(rep)
-	lists := evidenceLists(rep)
-	raw, err := json.Marshal(lists)
+	raw, err := canonicalJSON(evidenceSections(normalize(rep)), false)
 	if err != nil {
 		return ""
 	}
 	return digest(raw)
-}
-
-// evidenceLists collects a report's evidence arrays, one per citing entry, in
-// document order. Grouping is kept rather than flattened so that moving a
-// piece of evidence from one criterion to another changes the digest.
-func evidenceLists(rep Report) [][]Evidence {
-	lists := make([][]Evidence, 0,
-		len(rep.Criteria)+len(rep.Observations)+len(rep.Claims)+len(rep.Forensics)+len(rep.Dimensions))
-	for _, result := range rep.Criteria {
-		lists = append(lists, result.Evidence)
-	}
-	for _, observation := range rep.Observations {
-		lists = append(lists, observation.Evidence)
-	}
-	for _, claim := range rep.Claims {
-		lists = append(lists, claim.Verification)
-	}
-	for _, finding := range rep.Forensics {
-		lists = append(lists, finding.Evidence)
-	}
-	for _, dimension := range rep.Dimensions {
-		lists = append(lists, dimension.Evidence)
-	}
-	return lists
 }
 
 // digest is the "sha256:<hex>" form every digest a report carries takes.

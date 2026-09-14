@@ -1,6 +1,6 @@
 # v-eval report: service_change git:9f2c1a4e5b6d7c8f9a0b1c2d3e4f5a6b7c8d9e0f
 
-- Report id: sha256:8133cd5af3691431144e38ab5e39c701833b2a53e6a08040139195d374b55465
+- Report id: sha256:72760dea420ab21ef325ba034cc44081769cc290b495a524b53efd3c0f895ac4
 - Created: 2026-09-14T00:03:00Z by fixture on any/any
 - Schema 0.1.0, v-eval 0.0.0-dev, skill revision draft-2
 - Contract: extended-example version 1 (provisional)
@@ -108,7 +108,7 @@ Service change with a supplied test suite and a cited external limit, so executi
 - Environment: any/any
   - runtime go 1.23.1
 - Isolation levels used: none, worktree
-- Evidence digest: sha256:14f86f9069d39c8b3be2115a6fb9cbd61b063ee7fa4e9aaa218c111786620d9d
+- Evidence digest: sha256:16b12842a5d5420296a18d9d03ee5be6461b32ea7a165a8742b8c95e03eb3bd7
 - Commands:
   - go test ./... in /tmp/veval-worktree, exit 0, isolation worktree, 2026-09-14T00:03:10Z to 2026-09-14T00:03:12Z, log logs/e1-go-test.log
   - docker --version in /tmp/veval-worktree, exit 127, isolation none, 2026-09-14T00:06:00Z to 2026-09-14T00:06:00Z, log logs/o2-docker-version.log

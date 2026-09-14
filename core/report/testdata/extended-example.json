@@ -1,6 +1,6 @@
 {
   "identity": {
-    "report_id": "sha256:8133cd5af3691431144e38ab5e39c701833b2a53e6a08040139195d374b55465",
+    "report_id": "sha256:72760dea420ab21ef325ba034cc44081769cc290b495a524b53efd3c0f895ac4",
     "schema_version": "0.1.0",
     "veval_version": "0.0.0-dev",
     "skill_revision": "draft-2",
@@ -696,7 +696,7 @@
       "none",
       "worktree"
     ],
-    "evidence_digest": "sha256:14f86f9069d39c8b3be2115a6fb9cbd61b063ee7fa4e9aaa218c111786620d9d"
+    "evidence_digest": "sha256:16b12842a5d5420296a18d9d03ee5be6461b32ea7a165a8742b8c95e03eb3bd7"
   },
   "learning": {
     "precedents_retrieved": [

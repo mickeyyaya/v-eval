@@ -33,6 +33,7 @@ const (
 	RuleErrorIsOperational            = "criteria.error_is_operational"
 	RuleClaimsVerificationPresent     = "claims.verification_present"
 	RuleForensicsCriterionLink        = "forensics.criterion_link"
+	RuleForensicsConfirmedSeverity    = "forensics.confirmed_severity"
 	RuleForensicsConfirmedImpliesFail = "forensics.confirmed_implies_fail"
 	RuleDimensionsNoComposite         = "dimensions.no_composite"
 	RuleCountsMatch                   = "counts.match"
@@ -52,7 +53,8 @@ func structuralRules() []rule {
 		ruleLocatorShape, ruleCriteriaContractLink, rulePassRequiresObservedLocator,
 		ruleCandidateSuppliedKind, ruleJudgmentMetadata, ruleNotApplicableReasoning,
 		ruleErrorIsOperational, ruleClaimsVerificationPresent, ruleForensicsCriterionLink,
-		ruleForensicsConfirmedImpliesFail, ruleDimensionsNoComposite,
+		ruleForensicsConfirmedSeverity, ruleForensicsConfirmedImpliesFail,
+		ruleDimensionsNoComposite,
 	}
 }
 
@@ -133,9 +135,9 @@ func ruleRequiredNonempty(rep Report) []Violation {
 				Message: "must allow at least one method"})
 		}
 	}
-	for _, ref := range walkEvidence(rep) {
-		if strings.TrimSpace(ref.evidence.Observation) == "" {
-			violations = append(violations, Violation{Path: ref.path + ".observation",
+	for _, ref := range WalkEvidence(rep) {
+		if strings.TrimSpace(ref.Evidence.Observation) == "" {
+			violations = append(violations, Violation{Path: ref.Path + ".observation",
 				Rule: RuleRequiredNonempty, Message: "must not be empty"})
 		}
 	}
@@ -268,11 +270,11 @@ func elementEnums(rep Report) []enumField {
 // evidenceEnums are the enum-typed fields of every evidence entry.
 func evidenceEnums(rep Report) []enumField {
 	var fields []enumField
-	for _, ref := range walkEvidence(rep) {
+	for _, ref := range WalkEvidence(rep) {
 		fields = append(fields,
-			enumField{ref.path + ".kind", ref.evidence.Kind},
-			enumField{ref.path + ".isolation", ref.evidence.Isolation},
-			enumField{ref.path + ".origin", ref.evidence.Origin})
+			enumField{ref.Path + ".kind", ref.Evidence.Kind},
+			enumField{ref.Path + ".isolation", ref.Evidence.Isolation},
+			enumField{ref.Path + ".origin", ref.Evidence.Origin})
 	}
 	return fields
 }
@@ -302,9 +304,9 @@ func ruleTimeRFC3339(rep Report) []Violation {
 // field group, so a reader can always go back to what the evaluator saw.
 func ruleLocatorShape(rep Report) []Violation {
 	var violations []Violation
-	for _, ref := range walkEvidence(rep) {
-		if ref.evidence.Locator.Shape() == ShapeNone {
-			violations = append(violations, Violation{Path: ref.path + ".locator", Rule: RuleLocatorShape,
+	for _, ref := range WalkEvidence(rep) {
+		if ref.Evidence.Locator.Shape() == ShapeNone {
+			violations = append(violations, Violation{Path: ref.Path + ".locator", Rule: RuleLocatorShape,
 				Message: "must fill exactly one complete group: file, command, passage, or note"})
 		}
 	}
@@ -370,12 +372,12 @@ func anyEvidence(list []Evidence, match func(Evidence) bool) bool {
 // supplied, so it can never be counted as something the evaluator observed.
 func ruleCandidateSuppliedKind(rep Report) []Violation {
 	var violations []Violation
-	for _, ref := range walkEvidence(rep) {
-		if ref.evidence.Origin != OriginCandidateSupplied || ref.evidence.Kind == KindSupplied {
+	for _, ref := range WalkEvidence(rep) {
+		if ref.Evidence.Origin != OriginCandidateSupplied || ref.Evidence.Kind == KindSupplied {
 			continue
 		}
-		violations = append(violations, Violation{Path: ref.path + ".kind", Rule: RuleCandidateSuppliedKind,
-			Message: fmt.Sprintf("candidate_supplied evidence must be of kind supplied, not %q", ref.evidence.Kind)})
+		violations = append(violations, Violation{Path: ref.Path + ".kind", Rule: RuleCandidateSuppliedKind,
+			Message: fmt.Sprintf("candidate_supplied evidence must be of kind supplied, not %q", ref.Evidence.Kind)})
 	}
 	return violations
 }
@@ -383,11 +385,11 @@ func ruleCandidateSuppliedKind(rep Report) []Violation {
 // ruleJudgmentMetadata requires a judgment to name the rubric it applied.
 func ruleJudgmentMetadata(rep Report) []Violation {
 	var violations []Violation
-	for _, ref := range walkEvidence(rep) {
-		if ref.evidence.Kind != KindJudgment || strings.TrimSpace(ref.evidence.RubricVersion) != "" {
+	for _, ref := range WalkEvidence(rep) {
+		if ref.Evidence.Kind != KindJudgment || strings.TrimSpace(ref.Evidence.RubricVersion) != "" {
 			continue
 		}
-		violations = append(violations, Violation{Path: ref.path + ".rubric_version",
+		violations = append(violations, Violation{Path: ref.Path + ".rubric_version",
 			Rule: RuleJudgmentMetadata, Message: "judgment evidence must name the rubric version it applied"})
 	}
 	return violations
@@ -451,20 +453,36 @@ func ruleClaimsVerificationPresent(rep Report) []Violation {
 }
 
 // ruleForensicsCriterionLink ties every finding to a criterion of the
-// contract, and keeps a confirmed disposition backed by confirmed severity.
+// contract, so a detector hit can always be traced to what it bears on.
 func ruleForensicsCriterionLink(rep Report) []Violation {
 	var violations []Violation
 	for i, finding := range rep.Forensics {
-		base := fmt.Sprintf("forensics[%d]", i)
-		if _, ok := rep.Contract.CriterionByID(finding.CriterionID); !ok {
-			violations = append(violations, Violation{Path: base + ".criterion_id",
-				Rule:    RuleForensicsCriterionLink,
-				Message: fmt.Sprintf("%q is not a criterion of this contract", finding.CriterionID)})
+		if _, ok := rep.Contract.CriterionByID(finding.CriterionID); ok {
+			continue
 		}
-		if finding.Disposition == DispositionConfirmed && finding.Severity != SeverityConfirmed {
-			violations = append(violations, Violation{Path: base, Rule: RuleForensicsCriterionLink,
-				Message: fmt.Sprintf("a confirmed disposition needs confirmed severity, not %q", finding.Severity)})
+		violations = append(violations, Violation{
+			Path:    fmt.Sprintf("forensics[%d].criterion_id", i),
+			Rule:    RuleForensicsCriterionLink,
+			Message: fmt.Sprintf("%q is not a criterion of this contract", finding.CriterionID)})
+	}
+	return violations
+}
+
+// ruleForensicsConfirmedSeverity keeps a confirmed disposition backed by
+// confirmed severity: a finding cannot be settled as real while its own
+// severity still says it might not be. It is a separate rule id from the
+// contract link because the two say different things about a finding and a
+// caller acts on them differently.
+func ruleForensicsConfirmedSeverity(rep Report) []Violation {
+	var violations []Violation
+	for i, finding := range rep.Forensics {
+		if finding.Disposition != DispositionConfirmed || finding.Severity == SeverityConfirmed {
+			continue
 		}
+		violations = append(violations, Violation{
+			Path:    fmt.Sprintf("forensics[%d]", i),
+			Rule:    RuleForensicsConfirmedSeverity,
+			Message: fmt.Sprintf("a confirmed disposition needs confirmed severity, not %q", finding.Severity)})
 	}
 	return violations
 }
@@ -479,7 +497,7 @@ func ruleForensicsConfirmedImpliesFail(rep Report) []Violation {
 		if finding.Disposition != DispositionConfirmed || !known || !criterion.Required {
 			continue
 		}
-		if result, ok := resultByID(rep.Criteria, finding.CriterionID); ok && result.Result == ResultFail {
+		if result, ok := ResultByID(rep.Criteria, finding.CriterionID); ok && result.Result == ResultFail {
 			continue
 		}
 		violations = append(violations, Violation{
@@ -491,8 +509,10 @@ func ruleForensicsConfirmedImpliesFail(rep Report) []Violation {
 	return violations
 }
 
-// resultByID returns the result recorded for a criterion id.
-func resultByID(results []CriterionResult, id string) (CriterionResult, bool) {
+// ResultByID returns the result recorded for a criterion id, and whether
+// there is one. A criterion with no result is a real state, so the caller is
+// told rather than handed a zero value that reads as a verdict.
+func ResultByID(results []CriterionResult, id string) (CriterionResult, bool) {
 	for _, result := range results {
 		if result.ID == id {
 			return result, true
@@ -565,39 +585,59 @@ func ruleReportID(rep Report) []Violation {
 		Message: fmt.Sprintf("stated %q, recomputed %q", rep.Identity.ReportID, want)}}
 }
 
-// evidenceRef is one evidence entry together with the path it lives at.
-type evidenceRef struct {
-	path     string
-	evidence Evidence
+// EvidenceRef is one evidence entry together with the path it lives at, e.g.
+// "criteria[3].evidence[0]" — the path a violation about it cites.
+type EvidenceRef struct {
+	Path     string
+	Evidence Evidence
 }
 
-// walkEvidence lists every evidence entry in a report, in the document order
-// the evidence digest is taken over.
-func walkEvidence(rep Report) []evidenceRef {
-	var refs []evidenceRef
+// WalkEvidence lists every evidence entry in a report, in document order:
+// criteria, observations, claims, forensics, dimensions. Every rule that
+// looks at evidence reads this walk, so a rule cannot quietly disagree with
+// another about where evidence lives or what it is called.
+func WalkEvidence(rep Report) []EvidenceRef {
+	var refs []EvidenceRef
+	for _, section := range evidenceSections(rep) {
+		for i, evidence := range section.Evidence {
+			refs = append(refs, EvidenceRef{
+				Path:     fmt.Sprintf("%s[%d]", section.Path, i),
+				Evidence: evidence,
+			})
+		}
+	}
+	return refs
+}
+
+// evidenceSection is one evidence array, the report section that owns it, and
+// the path it lives at. It is the single statement of where evidence sits:
+// WalkEvidence flattens it for the rules, and EvidenceDigest hashes it whole,
+// so the digest and the violation paths can never drift apart. The json tags
+// are part of the digest's input and so part of its definition.
+type evidenceSection struct {
+	Section  string     `json:"section"`
+	Path     string     `json:"path"`
+	Evidence []Evidence `json:"evidence"`
+}
+
+// evidenceSections lists a report's evidence arrays in document order.
+func evidenceSections(rep Report) []evidenceSection {
+	sections := make([]evidenceSection, 0,
+		len(rep.Criteria)+len(rep.Observations)+len(rep.Claims)+len(rep.Forensics)+len(rep.Dimensions))
 	for i, result := range rep.Criteria {
-		refs = append(refs, evidenceAt(fmt.Sprintf("criteria[%d].evidence", i), result.Evidence)...)
+		sections = append(sections, evidenceSection{"criteria", fmt.Sprintf("criteria[%d].evidence", i), result.Evidence})
 	}
 	for i, observation := range rep.Observations {
-		refs = append(refs, evidenceAt(fmt.Sprintf("observations[%d].evidence", i), observation.Evidence)...)
+		sections = append(sections, evidenceSection{"observations", fmt.Sprintf("observations[%d].evidence", i), observation.Evidence})
 	}
 	for i, claim := range rep.Claims {
-		refs = append(refs, evidenceAt(fmt.Sprintf("claims[%d].verification", i), claim.Verification)...)
+		sections = append(sections, evidenceSection{"claims", fmt.Sprintf("claims[%d].verification", i), claim.Verification})
 	}
 	for i, finding := range rep.Forensics {
-		refs = append(refs, evidenceAt(fmt.Sprintf("forensics[%d].evidence", i), finding.Evidence)...)
+		sections = append(sections, evidenceSection{"forensics", fmt.Sprintf("forensics[%d].evidence", i), finding.Evidence})
 	}
 	for i, dimension := range rep.Dimensions {
-		refs = append(refs, evidenceAt(fmt.Sprintf("dimensions[%d].evidence", i), dimension.Evidence)...)
+		sections = append(sections, evidenceSection{"dimensions", fmt.Sprintf("dimensions[%d].evidence", i), dimension.Evidence})
 	}
-	return refs
-}
-
-// evidenceAt pairs each entry of one evidence array with its indexed path.
-func evidenceAt(base string, list []Evidence) []evidenceRef {
-	refs := make([]evidenceRef, 0, len(list))
-	for i, evidence := range list {
-		refs = append(refs, evidenceRef{fmt.Sprintf("%s[%d]", base, i), evidence})
-	}
-	return refs
+	return sections
 }
