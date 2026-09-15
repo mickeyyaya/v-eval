@@ -49,6 +49,10 @@ Chosen option: **B**.
 
 `core/` now exists, so the last bullet of the Decision Outcome -- port the source-register generator to an internal Go tool run with `go run ./tools/...` and delete the Python -- has become due. It has not been done. The Python tooling under `tools/docs/` stays as it is until the port is scheduled, and the port is now a Roadmap Stage 3 item. Doing it inside the walking skeleton would have put a second unrelated thing at risk in one branch, and the register is verified in CI by `vdocs.py register . --check` either way.
 
+## Amendment (2026-09-15): one third-party package, in CI only
+
+`tools/schema/validate.py` validates JSON instances against a JSON Schema and depends on the third-party `jsonschema` package: the standard library has no JSON Schema validator, and writing one is not repository maintenance. This is the one exception to "standard library only" above, and it is scoped the same way the exemption itself is: the package is installed only in continuous integration (`.github/workflows/go.yml`, job `schemas`, pinned to `jsonschema==4.26.0`) and by a maintainer on demand with `pip install jsonschema`. The product and every other tool stay standard-library. The tool's own unit tests need no package: the missing-package path is tested with the import mocked absent, and the tests that validate real instances are skipped, with a reason, wherever the package is not importable, so they run on all three operating systems in `docs.yml` unchanged. The job validates the SARIF fixtures under `core/export/testdata/` against the OASIS SARIF 2.1.0 schema, fetched into `build/` at run time, and the report fixtures under `core/report/testdata/` against `schema/report.schema.json`.
+
 ## Pros and Cons of the Options
 
 ### A. `scripts/docs/`

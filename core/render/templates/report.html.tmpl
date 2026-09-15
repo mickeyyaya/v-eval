@@ -6,6 +6,11 @@ line; then where it points, what it said, and what produced it. */ -}}
 {{end -}}
 {{- /* The same cards as a list, which says "none" rather than showing
 nothing: a reader must be able to tell cited-nothing from rendered-nothing. */ -}}
+{{- /* The overall verdict as a badge. The hero and the status section both
+show it, so it is spelled once here rather than copied by hand. */ -}}
+{{- define "overallBadge" -}}
+<span class="{{overallClass .}}">{{.}}</span>
+{{- end -}}
 {{- /* The rule the verdict rests on and the criteria that block it, as
 facts: shown large in the hero and again in the status section, which must
 stand on its own when a reader jumps to it or prints it. */ -}}
@@ -96,7 +101,7 @@ nav.toc a:hover, nav.toc a:focus { color: var(--fg); text-decoration: underline;
 dl.facts { margin: 0.75rem 0 0; }
 dl.facts dt { color: var(--muted); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
 dl.facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
-.fact { break-inside: avoid; margin: 0 0 0.5rem; }
+.fact { -webkit-column-break-inside: avoid; break-inside: avoid; margin: 0 0 0.5rem; }
 .count { display: inline-block; vertical-align: middle; margin-left: 0.35rem; padding: 0 0.55rem; border-radius: 999px; background: var(--panel); border: 1px solid var(--rule); color: var(--muted); font-size: 0.8rem; font-weight: 500; line-height: 1.4; }
 article { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 0.75rem 1rem; margin: 0 0 0.75rem; }
 table { width: 100%; border-collapse: collapse; margin: 0 0 0.5rem; }
@@ -149,7 +154,7 @@ footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule);
 <h1>{{.Identity.Artifact.Kind}}</h1>
 <p class="revision">{{.Identity.Artifact.Revision}}</p>
 <div class="hero">
-<span class="{{overallClass .Status.Overall}}">{{.Status.Overall}}</span>
+{{template "overallBadge" .Status.Overall}}
 <dl class="facts">
 {{template "verdictFacts" .Status}}
 </dl>
@@ -189,7 +194,7 @@ footer { margin: 3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--rule);
 <section id="status">
 <h2>Status</h2>
 <dl class="facts">
-<div class="fact"><dt>Overall</dt><dd><span class="{{overallClass .Status.Overall}}">{{.Status.Overall}}</span></dd></div>
+<div class="fact"><dt>Overall</dt><dd>{{template "overallBadge" .Status.Overall}}</dd></div>
 {{template "verdictFacts" .Status}}
 </dl>
 {{- range .Contract.Conflicts}}

@@ -30,3 +30,24 @@ jobs:
         run: go test -race -count=1 ./...
       - name: build
         run: go build ./cmd/veval
+
+  schemas:
+    name: schemas (jsonschema)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install jsonschema
+        run: pip install jsonschema==4.26.0
+      - name: fetch the SARIF 2.1.0 schema
+        run: |
+          mkdir -p build
+          curl --fail --silent --show-error --location \
+            --output build/sarif-schema-2.1.0.json \
+            https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json
+      - name: SARIF exports against the OASIS schema
+        run: python tools/schema/validate.py build/sarif-schema-2.1.0.json core/export/testdata/*.sarif.json
+      - name: report fixtures against the report schema
+        run: python tools/schema/validate.py schema/report.schema.json core/report/testdata/*.json

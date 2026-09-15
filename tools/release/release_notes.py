@@ -7,7 +7,10 @@ file, trimmed, with one trailing newline. Headings and link references inside fe
 blocks are not boundaries. ``-o FILE`` writes the notes to a file with LF line endings instead
 of standard output, creating the parent directory. Exits 2 with a message on standard error
 when the version has no section, the section is empty, or the file cannot be read, so an
-undocumented or empty tag fails the release workflow (decision 0025).
+undocumented or empty tag fails the release workflow (decision 0025). A link whose target is
+relative -- a path in the repository rather than a URL, a mailto, or an anchor -- resolves on
+the changelog's own page but not on the release page, where the notes stand alone, so each one
+is reported as a warning on standard error; the notes and the exit code are unchanged.
 
 Repository maintenance tool only (decision 0022): standard library only; runs on macOS,
 Linux, and Windows with ``python tools/release/release_notes.py CHANGELOG.md 0.1.0``.
@@ -23,6 +26,8 @@ from typing import Sequence
 FENCE_OPEN = re.compile(r"^[ \t]{0,3}(`{3,}|~{3,})")  # kept identical to tools/docs/gen_sources.py and tools/docs/check_links.py on purpose
 LEVEL_TWO = re.compile(r"^##[ \t]")
 LINK_REFERENCE = re.compile(r"^\[[^\]]+\]:[ \t]+\S")
+INLINE_LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)(?:[ \t]+\"[^\"]*\")?\)")  # [text](target "title"), images included
+ABSOLUTE_PREFIXES = ("http://", "https://", "mailto:", "#")
 
 
 class ToolError(Exception):
@@ -82,6 +87,25 @@ def section(text: str, version: str) -> str | None:
     return "\n".join(body).strip() + "\n"
 
 
+def relative_links(notes: str) -> list[str]:
+    """The target of every inline link in the notes' prose, in order, that is neither a URL,
+    a mailto, nor an anchor: a repository path the release page has no way to resolve."""
+    targets: list[str] = []
+    for line, prose in prose_lines(notes):
+        if not prose:
+            continue
+        for match in INLINE_LINK.finditer(line):
+            target = match.group(1)
+            if not target.lower().startswith(ABSOLUTE_PREFIXES):
+                targets.append(target)
+    return targets
+
+
+def warn_relative_links(notes: str) -> None:
+    for target in relative_links(notes):
+        print(f'warning: relative link "{target}" will not resolve on the release page', file=sys.stderr)
+
+
 def write_notes(path: str, notes: str) -> None:
     parent = os.path.dirname(path)
     if parent:
@@ -106,6 +130,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise ToolError(f"no section for version {args.version} in {args.changelog}")
         if not notes.strip():
             raise ToolError(f"section for version {args.version} in {args.changelog} is empty")
+        warn_relative_links(notes)
         if args.output:
             write_notes(args.output, notes)
         else:

@@ -3,6 +3,8 @@ package render_test
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
@@ -525,5 +527,42 @@ func TestHTMLNavComesBeforeMain(t *testing.T) {
 	i, j := bytes.Index(out, []byte(`<nav class="toc"`)), bytes.Index(out, []byte("<main>"))
 	if i < 0 || j < 0 || i > j {
 		t.Errorf("nav (at %d) must come before main (at %d)", i, j)
+	}
+}
+
+// TestHTMLOverallBadgeIsSpelledOnce holds the verdict badge to one place in
+// the template. The hero and the status section both show it, and two
+// hand-copied spellings are two that can drift apart, so both must render
+// the one overallBadge define -- and render the same markup from it.
+func TestHTMLOverallBadgeIsSpelledOnce(t *testing.T) {
+	t.Parallel()
+	src, err := os.ReadFile(filepath.Join("templates", "report.html.tmpl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := bytes.Count(src, []byte("overallClass")); got != 1 {
+		t.Errorf("the template calls overallClass %d times, want 1: inside the overallBadge define", got)
+	}
+	if got := bytes.Count(src, []byte(`{{template "overallBadge" `)); got != 2 {
+		t.Errorf("the template renders overallBadge %d times, want 2: the hero and the status section", got)
+	}
+	out := renderAs(t, "html", loadFixture(t, "worked-example"))
+	const badge = `<span class="badge fail">FAIL</span>`
+	hero, status := heroBlock(t, out), between(t, out, `<section id="status">`, "</section>")
+	if !strings.Contains(hero, badge) || !strings.Contains(status, `<dt>Overall</dt><dd>`+badge+`</dd>`) {
+		t.Errorf("the hero and the status section do not both carry %q:\n%s\n%s", badge, hero, status)
+	}
+}
+
+// TestHTMLFactStaysWholeInEveryColumnEngine pins the two spellings of the
+// same rule: the standard break-inside, and the -webkit- prefixed
+// column-break-inside older WebKit engines still read, so a label and its
+// value are never split across the columns the facts flow into anywhere.
+func TestHTMLFactStaysWholeInEveryColumnEngine(t *testing.T) {
+	t.Parallel()
+	out := renderAs(t, "html", report.Report{})
+	const want = ".fact { -webkit-column-break-inside: avoid; break-inside: avoid; margin: 0 0 0.5rem; }"
+	if !bytes.Contains(out, []byte(want)) {
+		t.Errorf("the stylesheet does not carry %q", want)
 	}
 }

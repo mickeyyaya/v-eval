@@ -99,6 +99,26 @@ class ProseLinesTest(unittest.TestCase):
         self.assertEqual([prose for _, prose in release_notes.prose_lines(text)], [False, False, False])
 
 
+class RelativeLinksTest(unittest.TestCase):
+    def test_relative_target_is_found_in_order(self) -> None:
+        notes = "See [the guide](docs/guide.md) and [the schema](schema/report.schema.json).\n"
+        self.assertEqual(release_notes.relative_links(notes), ["docs/guide.md", "schema/report.schema.json"])
+
+    def test_absolute_targets_are_not_relative(self) -> None:
+        notes = (
+            "[a](https://example.org/x) [b](http://example.org/y) [c](mailto:me@example.org) [d](#anchor)\n"
+            "[e](HTTPS://EXAMPLE.ORG/upper)\n"
+        )
+        self.assertEqual(release_notes.relative_links(notes), [])
+
+    def test_a_link_inside_fenced_code_is_not_a_link(self) -> None:
+        notes = "```markdown\n[x](docs/x.md)\n```\n\n[y](docs/y.md)\n"
+        self.assertEqual(release_notes.relative_links(notes), ["docs/y.md"])
+
+    def test_an_image_with_a_relative_source_counts(self) -> None:
+        self.assertEqual(release_notes.relative_links("![shot](build/shot.png)\n"), ["build/shot.png"])
+
+
 class MainTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
@@ -150,6 +170,28 @@ class MainTest(unittest.TestCase):
         code, out, err = run_main([str(self.changelog), "0.1.0", "-o", str(target)])
         self.assertEqual((code, out, err), (0, "", ""))
         self.assertEqual(target.read_bytes(), b"First release.\n\n### Added\n\n- The core.\n- The command line.\n")
+
+    def test_one_relative_link_warns_once_and_leaves_the_notes_alone(self) -> None:
+        linked = self.root / "linked.md"
+        linked.write_text(
+            "## [0.1.0] - 2026-09-15\n\nRead [the install guide](docs/install.md) or "
+            "[the tag](https://example.org/tag).\n\n## [0.0.9]\n",
+            encoding="utf-8",
+        )
+        code, out, err = run_main([str(linked), "0.1.0"])
+        self.assertEqual(code, 0)
+        self.assertEqual(out, "Read [the install guide](docs/install.md) or [the tag](https://example.org/tag).\n")
+        self.assertEqual(err, 'warning: relative link "docs/install.md" will not resolve on the release page\n')
+
+    def test_absolute_links_do_not_warn(self) -> None:
+        linked = self.root / "linked.md"
+        linked.write_text(
+            "## [0.1.0] - 2026-09-15\n\n[tag](https://example.org/tag), [mail](mailto:a@b.c), [top](#top).\n",
+            encoding="utf-8",
+        )
+        code, out, err = run_main([str(linked), "0.1.0"])
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual(out, "[tag](https://example.org/tag), [mail](mailto:a@b.c), [top](#top).\n")
 
     def test_crlf_input_yields_lf_output(self) -> None:
         self.changelog.write_bytes(CHANGELOG.replace("\n", "\r\n").encode("utf-8"))
