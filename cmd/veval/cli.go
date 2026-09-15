@@ -72,7 +72,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprint(stderr, usage())
 		return exitError
 	}
-	if args[0] == "-h" || args[0] == "--help" {
+	if isHelp(args[0]) {
 		fmt.Fprint(stdout, usage())
 		return exitOK
 	}
@@ -83,6 +83,13 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprintf(stderr, "error: unknown command %q\n\n%s", args[0], usage())
 	return exitError
+}
+
+// isHelp reports whether one argument is an explicit request for help. The
+// top level and every command read the same two spellings, so that "veval
+// -h" and "veval render -h" are asked, and answered, the same way.
+func isHelp(arg string) bool {
+	return arg == "-h" || arg == "--help"
 }
 
 // usage describes the command line: one line per command, taken from the

@@ -20,8 +20,8 @@ func runRender(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	flags := newFlags("render", stderr)
 	format := flags.String("format", defaultFormat, "output format: "+strings.Join(render.Formats(), ", "))
 	output := flags.String("o", "", "write to this file instead of standard output")
-	operands, code := parseArgs(flags, args, 1)
-	if code != exitOK {
+	operands, code, ok := parseArgs(flags, args, 1, stdout)
+	if !ok {
 		return code
 	}
 	renderer, ok := render.ByFormat(*format)

@@ -14,8 +14,8 @@ import (
 // recompute.
 func runValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	flags := newFlags("validate", stderr)
-	operands, code := parseArgs(flags, args, 1)
-	if code != exitOK {
+	operands, code, ok := parseArgs(flags, args, 1, stdout)
+	if !ok {
 		return code
 	}
 	rep, code, ok := loadReport(operands[0], stdin, stdout, stderr, report.Validate)

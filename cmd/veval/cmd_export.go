@@ -37,8 +37,8 @@ func toSARIF(rep report.Report) ([]byte, error) {
 func runExport(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	flags := newFlags("export", stderr)
 	output := flags.String("o", "", "write to this file instead of standard output")
-	operands, code := parseArgs(flags, args, 2)
-	if code != exitOK {
+	operands, code, ok := parseArgs(flags, args, 2, stdout)
+	if !ok {
 		return code
 	}
 	encode, ok := exporters[operands[0]]

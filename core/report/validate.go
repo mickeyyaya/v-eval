@@ -1,6 +1,7 @@
 package report
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"slices"
@@ -81,12 +82,13 @@ func ValidateForAggregate(raw []byte) (Report, []Violation, error) {
 }
 
 // runRules decodes raw and collects every rule's violations in rule order. A
-// report that does not decode yields the single json violation and nothing
-// else: no later rule has a report to inspect.
+// report that does not decode yields the json violation and, at most, the
+// one thing that can still be said about it: no later rule has a report to
+// inspect.
 func runRules(raw []byte, rules []rule) (Report, []Violation, error) {
 	rep, err := Decode(raw)
 	if err != nil {
-		return Report{}, []Violation{{Path: "$", Rule: RuleJSON, Message: err.Error()}}, nil
+		return Report{}, decodeViolations(raw, err), nil
 	}
 	var violations []Violation
 	for _, check := range rules {
@@ -95,14 +97,51 @@ func runRules(raw []byte, rules []rule) (Report, []Violation, error) {
 	return rep, violations, nil
 }
 
+// decodeViolations is what a report that does not decode is told. The json
+// violation comes first and carries the decoder's own words. A report written
+// to a newer schema most often fails on a field this build has never heard
+// of, and `unknown field` names the field without saying why it is unknown;
+// when the bytes declare a schema version this build does not read, that is
+// the why, so the schema_version.supported violation follows. A version that
+// matches, or that cannot be read out of the bytes at all, adds nothing.
+func decodeViolations(raw []byte, err error) []Violation {
+	violations := []Violation{{Path: "$", Rule: RuleJSON, Message: err.Error()}}
+	if declared, ok := peekSchemaVersion(raw); ok && declared != schema.Version {
+		violations = append(violations, schemaVersionViolation(declared))
+	}
+	return violations
+}
+
+// peekSchemaVersion reads identity.schema_version and nothing else, so that
+// it can be read out of a report the strict decoder rejects. It reports
+// false when the bytes are not a JSON object or carry no version: an absent
+// version says nothing about which schema the report was written to.
+func peekSchemaVersion(raw []byte) (string, bool) {
+	var peek struct {
+		Identity struct {
+			SchemaVersion string `json:"schema_version"`
+		} `json:"identity"`
+	}
+	if err := json.Unmarshal(raw, &peek); err != nil {
+		return "", false
+	}
+	return peek.Identity.SchemaVersion, peek.Identity.SchemaVersion != ""
+}
+
 // ruleSchemaVersion requires the report to declare the schema this build reads.
 func ruleSchemaVersion(rep Report) []Violation {
 	if rep.Identity.SchemaVersion == schema.Version {
 		return nil
 	}
-	return []Violation{{Path: "identity.schema_version", Rule: RuleSchemaVersionSupported,
+	return []Violation{schemaVersionViolation(rep.Identity.SchemaVersion)}
+}
+
+// schemaVersionViolation is the one wording of an unsupported schema version,
+// whether the report decoded and declared it or only the bytes did.
+func schemaVersionViolation(declared string) Violation {
+	return Violation{Path: "identity.schema_version", Rule: RuleSchemaVersionSupported,
 		Message: fmt.Sprintf("schema version %q is not supported; this build reads %q",
-			rep.Identity.SchemaVersion, schema.Version)}}
+			declared, schema.Version)}
 }
 
 // requiredField is one string that must carry content, and where it lives.

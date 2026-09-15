@@ -11,26 +11,32 @@ import (
 	"strings"
 )
 
-// newFlags returns a flag set that writes everything it has to say to the
-// stderr the caller passed in, and that decides nothing: a parse failure is
-// returned, so one place -- the subcommand -- owns the exit code.
+// newFlags returns a flag set that writes what goes wrong to the stderr the
+// caller passed in, and that decides nothing: a parse failure is returned,
+// so one place -- the subcommand -- owns the exit code.
 //
 // Its usage line is the command table's own line for that command, so that
 // "veval render -h" and "veval -h" answer with the same spelling instead of
-// two that drift apart.
+// two that drift apart. The usage goes to whichever stream the set writes
+// to at the time: standard error when it explains a mistake, standard
+// output when parseArgs answers a request for it.
 func newFlags(name string, stderr io.Writer) *flag.FlagSet {
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	flags.Usage = func() {
-		fmt.Fprintf(stderr, "usage: %s\n", usageLine(name))
+		fmt.Fprintf(flags.Output(), "usage: %s\n", usageLine(name))
 		flags.PrintDefaults()
 	}
 	return flags
 }
 
 // parseArgs parses the flags in args and requires exactly want operands. It
-// returns the operands, and the exit code to end on when it could not: the
-// flag set has already written what went wrong.
+// returns the operands and true when the command may go on; otherwise the
+// flag set has already said what there was to say, and the exit code to end
+// on is returned: 2 for a mistake, 0 for help, which is what the caller asked
+// for. Help goes to stdout for the reason the top level's does -- it is an
+// answer, not a complaint -- and it is answered before anything is parsed, so
+// that "render -h" is help rather than a missing operand.
 //
 // Only the flag tokens reach the flag set. The operands never do, so the two
 // may be typed in any order, and a value-taking flag left without a value is
@@ -39,17 +45,37 @@ func newFlags(name string, stderr io.Writer) *flag.FlagSet {
 // "-" alone is a path: it is the standard stream, not a flag. Any other path
 // that begins with a dash is read as a flag, so it has to be handed over
 // after "--".
-func parseArgs(flags *flag.FlagSet, args []string, want int) ([]string, int) {
+func parseArgs(flags *flag.FlagSet, args []string, want int, stdout io.Writer) ([]string, int, bool) {
 	flagArgs, operands := splitArgs(flags, args)
+	if asksForHelp(flags, flagArgs) {
+		flags.SetOutput(stdout)
+		flags.Usage()
+		return nil, exitOK, false
+	}
 	if err := flags.Parse(flagArgs); err != nil {
-		return nil, exitError
+		return nil, exitError, false
 	}
 	if len(operands) != want {
 		fmt.Fprintf(flags.Output(), "error: %s takes %d argument(s), got %d\n", flags.Name(), want, len(operands))
 		flags.Usage()
-		return nil, exitError
+		return nil, exitError, false
 	}
-	return operands, exitOK
+	return operands, exitOK, true
+}
+
+// asksForHelp reports whether the flag tokens carry an explicit request for
+// help: one of the top level's two spellings standing as a flag of its own,
+// not as the value of one, so that "-o -h" still names a file.
+func asksForHelp(flags *flag.FlagSet, flagArgs []string) bool {
+	for i := 0; i < len(flagArgs); i++ {
+		if isHelp(flagArgs[i]) {
+			return true
+		}
+		if takesValue(flags, flagArgs[i]) {
+			i++
+		}
+	}
+	return false
 }
 
 // terminator ends flag parsing: every token after it is an operand, however

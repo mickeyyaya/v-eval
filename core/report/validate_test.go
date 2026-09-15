@@ -512,3 +512,53 @@ func TestValidateRequiresADimensionToNameItsDefinition(t *testing.T) {
 		t.Fatalf("path = %q, want %q: %v", got, "dimensions[0].definition_ref", violations)
 	}
 }
+
+// TestDecodeFailureNamesANewerSchemaVersion covers the report a newer skill
+// writes: a field this build has never heard of makes the decoder stop with
+// `unknown field`, which says nothing about why. When the bytes declare a
+// schema version this build does not read, that is the reason, so the
+// schema_version.supported violation follows the json one -- in the words
+// ruleSchemaVersion would use, so a caller matching on either sees the same
+// message. The json violation is still first, and still alone when the
+// version matches or cannot be read at all.
+func TestDecodeFailureNamesANewerSchemaVersion(t *testing.T) {
+	t.Parallel()
+	unknownField := func(raw []byte) []byte {
+		return append([]byte(`{"from_the_future": 1,`), raw[1:]...)
+	}
+	newer := func(rep *Report) { rep.Identity.SchemaVersion = "9.9.9" }
+	newerMessage := ruleSchemaVersion(Report{Identity: Identity{SchemaVersion: "9.9.9"}})[0].Message
+	cases := []struct {
+		name      string
+		testCase  ruleCase
+		wantRules []string
+	}{
+		{"unknown field and a newer version", ruleCase{"", newer, unknownField},
+			[]string{RuleJSON, RuleSchemaVersionSupported}},
+		{"unknown field and the current version", ruleCase{"", nil, unknownField},
+			[]string{RuleJSON}},
+		{"malformed json", ruleCase{"", newer, func([]byte) []byte { return []byte("{not json") }},
+			[]string{RuleJSON}},
+		{"trailing data", ruleCase{"", newer, func(raw []byte) []byte { return append(raw, "{}"...) }},
+			[]string{RuleJSON}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			violations := violationsFor(t, tc.testCase)
+			var gotRules []string
+			for _, v := range violations {
+				gotRules = append(gotRules, v.Rule)
+			}
+			if strings.Join(gotRules, ",") != strings.Join(tc.wantRules, ",") {
+				t.Fatalf("rules = %v, want %v: %v", gotRules, tc.wantRules, violations)
+			}
+			if violations[0].Path != "$" || !strings.Contains(violations[0].Message, "decode") {
+				t.Errorf("json violation = %+v, want path $ and a decode message", violations[0])
+			}
+			if len(violations) == 2 && (violations[1].Path != "identity.schema_version" || violations[1].Message != newerMessage) {
+				t.Errorf("schema violation = %+v, want path identity.schema_version and %q", violations[1], newerMessage)
+			}
+		})
+	}
+}

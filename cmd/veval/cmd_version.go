@@ -18,7 +18,7 @@ import (
 // ignore.
 func runVersion(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	flags := newFlags("version", stderr)
-	if _, code := parseArgs(flags, args, 0); code != exitOK {
+	if _, code, ok := parseArgs(flags, args, 0, stdout); !ok {
 		return code
 	}
 	fmt.Fprintf(stdout, "veval %s schema %s\n", version.String(), schema.Version)

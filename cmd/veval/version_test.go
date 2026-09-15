@@ -50,19 +50,20 @@ func TestVersionTakesNoArguments(t *testing.T) {
 
 // TestCommandHelpCarriesTheTableUsageLine holds the two places a usage line
 // could be spelled to one spelling: `veval render -h` must answer with the
-// same line `veval -h` lists for render.
+// same line `veval -h` lists for render -- and answer it the same way, on
+// standard output with exit code 0, because help asked for is help given.
 func TestCommandHelpCarriesTheTableUsageLine(t *testing.T) {
 	for _, cmd := range commands() {
 		t.Run(cmd.Name, func(t *testing.T) {
 			code, stdout, stderr := call([]string{cmd.Name, "-h"}, "")
-			if code != exitError {
-				t.Errorf("code=%d, want 2", code)
+			if code != exitOK {
+				t.Errorf("code=%d, want 0", code)
 			}
-			if !strings.Contains(stderr, cmd.Usage) {
-				t.Errorf("help for %s does not carry %q: %q", cmd.Name, cmd.Usage, stderr)
+			if !strings.Contains(stdout, cmd.Usage) {
+				t.Errorf("help for %s does not carry %q: %q", cmd.Name, cmd.Usage, stdout)
 			}
-			if stdout != "" {
-				t.Errorf("help wrote %q to stdout, want stderr only", stdout)
+			if stderr != "" {
+				t.Errorf("help wrote %q to stderr, want stdout only", stderr)
 			}
 		})
 	}

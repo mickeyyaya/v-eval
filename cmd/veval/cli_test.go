@@ -158,6 +158,31 @@ func TestHelpIsAnAnswerNotAFailure(t *testing.T) {
 	}
 }
 
+// TestSubcommandHelpIsAnAnswerNotAFailure holds a command's own help to the
+// top level's rule: a caller who asked for the usage was given what they
+// asked for, on standard output, with an exit code that says so. The answer
+// is the command's table line and its flag defaults; standard error stays
+// silent.
+func TestSubcommandHelpIsAnAnswerNotAFailure(t *testing.T) {
+	for _, args := range [][]string{{"render", "-h"}, {"render", "--help"}, {"render", fixturePath(), "-h"}} {
+		code, stdout, stderr := call(args, "")
+		if code != exitOK {
+			t.Errorf("%v: code=%d, want 0", args, code)
+		}
+		if stderr != "" {
+			t.Errorf("%v: help wrote %q to stderr, want stdout only", args, stderr)
+		}
+		if want := "usage: " + usageLine("render") + "\n"; !strings.HasPrefix(stdout, want) {
+			t.Errorf("%v: stdout %q does not start with %q", args, stdout, want)
+		}
+		for _, flagName := range []string{"-format", "-o"} {
+			if !strings.Contains(stdout, "  "+flagName+" ") {
+				t.Errorf("%v: help does not list the %s flag: %q", args, flagName, stdout)
+			}
+		}
+	}
+}
+
 func TestUnknownFormatNamesTheAcceptedFormats(t *testing.T) {
 	code, _, stderr := call([]string{"render", "--format", "pdf", fixturePath()}, "")
 	want := `error: unknown format "pdf" (accepted: html, md)`
@@ -331,7 +356,7 @@ func TestOperationalFailuresGoToStderrWithCodeTwo(t *testing.T) {
 		{"unknown flag", []string{"validate", "--nope", source}},
 		{"too many positionals", []string{"validate", source, source}},
 		{"export without a format", []string{"export", source}},
-		{"subcommand help", []string{"render", "-h"}},
+		{"help after the terminator is a path", []string{"validate", "--", "-h"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
