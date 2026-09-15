@@ -41,6 +41,8 @@ Option 1. A push of a tag matching `v*` runs `release.yml` on ubuntu-latest: it 
 
 Confirmed for v0.1.0 on 2026-09-15: workflow run 34910783993 published six archives, `checksums.txt` (eight entries), and the two example reports; `shasum -a 256 --check --ignore-missing checksums.txt` passed for `veval_darwin_arm64.tar.gz` and `example-report-service-change.html`; the extracted binary printed `veval 0.1.0 (c591242) schema 0.1.0`; the attached example report was byte-identical to that binary's own render of the fixture; the release body was the `[0.1.0]` section of `CHANGELOG.md`.
 
+Confirmed for v0.1.1 on 2026-09-15: workflow run 34915090805 published the same nine assets; checksums passed; the extracted binary printed `veval 0.1.1 (23e5cab) schema 0.1.0`; the attached service-change report was byte-identical both to that binary's own render and to the copy the project site serves.
+
 ## Pros and Cons of the Options
 
 ### Tag-driven GoReleaser in CI with notes and example reports

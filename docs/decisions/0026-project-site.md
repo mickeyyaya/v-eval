@@ -38,6 +38,8 @@ Option 1. `site/index.html` is one file: system font stacks, custom properties o
 
 `curl -sI https://mickeyyaya.github.io/v-eval/` returns 200; the page contains no `<script`; the two example links resolve; the Fig. 1 texts equal `core/report/testdata/worked-example.json`; the `pages` workflow is green on `main`.
 
+Confirmed on 2026-09-15: run 34915006447 deployed; the index and both examples answer 200; the page carries no script; the C3 text on the page is the fixture's, including "after trimming".
+
 ## Pros and Cons of the Options
 
 ### One self-contained page deployed by workflow
