@@ -2,7 +2,7 @@
 
 Generated from every Markdown file in the repository. Each external link cited anywhere in the documentation appears once, with the documents that cite it. All links were accessed on the research dates stated in the citing documents; this register does not re-verify them. Regenerate with `python tools/docs/vdocs.py register .` from the repository root; `--check` verifies the committed file is current.
 
-Unique external links: 301. Citing documents: 84.
+Unique external links: 302. Citing documents: 84.
 
 ## aclanthology.org
 
@@ -526,6 +526,7 @@ Unique external links: 301. Citing documents: 84.
 
 ## skills.sh
 
+- [https://skills.sh](https://skills.sh) — cited in `README.md`
 - [https://www.skills.sh/hamelsmu/evals-skills/validate-evaluator](https://www.skills.sh/hamelsmu/evals-skills/validate-evaluator) — cited in `docs/decisions/0015-pilot-cases-and-labeling.md`, `docs/research/2026-09-14-evaluator-learning.md`
 
 ## sonarsource.com

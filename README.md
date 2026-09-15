@@ -52,7 +52,18 @@ tar -xzf veval_darwin_arm64.tar.gz veval
 ./veval version
 ```
 
-On Windows the archive is a `.zip` containing `veval.exe`; `Get-FileHash` prints the checksum to compare. Binaries are unsigned, so a browser download on macOS needs `xattr -d com.apple.quarantine veval` before it runs; the `curl` path above does not. With a Go toolchain, `go install github.com/mickeyyaya/v-eval/cmd/veval@v0.1.0` builds the same program; a build made that way prints `veval 0.0.0-dev (unknown)` because only the release build stamps the version. The two example reports attached to a release are rendered from the repository's fixtures, whose `veval_version` field reads `0.0.0-dev`; the render repeats the report's own words, so that is what the page shows.
+On Windows the archive is a `.zip` containing `veval.exe`; `Get-FileHash` prints the checksum to compare. Binaries are unsigned, so a browser download on macOS needs `xattr -d com.apple.quarantine veval` before it runs; the `curl` path above does not. With a Go toolchain, `go install github.com/mickeyyaya/v-eval/cmd/veval@v0.1.0` builds the same program; a build made that way prints `veval 0.1.0 (unknown)`: the release name comes from the module version in the build information, and only the release build stamps the commit. The two example reports attached to a release are rendered from the repository's fixtures, whose `veval_version` field reads `0.0.0-dev`; the render repeats the report's own words, so that is what the page shows.
+
+## Install the skill
+
+One line installs the skill for any agent that reads `SKILL.md` directories, through the cross-agent `skills` installer (<https://skills.sh>, Vercel Labs, accessed 2026-09-15):
+
+```sh
+npx skills add mickeyyaya/v-eval -y        # this project: ./.claude/skills, ./.agents/skills, ./.hermes/skills
+npx skills add mickeyyaya/v-eval -y -g     # your user: ~/.claude/skills and the other agents' homes
+```
+
+Verified on 2026-09-15: the installed `skills/evaluate-output/` directory, host reference files included, is byte-identical to this repository's, and a `skills-lock.json` records the source and content hash. Without `npx`, copy `skills/evaluate-output/` into your agent's skills directory (`~/.claude/skills/` for Claude Code). A native Claude Code plugin manifest for `claude plugin install` is a [roadmap](ROADMAP.md) item. The skill calls the `veval` binary when it is on `PATH` (see the next section) and says so in the report when it is not.
 
 ## Try the draft skill
 
