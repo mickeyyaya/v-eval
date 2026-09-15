@@ -31,5 +31,6 @@ Records 0001 to 0022 were decided on 2026-09-14 in a maintainer session; 0023 an
 | [0023](0023-note-locator-shape.md) | A fourth locator shape, `note`, for evidence that was neither opened nor run | accepted | 2026-09-15 | REQ-05, REQ-13; REQ-28 |
 | [0024](0024-contract-inside-report-schema.md) | The evaluation contract is a section of the report schema, not a schema of its own | accepted | 2026-09-15 | REQ-09, REQ-13, REQ-21 |
 | [0025](0025-tag-driven-release.md) | Releases are cut by tag, built by GoReleaser in CI, and ship the rendered example reports | accepted | 2026-09-15 | REQ-34, REQ-36 |
+| [0026](0026-project-site.md) | The project site is one static page, deployed by workflow, with the example reports rendered at deploy time | accepted | 2026-09-15 | REQ-34, REQ-39 |
 
 Requirements stated by the maintainer on 2026-09-14 carry identifiers REQ-28 to REQ-39 in [requirements.md](../requirements.md). Research memos referenced by the records live in [../research/](../research/) with the `2026-09-14-` prefix.

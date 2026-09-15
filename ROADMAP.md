@@ -23,6 +23,7 @@ Done:
 - `skills/evaluate-output/`: skill draft-3 writes the JSON report and calls the core when present; per-harness reference files for Claude Code, Codex, Gemini CLI, Antigravity, Hermes, and ollama-backed agents, under `skills/evaluate-output/references/hosts/`.
 - Continuous integration on macOS, Linux, and Windows; GoReleaser configuration for the six operating-system and architecture targets.
 - First official release, v0.1.0 (2026-09-15), cut by tag through `release.yml` with binaries for six targets, checksums, notes from the changelog, and the two example reports rendered at the tagged commit ([decision 0025](docs/decisions/0025-tag-driven-release.md)); the HTML report received a design pass first.
+- v0.1.1 (2026-09-15): the review follow-ups, a one-line skill install, the CI schema-validation job, and the project site at <https://mickeyyaya.github.io/v-eval/> ([decision 0026](docs/decisions/0026-project-site.md)).
 
 Remaining:
 

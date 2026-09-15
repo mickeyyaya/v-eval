@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v-eval — evidence before verdict</title>
+<meta name="description" content="v-eval is an evaluation skill and a small Go core that judge AI-generated work against intent, design, sources, and acceptance criteria: evidence first, verdicts derived, gaming traces hunted.">
+<style>
+:root {
+  color-scheme: light dark;
+  --paper: #faf8f3;
+  --paper-2: #f3efe6;
+  --ink: #2a2724;
+  --ink-2: #5d5750;
+  --rule: #ddd6c8;
+  --accent: #a2512b;
+  --accent-ink: #7e3d1f;
+  --code-bg: #efeadf;
+  --pass-bg: #d7ead9; --pass-fg: #12492a;
+  --fail-bg: #f3d6d6; --fail-fg: #781d1d;
+  --unknown-bg: #e4e4de; --unknown-fg: #3d3d38;
+  --dark-panel: #1c1a17; --dark-panel-fg: #efe9dc;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #17161a;
+    --paper-2: #1f1d22;
+    --ink: #ebe7df;
+    --ink-2: #b1aba0;
+    --rule: #3a363e;
+    --accent: #e0946c;
+    --accent-ink: #f0b48f;
+    --code-bg: #26232a;
+    --pass-bg: #16341f; --pass-fg: #9ddfae;
+    --fail-bg: #3a1c1c; --fail-fg: #f0a8a8;
+    --unknown-bg: #2b2f34; --unknown-fg: #c9c9c2;
+    --dark-panel: #0f0e11; --dark-panel-fg: #e6e1d6;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+.serif, h1, h2, blockquote { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif; }
+code, pre, kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 72rem; margin: 0 auto; padding: 0 1.25rem; }
+
+/* masthead */
+.masthead { border-bottom: 1px solid var(--rule); position: sticky; top: 0; background: var(--paper); z-index: 2; }
+.masthead .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 4rem; }
+.brand { display: flex; align-items: baseline; gap: 0.75rem; text-decoration: none; color: var(--ink); }
+.brand .name { font-size: 1.35rem; font-weight: 500; }
+.eyebrow { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+.eyebrow.accent { color: var(--accent); font-weight: 600; }
+.masthead nav { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.masthead nav a { text-decoration: none; color: var(--ink-2); font-size: 0.95rem; }
+.masthead nav a.button { border: 1px solid var(--ink); color: var(--ink); padding: 0.4rem 0.9rem; border-radius: 4px; font-weight: 600; }
+.brand .name { white-space: nowrap; }
+@media (max-width: 40rem) { .masthead { position: static; } .masthead .wrap { flex-wrap: wrap; padding-top: 0.75rem; padding-bottom: 0.75rem; } .brand .eyebrow { display: none; } .masthead nav { gap: 0.75rem; } }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 1fr; gap: 2.5rem; padding: 3.5rem 0 2.5rem; align-items: start; }
+@media (min-width: 60rem) { .hero { grid-template-columns: 1fr 1fr; gap: 4rem; padding: 5rem 0 3rem; } }
+h1 { font-size: clamp(2.4rem, 6vw, 4.4rem); line-height: 1.05; font-weight: 500; letter-spacing: -0.01em; margin: 0.75rem 0 1.25rem; }
+h1 em { font-style: italic; color: var(--accent); }
+.lede { font-size: 1.2rem; color: var(--ink-2); max-width: 32rem; margin: 0 0 1.5rem; }
+.lede.serif { font-size: 1.3rem; }
+.cmd { display: flex; align-items: center; gap: 0.75rem; border: 1px solid var(--rule); background: var(--paper-2); border-radius: 6px; padding: 0.75rem 1rem; overflow-x: auto; white-space: nowrap; font-size: 0.95rem; }
+.cmd .prompt { color: var(--accent); }
+.cta { display: inline-block; margin-top: 1rem; font-weight: 600; }
+
+/* figure card */
+figure { margin: 0; }
+.card { border: 1px solid var(--rule); border-radius: 8px; background: var(--paper-2); overflow: hidden; }
+.card .head { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 1rem; border-bottom: 1px solid var(--rule); font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.card .head .label { color: var(--accent); font-weight: 600; }
+.card .head .meta { color: var(--ink-2); letter-spacing: 0.04em; text-transform: none; }
+.card .body { padding: 1rem; background: var(--paper); }
+.verdict-row { display: grid; grid-template-columns: 3rem 1fr auto; gap: 0.75rem; align-items: baseline; padding: 0.45rem 0; border-bottom: 1px dashed var(--rule); font-size: 0.95rem; }
+.verdict-row:last-child { border-bottom: 0; }
+.verdict-row .id { color: var(--ink-2); font-size: 0.85rem; }
+.badge { display: inline-block; border-radius: 3px; padding: 0.05rem 0.5rem; font-weight: 600; font-size: 0.8rem; letter-spacing: 0.03em; background: var(--unknown-bg); color: var(--unknown-fg); }
+.badge.pass { background: var(--pass-bg); color: var(--pass-fg); }
+.badge.fail { background: var(--fail-bg); color: var(--fail-fg); }
+.overall { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--rule); font-size: 0.95rem; }
+.overall .badge { font-size: 0.95rem; padding: 0.15rem 0.7rem; }
+figcaption { margin-top: 0.75rem; padding-left: 0.75rem; border-left: 2px solid var(--accent); color: var(--ink-2); font-style: italic; font-size: 0.95rem; }
+
+/* stats */
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 1rem 0 0; }
+@media (min-width: 48rem) { .stats { grid-template-columns: repeat(4, 1fr); } }
+.stat { padding: 1.25rem 1rem; border-right: 1px solid var(--rule); }
+.stat:last-child { border-right: 0; }
+.stat .n { font-size: 1.8rem; font-weight: 500; line-height: 1.1; }
+.stat .l { color: var(--ink-2); font-size: 0.85rem; margin-top: 0.25rem; }
+
+/* sections */
+section.part { padding: 4rem 0 1rem; border-top: 1px solid var(--rule); }
+section.part:first-of-type { border-top: 0; }
+.no { color: var(--accent); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; }
+h2 { font-size: clamp(1.7rem, 3.4vw, 2.5rem); line-height: 1.15; font-weight: 500; margin: 0.5rem 0 1rem; max-width: 40rem; }
+.part p { max-width: 42rem; }
+.two { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+.two > *, .hero > * { min-width: 0; }
+@media (min-width: 60rem) { .two { grid-template-columns: 1fr 1fr; gap: 3rem; } }
+.steps { list-style: none; margin: 1.5rem 0 0; padding: 0; counter-reset: step; }
+.steps li { counter-increment: step; display: grid; grid-template-columns: 2.5rem 1fr; gap: 0.75rem; padding: 0.9rem 0; border-top: 1px solid var(--rule); }
+.steps li::before { content: counter(step, decimal-leading-zero); color: var(--accent); font-weight: 600; font-size: 0.85rem; padding-top: 0.2rem; }
+.steps b { display: block; margin-bottom: 0.15rem; }
+.steps span { color: var(--ink-2); font-size: 0.95rem; }
+pre { margin: 1rem 0; padding: 1rem 1.1rem; background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55; }
+pre.terminal { background: var(--dark-panel); color: var(--dark-panel-fg); border-color: transparent; }
+pre .c { color: #8f8a80; }
+code { background: var(--code-bg); border-radius: 3px; padding: 0 0.3rem; font-size: 0.9em; }
+pre code { background: none; padding: 0; font-size: inherit; }
+.rulebox { border: 1px solid var(--rule); border-left: 3px solid var(--accent); background: var(--paper-2); padding: 1rem 1.25rem; margin: 1.5rem 0; max-width: 42rem; }
+.rulebox b { display: block; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.75rem; color: var(--accent); margin-bottom: 0.4rem; }
+.rulebox code { background: var(--code-bg); }
+blockquote { margin: 1.5rem 0; padding: 0 0 0 1.25rem; border-left: 3px solid var(--accent); font-size: 1.35rem; line-height: 1.35; max-width: 36rem; }
+blockquote cite { display: block; margin-top: 0.5rem; font-size: 0.85rem; color: var(--ink-2); font-style: normal; font-family: ui-sans-serif, system-ui, sans-serif; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; font-size: 0.95rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.7rem 0.8rem; border-bottom: 1px solid var(--rule); }
+th { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); font-weight: 600; }
+td:first-child { color: var(--ink-2); white-space: nowrap; }
+.states td:nth-child(2) { white-space: nowrap; }
+.hosts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin: 1.5rem 0; padding: 0; list-style: none; max-width: 42rem; }
+@media (min-width: 48rem) { .hosts { grid-template-columns: repeat(3, 1fr); } }
+.hosts li { border: 1px solid var(--rule); border-radius: 6px; padding: 0.7rem 0.9rem; background: var(--paper-2); font-size: 0.95rem; }
+.hosts li small { display: block; color: var(--ink-2); font-size: 0.8rem; }
+.hosts li, .stat, td, .verdict-row span, .steps span { overflow-wrap: anywhere; }
+.not { columns: 1; max-width: 42rem; }
+.closing { padding: 4rem 0 3rem; border-top: 1px solid var(--rule); }
+.closing h2 { max-width: none; }
+.closing .links { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; margin-top: 1rem; }
+footer { border-top: 1px solid var(--rule); padding: 1.5rem 0 3rem; color: var(--ink-2); font-size: 0.9rem; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; justify-content: space-between; }
+@media print { .masthead { position: static; } .scroll { overflow: visible; } pre { white-space: pre-wrap; } }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+<div class="wrap">
+<a class="brand" href="#top"><span class="name serif">v-eval</span> <span class="eyebrow">A field guide</span></a>
+<nav aria-label="Site">
+<a href="https://github.com/mickeyyaya/v-eval/tree/main/docs">Docs</a>
+<a href="https://github.com/mickeyyaya/v-eval/releases/latest">Release</a>
+<a href="examples/example-report-service-change.html">Example report</a>
+<a class="button" href="https://github.com/mickeyyaya/v-eval">GitHub</a>
+</nav>
+</div>
+</header>
+
+<main id="top" class="wrap">
+
+<section class="hero">
+<div>
+<p class="eyebrow accent">Evaluating AI-generated work</p>
+<h1>Don't trust the summary. <em>Verify from the context.</em></h1>
+<p class="lede serif">v-eval is a skill for any tool-capable assistant, backed by a small Go core. It evaluates a code change, a document, or a generated context against the intent, design, sources, and acceptance criteria that define success: every claim checked against the underlying material, every verdict derived from evidence, a forensic pass for gaming traces on every evaluation.</p>
+<div class="cmd"><span class="prompt">$</span> <code>npx skills add mickeyyaya/v-eval -y</code></div>
+<a class="cta" href="#install">Install the skill and the core &rarr;</a>
+</div>
+<figure>
+<div class="card">
+<div class="head"><span class="label">Fig. 1 — the verdict</span><span class="meta">worked example, code review</span></div>
+<div class="body">
+<div class="verdict-row"><span class="id">C1</span><span>Whitespace and case variants collapse into one address</span><span class="badge fail">FAIL</span></div>
+<div class="verdict-row"><span class="id">C2</span><span>Output preserves first-seen order</span><span class="badge fail">FAIL</span></div>
+<div class="verdict-row"><span class="id">C3</span><span>Each kept address retains the first occurrence's spelling after trimming</span><span class="badge fail">FAIL</span></div>
+<div class="verdict-row"><span class="id">C4</span><span>Complete supplied implementation uses no third-party dependency</span><span class="badge pass">PASS</span></div>
+<div class="verdict-row"><span class="id">C5</span><span>Regression tests pass for this exact artifact</span><span class="badge">UNKNOWN</span></div>
+<div class="overall"><span>Overall, by rule <em>required applicable criterion failed</em></span><span class="badge fail">FAIL</span></div>
+</div>
+</div>
+<figcaption>The candidate said "production-ready and all tests passed." The evaluator opened the file: <code>sorted()</code> replaces input order, so first-seen order cannot be preserved. The tests were never shown, so C5 stays UNKNOWN rather than becoming a guess.</figcaption>
+</figure>
+</section>
+
+<div class="stats">
+<div class="stat"><div class="n">5</div><div class="l">verdict states per criterion, no composite score</div></div>
+<div class="stat"><div class="n">6</div><div class="l">CLIs mapped: Claude Code, Codex, Gemini CLI, Antigravity, Hermes, ollama</div></div>
+<div class="stat"><div class="n">3</div><div class="l">operating systems, a static binary for amd64 and arm64 on each</div></div>
+<div class="stat"><div class="n">MIT</div><div class="l">open source, no dependency on any other project</div></div>
+</div>
+
+<section class="part" id="problem">
+<p class="no">№ 01 — the problem</p>
+<h2>The summary is not the work.</h2>
+<div class="two">
+<div>
+<p>An assistant that wrote a change also writes its description. "All tests pass." "Follows the design." "No new dependencies." A reviewer who reads the description instead of the diff accepts whatever the author believed, or wanted believed. The same assistant, asked to grade its own work, tends to find it good.</p>
+<p>v-eval takes the opposite stance. The description is a set of claims. Each claim is verified from the context it points at, or marked unverified. What the evaluator itself opened, ran, or cited is evidence; what it was told is not.</p>
+</div>
+<blockquote>Seeing is believing. Find the hidden trace under the surface.<cite>The maintainer's verification axis, requirements U11, 2026-09-14</cite></blockquote>
+</div>
+</section>
+
+<section class="part" id="evidence">
+<p class="no">№ 02 — the rule</p>
+<h2>Evidence first. Verdicts derived.</h2>
+<p>A criterion can PASS only on evidence the evaluator observed, and only when that evidence points somewhere a reader can go: a file with a line range, a command with its exit status and log, or a passage with its source and dates. A note such as "the author says so" is a valid record of what was supplied, and it can never carry a PASS. The core enforces this; a report that breaks it is rejected before it is rendered.</p>
+<div class="rulebox"><b>Evidence hierarchy</b>observed execution &gt; observed inspection &gt; supplied logs &gt; the candidate's own summary. Candidate-supplied material is labelled <code>(supplied)</code> everywhere it appears.</div>
+<ol class="steps">
+<li><b>Intake</b><span>Everything available is input: the brief, the artifact, the diff, the design, test definitions, execution records, prior reviews, the candidate's claims.</span></li>
+<li><b>Contract</b><span>The acceptance criteria become an explicit contract: identifier, requirement, source, required or optional, allowed methods, acceptance rule. Provisional criteria are marked and block acceptance until confirmed.</span></li>
+<li><b>Classify and route</b><span>The evaluator records which perspectives and checks apply in this host, what was skipped, and why. Test evidence is one route to evidence among several, not the whole method. A deterministic classifier and adapters in the core are designed, not yet built.</span></li>
+<li><b>Collect evidence</b><span>Files are opened, commands are run where the environment allows, sources are read. Each record carries its kind, its isolation level, and its provenance.</span></li>
+<li><b>Forensic pass</b><span>The detective work: tests or graders touched alongside the change, provenance that does not match the artifact, hard-coded answers and special cases. Each finding carries a benign alternative and a disposition.</span></li>
+<li><b>Decide</b><span>Per-criterion results, then one overall status by one auditable rule. No composite score.</span></li>
+<li><b>Report</b><span>Canonical JSON, validated by the core; Markdown and a self-contained HTML page; SARIF for tools that read it.</span></li>
+</ol>
+</section>
+
+<section class="part" id="states">
+<p class="no">№ 03 — the states</p>
+<h2>Five states, one auditable rule.</h2>
+<div class="two">
+<div>
+<p>Each criterion ends in exactly one of five states. UNKNOWN is a first-class answer: when the tests were not supplied, the honest result is that nobody knows, not that they probably pass. ERROR is reserved for a check that was actually attempted and could not complete.</p>
+<p>The overall status follows from the required, applicable, confirmed criteria by a fixed order of rules, and the report names the rule it applied and the criteria that blocked acceptance. Change a result by hand and the core notices: the recomputed status and the stated one must agree, and so must the report's content hash.</p>
+</div>
+<div class="scroll">
+<table class="states">
+<thead><tr><th>State</th><th>Means</th><th>Needs</th></tr></thead>
+<tbody>
+<tr><td><span class="badge pass">PASS</span></td><td>The acceptance rule was met</td><td>Observed evidence with a qualifying locator</td></tr>
+<tr><td><span class="badge fail">FAIL</span></td><td>The rule was not met</td><td>Evidence of the failure</td></tr>
+<tr><td><span class="badge">UNKNOWN</span></td><td>Could not be determined</td><td>A next action that would settle it</td></tr>
+<tr><td><span class="badge">ERROR</span></td><td>A check ran and broke</td><td>The attempt on record: execution evidence or a failed command</td></tr>
+<tr><td><span class="badge">NOT_APPLICABLE</span></td><td>Does not apply here</td><td>Reasoning that says why</td></tr>
+</tbody>
+</table>
+</div>
+<p style="font-size:0.9rem;color:var(--ink-2)">PASS, ERROR, and NOT_APPLICABLE are enforced by the core; FAIL and UNKNOWN are the skill's obligations.</p>
+</div>
+<pre class="terminal"><code><span class="c"># edit the report so the overall status reads PASS, then:</span>
+$ veval validate report.json
+status: status.match: stated overall PASS, computed FAIL
+identity.report_id: identity.report_id: stated "sha256:9801…", recomputed "sha256:d9a4…"
+$ echo $?
+1</code></pre>
+</section>
+
+<section class="part" id="forensics">
+<p class="no">№ 04 — the detective pass</p>
+<h2>Verifying the known result is only the first step.</h2>
+<div class="two">
+<div>
+<p>A change that makes the tests pass by changing the tests has passed nothing. A benchmark number quoted from a pull request description has been measured by nobody the evaluator can name. v-eval's forensic pass looks for exactly these traces: grader and test tampering, provenance that does not bind to the artifact under review, hard-coded outputs that satisfy the known cases and nothing else.</p>
+<p>Isolation is recorded, not demanded. A check that ran in a clean worktree or a container says so; one that ran in place says that instead. The report never pretends a stronger setting than the one it had. And the evaluator is not an auditor handing down a verdict: it collects everything, shows what it found, and lets the verdict follow.</p>
+</div>
+<div class="card">
+<div class="head"><span class="label">Fig. 2 — a finding</span><span class="meta">extended example, F1</span></div>
+<div class="body">
+<p style="margin:0 0 0.5rem"><span class="badge">suspicious</span> <span class="badge">open</span> &nbsp;detector <code>mtime-drift 0.3</code> on E6</p>
+<p style="margin:0 0 0.5rem;font-size:0.95rem">Modification time <code>2026-09-14T00:04:12Z</code>, after the evaluation started at <code>2026-09-14T00:03:00Z</code>. A tracked file's modification time moved during the evaluation, and no pre-evaluation tree digest was recorded, so whether the artifact changed cannot be settled either way.</p>
+<p style="margin:0;font-size:0.9rem;color:var(--ink-2)">Benign alternative: a checkout or a formatter touched the file without changing its contents. Next action: record a tree digest before evaluation begins, then re-run and compare. The detector name and version are the fixture's; the core ships no detectors yet.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="part" id="report">
+<p class="no">№ 05 — the report</p>
+<h2>One canonical record, three renderings.</h2>
+<p>The JSON report is the record: a published schema, canonical bytes, a content hash, and a digest over every piece of evidence. Markdown and HTML are renderings that add nothing. SARIF 2.1.0 carries the same results to any tool that reads it. The HTML is a single file with no script and no external resource, readable offline, in light and dark, on a phone or on paper.</p>
+<div class="two">
+<div>
+<pre><code>veval version
+veval aggregate report.json -o report.json
+veval validate  report.json
+veval render --format html report.json -o report.html
+veval render --format md   report.json -o report.md
+veval export sarif report.json -o report.sarif.json</code></pre>
+<p>Exit 0 when the report is sound, 1 when a rule is broken, 2 when the tool could not run. A report the skill wrote by hand goes through <code>aggregate</code> first, which fills the counts, the status, and the digests from the results; nothing else is derived by the assistant.</p>
+</div>
+<div>
+<p>See the real thing rather than a description of it. Both example reports are rendered from the repository's fixtures by the current code when this page is deployed:</p>
+<ul>
+<li><a href="examples/example-report-code-review.html">Code review</a>: the deduplication change from Fig. 1, three failures and an unverified claim.</li>
+<li><a href="examples/example-report-service-change.html">Service change</a>: command and passage locators, an optional criterion, an error, a suspicious finding, an unresolved contract conflict.</li>
+</ul>
+</div>
+</div>
+</section>
+
+<section class="part" id="hosts">
+<p class="no">№ 06 — where it runs</p>
+<h2>One skill, every CLI.</h2>
+<p>The skill is a <code>SKILL.md</code> workflow with a reference file per host that maps its seven actions (read a file, search, list, run a command, fetch a URL, dispatch a subagent, invoke the core) onto that host's tools. Where a host cannot run commands, execution criteria stay UNKNOWN and the report says so.</p>
+<ul class="hosts">
+<li>Claude Code<small>Read, Grep, Glob, Bash, WebFetch, Agent</small></li>
+<li>Codex<small>shell tool and spawn_agent; other actions from the session's own tool list</small></li>
+<li>Gemini CLI<small>file, search, shell tools</small></li>
+<li>Antigravity<small>invoke_subagent; other actions from the session's own tool list</small></li>
+<li>Hermes<small>its agent tool set</small></li>
+<li>ollama-backed agents<small>through a harness such as Claude Code, Codex, or OpenCode</small></li>
+</ul>
+</section>
+
+<section class="part" id="install">
+<p class="no">№ 07 — install</p>
+<h2>One line for the skill. One archive for the core.</h2>
+<div class="two">
+<div>
+<p>The skill installs with the cross-agent <code>skills</code> installer into your project, or with <code>-g</code> into your user directory. Without it, copy <code>skills/evaluate-output/</code> into your agent's skills directory.</p>
+<pre><code>npx skills add mickeyyaya/v-eval -y</code></pre>
+<p>The core is a static binary per operating system and architecture. Download the archive for your platform from the release, check it against <code>checksums.txt</code>, and put <code>veval</code> on your <code>PATH</code>. The skill calls it when present and states in the report when it is not.</p>
+<pre><code>curl -sSLO https://github.com/mickeyyaya/v-eval/releases/latest/download/veval_darwin_arm64.tar.gz
+curl -sSLO https://github.com/mickeyyaya/v-eval/releases/latest/download/checksums.txt
+shasum -a 256 --check --ignore-missing checksums.txt
+tar -xzf veval_darwin_arm64.tar.gz veval
+./veval version</code></pre>
+</div>
+<div>
+<p>Then hand your assistant the skill and the material to judge:</p>
+<pre><code>Read skills/evaluate-output/SKILL.md and use it
+to evaluate my change.
+Intent: &lt;the requested outcome&gt;
+Artifacts: &lt;files or diff to review&gt;
+Design: &lt;relevant design documents, if available&gt;
+Criteria: &lt;acceptance requirements&gt;
+Tests: &lt;existing suite and execution environment, if available&gt;
+Write a report with evidence for each criterion
+and distinguish checks you executed from code
+inspection and supplied claims.</code></pre>
+<p>What comes back is a JSON report, validated by the core when <code>veval</code> is installed, an HTML page you can open anywhere, and a Markdown rendering for the pull request.</p>
+</div>
+</div>
+</section>
+
+<section class="part" id="compare">
+<p class="no">№ 08 — the difference</p>
+<h2>Reading the summary, or reading the work.</h2>
+<div class="scroll">
+<table>
+<thead><tr><th></th><th>Trusting the description</th><th>v-eval</th></tr></thead>
+<tbody>
+<tr><td>What a PASS needs</td><td>The author's word</td><td>Observed evidence with a locator a reader can follow</td></tr>
+<tr><td>When the tests are missing</td><td>"Probably fine"</td><td>UNKNOWN, with the action that would settle it</td></tr>
+<tr><td>Who computes the verdict</td><td>The reviewer's impression</td><td>One rule, applied by the core, named in the report</td></tr>
+<tr><td>A tampered test</td><td>Green</td><td>A forensic finding with a benign alternative to rule out</td></tr>
+<tr><td>The report</td><td>A paragraph</td><td>Canonical JSON, Markdown, HTML, SARIF; content-hashed</td></tr>
+<tr><td>The score</td><td>7/10</td><td>No composite. Counts with denominators; dimension measurements in their own units</td></tr>
+</tbody>
+</table>
+</div>
+<p>What v-eval is not: a model leaderboard, an automatic repair loop, a hosted dashboard, or a default composite score. Those are listed as not planned in its roadmap, not missing features.</p>
+</section>
+
+<section class="closing">
+<p class="no">The stance</p>
+<h2 class="serif">Collect everything. Show what was found. <em style="color:var(--accent)">Then decide.</em></h2>
+<div class="links">
+<a class="button" href="https://github.com/mickeyyaya/v-eval">Repository</a>
+<a href="https://github.com/mickeyyaya/v-eval/releases/latest">Latest release</a>
+<a href="https://github.com/mickeyyaya/v-eval/blob/main/CHANGELOG.md">Changelog</a>
+<a href="https://github.com/mickeyyaya/v-eval/tree/main/docs/decisions">Decision records</a>
+<a href="https://github.com/mickeyyaya/v-eval/blob/main/skills/evaluate-output/SKILL.md">The skill</a>
+</div>
+</section>
+
+</main>
+
+<footer>
+<div class="wrap">
+<span>v-eval is MIT licensed. Each design document links to the decision records and research memos it rests on.</span>
+<span>Skill draft-3 · schema 0.1.0 · this page is one file with no script.</span>
+</div>
+</footer>
+
+</body>
+</html>

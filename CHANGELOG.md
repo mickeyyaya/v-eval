@@ -4,8 +4,17 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.1] - 2026-09-15
+
+Follow-ups from the v0.1.0 reviews, a one-line skill install, a schema-validation job in CI, and the project site.
+
 ### Added
 
+- Project site at <https://mickeyyaya.github.io/v-eval/> (decision 0026, `docs/decisions/0026-project-site.md`): one self-contained introduction page in `site/`, deployed by `.github/workflows/pages.yml`, which renders the two example reports beside it at deploy time.
+- A CI `schemas` job validates the SARIF goldens against the OASIS 2.1.0 schema and the report fixtures against the published report schema with `tools/schema/validate.py` (decision 0022 amended: `jsonschema` is a CI-only dependency).
+- `tools/release/release_notes.py` warns about relative links, which do not resolve on a release page.
 - `veval version` falls back to the Go build information when nothing was stamped: a `go install` build names its module version, and a checkout build names its commit (with `-dirty` when the tree was modified).
 - Validation reports the schema-version mismatch alongside the unknown-field error when a report from a newer schema is read, so the reader learns which build to use instead of only which field was unknown.
 - One-line skill installation through the cross-agent `skills` installer (`npx skills add mickeyyaya/v-eval`), verified byte-identical to the repository, documented in `README.md`.
@@ -69,5 +78,6 @@ First tagged release: the core walking skeleton, the `veval` command line, the s
 
 - The plugin manifests, the agent profile, the isolation profile, the adapters, the classifier, the forensic detectors, the precedent bank, and the pilot set are designed but not built.
 
-[Unreleased]: https://github.com/mickeyyaya/v-eval/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mickeyyaya/v-eval/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/mickeyyaya/v-eval/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/mickeyyaya/v-eval/releases/tag/v0.1.0

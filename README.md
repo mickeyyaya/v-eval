@@ -54,6 +54,8 @@ tar -xzf veval_darwin_arm64.tar.gz veval
 
 On Windows the archive is a `.zip` containing `veval.exe`; `Get-FileHash` prints the checksum to compare. Binaries are unsigned, so a browser download on macOS needs `xattr -d com.apple.quarantine veval` before it runs; the `curl` path above does not. With a Go toolchain, `go install github.com/mickeyyaya/v-eval/cmd/veval@v0.1.0` builds the same program; a build made that way prints `veval 0.1.0 (unknown)`: the release name comes from the module version in the build information, and only the release build stamps the commit. The two example reports attached to a release are rendered from the repository's fixtures, whose `veval_version` field reads `0.0.0-dev`; the render repeats the report's own words, so that is what the page shows.
 
+An introduction to the skill, with the example reports rendered by the current code, is at <https://mickeyyaya.github.io/v-eval/>.
+
 ## Install the skill
 
 One line installs the skill for any agent that reads `SKILL.md` directories, through the cross-agent `skills` installer (<https://skills.sh>, Vercel Labs, accessed 2026-09-15):

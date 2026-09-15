@@ -2,7 +2,7 @@
 
 Generated from every Markdown file in the repository. Each external link cited anywhere in the documentation appears once, with the documents that cite it. All links were accessed on the research dates stated in the citing documents; this register does not re-verify them. Regenerate with `python tools/docs/vdocs.py register .` from the repository root; `--check` verifies the committed file is current.
 
-Unique external links: 302. Citing documents: 84.
+Unique external links: 305. Citing documents: 85.
 
 ## aclanthology.org
 
@@ -204,6 +204,7 @@ Unique external links: 302. Citing documents: 84.
 
 - [https://docs.github.com/en/actions/concepts/security/artifact-attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations) — cited in `docs/architecture/forensics.md`, `docs/decisions/0010-first-adapters.md`
 - [https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication](https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication) — cited in `docs/decisions/0025-tag-driven-release.md`
+- [https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages) — cited in `docs/decisions/0026-project-site.md`
 
 ## docs.oasis-open.org
 
@@ -306,7 +307,8 @@ Unique external links: 302. Citing documents: 84.
 - [https://github.com/mem0ai/mem0](https://github.com/mem0ai/mem0) — cited in `docs/research/2026-09-14-adaptive-skills.md`
 - [https://github.com/mickeyyaya/evolve-loop](https://github.com/mickeyyaya/evolve-loop) — cited in `docs/decisions/0001-independent-of-evolve-loop.md`
 - [https://github.com/mickeyyaya/v-eval](https://github.com/mickeyyaya/v-eval) — cited in `README.md`, `docs/decisions/0019-delivery-public-repo-mit.md`
-- [https://github.com/mickeyyaya/v-eval/compare/v0.1.0...HEAD](https://github.com/mickeyyaya/v-eval/compare/v0.1.0...HEAD) — cited in `CHANGELOG.md`
+- [https://github.com/mickeyyaya/v-eval/compare/v0.1.0...v0.1.1](https://github.com/mickeyyaya/v-eval/compare/v0.1.0...v0.1.1) — cited in `CHANGELOG.md`
+- [https://github.com/mickeyyaya/v-eval/compare/v0.1.1...HEAD](https://github.com/mickeyyaya/v-eval/compare/v0.1.1...HEAD) — cited in `CHANGELOG.md`
 - [https://github.com/mickeyyaya/v-eval/releases](https://github.com/mickeyyaya/v-eval/releases) — cited in `README.md`
 - [https://github.com/mickeyyaya/v-eval/releases/tag/v0.1.0](https://github.com/mickeyyaya/v-eval/releases/tag/v0.1.0) — cited in `CHANGELOG.md`
 - [https://github.com/microsoft/PromptWizard](https://github.com/microsoft/PromptWizard) — cited in `docs/research/2026-09-14-adaptive-skills.md`
@@ -459,6 +461,10 @@ Unique external links: 302. Citing documents: 84.
 - [Recent Frontier Models Are Reward Hacking](https://metr.org/blog/2025-06-05-recent-reward-hacking/) — cited in `docs/architecture/forensics.md`, `docs/decisions/0008-evidence-policy-verify-over-summary.md`, `docs/gaming-and-defenses.md`
 - [MALT dataset announcement](https://metr.org/blog/2025-10-14-malt-dataset-of-natural-and-prompted-behaviors/) — cited in `docs/architecture/forensics.md`, `docs/decisions/0012-forensic-detectors-v1.md`, `docs/decisions/0015-pilot-cases-and-labeling.md`, `docs/gaming-and-defenses.md`
 - [https://metr.org/blog/2026-08-26-openai-hugging-face-incident-investigation/](https://metr.org/blog/2026-08-26-openai-hugging-face-incident-investigation/) — cited in `docs/architecture/forensics.md`, `docs/decisions/0008-evidence-policy-verify-over-summary.md`
+
+## mickeyyaya.github.io
+
+- [https://mickeyyaya.github.io/v-eval/](https://mickeyyaya.github.io/v-eval/) — cited in `CHANGELOG.md`, `README.md`, `ROADMAP.md`, `docs/decisions/0026-project-site.md`
 
 ## microsoft.com
 
