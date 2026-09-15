@@ -45,7 +45,9 @@ def load_jsonschema() -> Any:
     that needs no validator is reported without it."""
     try:
         import jsonschema  # noqa: PLC0415 -- deliberately deferred; see the module docstring
-    except ImportError as exc:
+    except ModuleNotFoundError as exc:
+        if exc.name != "jsonschema":  # a broken dependency inside the package is a different problem
+            raise
         raise ToolError(MISSING_PACKAGE) from exc
     return jsonschema
 

@@ -10,6 +10,10 @@ All notable changes to this project are documented in this file. The format foll
 - Validation reports the schema-version mismatch alongside the unknown-field error when a report from a newer schema is read, so the reader learns which build to use instead of only which field was unknown.
 - One-line skill installation through the cross-agent `skills` installer (`npx skills add mickeyyaya/v-eval`), verified byte-identical to the repository, documented in `README.md`.
 
+### Fixed
+
+- HTML report: each fact keeps its label and value together across column breaks (`-webkit-column-break-inside` beside `break-inside`).
+
 ### Changed
 
 - `veval <command> -h` prints that command's usage on standard output and exits 0, matching `veval -h`; unknown flags and missing values still exit 2 on standard error.

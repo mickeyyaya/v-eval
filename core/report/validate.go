@@ -103,7 +103,9 @@ func runRules(raw []byte, rules []rule) (Report, []Violation, error) {
 // of, and `unknown field` names the field without saying why it is unknown;
 // when the bytes declare a schema version this build does not read, that is
 // the why, so the schema_version.supported violation follows. A version that
-// matches, or that cannot be read out of the bytes at all, adds nothing.
+// matches, or that cannot be read out of the bytes at all, adds nothing. The
+// peek runs on every decode failure, not only an unknown field: a report that
+// declares an unsupported version is told so whatever else is wrong with it.
 func decodeViolations(raw []byte, err error) []Violation {
 	violations := []Violation{{Path: "$", Rule: RuleJSON, Message: err.Error()}}
 	if declared, ok := peekSchemaVersion(raw); ok && declared != schema.Version {
