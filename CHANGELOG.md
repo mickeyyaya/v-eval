@@ -4,7 +4,9 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- Project site: the numbered steps in "Evidence first" no longer wrap into the number column, the states table spans the full width, and every numbered section fills the container in two columns so the layout keeps its proportions at any window width (checked at 320, 375, 768, 1024, 1440, and 1920 pixels).
 
 ## [0.1.1] - 2026-09-15
 

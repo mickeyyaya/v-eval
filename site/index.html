@@ -51,7 +51,7 @@ body {
 code, pre, kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
 a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 3px; }
 a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.wrap { max-width: 72rem; margin: 0 auto; padding: 0 1.25rem; }
+.wrap { max-width: 70rem; margin: 0 auto; padding: 0 1.5rem; }
 
 /* masthead */
 .masthead { border-bottom: 1px solid var(--rule); position: sticky; top: 0; background: var(--paper); z-index: 2; }
@@ -103,17 +103,19 @@ figcaption { margin-top: 0.75rem; padding-left: 0.75rem; border-left: 2px solid 
 .stat .l { color: var(--ink-2); font-size: 0.85rem; margin-top: 0.25rem; }
 
 /* sections */
-section.part { padding: 4rem 0 1rem; border-top: 1px solid var(--rule); }
+section.part { padding: 4rem 0 2rem; border-top: 1px solid var(--rule); }
 section.part:first-of-type { border-top: 0; }
 .no { color: var(--accent); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; }
 h2 { font-size: clamp(1.7rem, 3.4vw, 2.5rem); line-height: 1.15; font-weight: 500; margin: 0.5rem 0 1rem; max-width: 40rem; }
 .part p { max-width: 42rem; }
+.two > p, .two > div > p:first-child { margin-top: 0; }
 .two { display: grid; grid-template-columns: 1fr; gap: 2rem; }
 .two > *, .hero > * { min-width: 0; }
 @media (min-width: 60rem) { .two { grid-template-columns: 1fr 1fr; gap: 3rem; } }
-.steps { list-style: none; margin: 1.5rem 0 0; padding: 0; counter-reset: step; }
+.steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
 .steps li { counter-increment: step; display: grid; grid-template-columns: 2.5rem 1fr; gap: 0.75rem; padding: 0.9rem 0; border-top: 1px solid var(--rule); }
-.steps li::before { content: counter(step, decimal-leading-zero); color: var(--accent); font-weight: 600; font-size: 0.85rem; padding-top: 0.2rem; }
+.steps li::before { content: counter(step, decimal-leading-zero); grid-column: 1; grid-row: 1 / span 2; color: var(--accent); font-weight: 600; font-size: 0.85rem; padding-top: 0.2rem; }
+.steps li > * { grid-column: 2; }
 .steps b { display: block; margin-bottom: 0.15rem; }
 .steps span { color: var(--ink-2); font-size: 0.95rem; }
 pre { margin: 1rem 0; padding: 1rem 1.1rem; background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55; }
@@ -121,7 +123,7 @@ pre.terminal { background: var(--dark-panel); color: var(--dark-panel-fg); borde
 pre .c { color: #8f8a80; }
 code { background: var(--code-bg); border-radius: 3px; padding: 0 0.3rem; font-size: 0.9em; }
 pre code { background: none; padding: 0; font-size: inherit; }
-.rulebox { border: 1px solid var(--rule); border-left: 3px solid var(--accent); background: var(--paper-2); padding: 1rem 1.25rem; margin: 1.5rem 0; max-width: 42rem; }
+.rulebox { border: 1px solid var(--rule); border-left: 3px solid var(--accent); background: var(--paper-2); padding: 1rem 1.25rem; margin: 1.5rem 0 0; }
 .rulebox b { display: block; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.75rem; color: var(--accent); margin-bottom: 0.4rem; }
 .rulebox code { background: var(--code-bg); }
 blockquote { margin: 1.5rem 0; padding: 0 0 0 1.25rem; border-left: 3px solid var(--accent); font-size: 1.35rem; line-height: 1.35; max-width: 36rem; }
@@ -132,8 +134,9 @@ th, td { text-align: left; vertical-align: top; padding: 0.7rem 0.8rem; border-b
 th { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); font-weight: 600; }
 td:first-child { color: var(--ink-2); white-space: nowrap; }
 .states td:nth-child(2) { white-space: nowrap; }
-.hosts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin: 1.5rem 0; padding: 0; list-style: none; max-width: 42rem; }
-@media (min-width: 48rem) { .hosts { grid-template-columns: repeat(3, 1fr); } }
+.states th:nth-child(3), .states td:nth-child(3) { width: 45%; }
+.hosts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 48rem) { .hosts { grid-template-columns: repeat(2, 1fr); } }
 .hosts li { border: 1px solid var(--rule); border-radius: 6px; padding: 0.7rem 0.9rem; background: var(--paper-2); font-size: 0.95rem; }
 .hosts li small { display: block; color: var(--ink-2); font-size: 0.8rem; }
 .hosts li, .stat, td, .verdict-row span, .steps span { overflow-wrap: anywhere; }
@@ -208,8 +211,11 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; justify-cont
 <section class="part" id="evidence">
 <p class="no">№ 02 — the rule</p>
 <h2>Evidence first. Verdicts derived.</h2>
+<div class="two">
+<div>
 <p>A criterion can PASS only on evidence the evaluator observed, and only when that evidence points somewhere a reader can go: a file with a line range, a command with its exit status and log, or a passage with its source and dates. A note such as "the author says so" is a valid record of what was supplied, and it can never carry a PASS. The core enforces this; a report that breaks it is rejected before it is rendered.</p>
 <div class="rulebox"><b>Evidence hierarchy</b>observed execution &gt; observed inspection &gt; supplied logs &gt; the candidate's own summary. Candidate-supplied material is labelled <code>(supplied)</code> everywhere it appears.</div>
+</div>
 <ol class="steps">
 <li><b>Intake</b><span>Everything available is input: the brief, the artifact, the diff, the design, test definitions, execution records, prior reviews, the candidate's claims.</span></li>
 <li><b>Contract</b><span>The acceptance criteria become an explicit contract: identifier, requirement, source, required or optional, allowed methods, acceptance rule. Provisional criteria are marked and block acceptance until confirmed.</span></li>
@@ -219,13 +225,13 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; justify-cont
 <li><b>Decide</b><span>Per-criterion results, then one overall status by one auditable rule. No composite score.</span></li>
 <li><b>Report</b><span>Canonical JSON, validated by the core; Markdown and a self-contained HTML page; SARIF for tools that read it.</span></li>
 </ol>
+</div>
 </section>
 
 <section class="part" id="states">
 <p class="no">№ 03 — the states</p>
 <h2>Five states, one auditable rule.</h2>
 <div class="two">
-<div>
 <p>Each criterion ends in exactly one of five states. UNKNOWN is a first-class answer: when the tests were not supplied, the honest result is that nobody knows, not that they probably pass. ERROR is reserved for a check that was actually attempted and could not complete.</p>
 <p>The overall status follows from the required, applicable, confirmed criteria by a fixed order of rules, and the report names the rule it applied and the criteria that blocked acceptance. Change a result by hand and the core notices: the recomputed status and the stated one must agree, and so must the report's content hash.</p>
 </div>
@@ -242,7 +248,6 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; justify-cont
 </table>
 </div>
 <p style="font-size:0.9rem;color:var(--ink-2)">PASS, ERROR, and NOT_APPLICABLE are enforced by the core; FAIL and UNKNOWN are the skill's obligations.</p>
-</div>
 <pre class="terminal"><code><span class="c"># edit the report so the overall status reads PASS, then:</span>
 $ veval validate report.json
 status: status.match: stated overall PASS, computed FAIL
@@ -297,6 +302,7 @@ veval export sarif report.json -o report.sarif.json</code></pre>
 <section class="part" id="hosts">
 <p class="no">№ 06 — where it runs</p>
 <h2>One skill, every CLI.</h2>
+<div class="two">
 <p>The skill is a <code>SKILL.md</code> workflow with a reference file per host that maps its seven actions (read a file, search, list, run a command, fetch a URL, dispatch a subagent, invoke the core) onto that host's tools. Where a host cannot run commands, execution criteria stay UNKNOWN and the report says so.</p>
 <ul class="hosts">
 <li>Claude Code<small>Read, Grep, Glob, Bash, WebFetch, Agent</small></li>
@@ -306,6 +312,7 @@ veval export sarif report.json -o report.sarif.json</code></pre>
 <li>Hermes<small>its agent tool set</small></li>
 <li>ollama-backed agents<small>through a harness such as Claude Code, Codex, or OpenCode</small></li>
 </ul>
+</div>
 </section>
 
 <section class="part" id="install">
